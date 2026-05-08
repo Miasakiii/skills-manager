@@ -315,30 +315,39 @@ skills-manager search "翻译"
 
 **交付物**：`skills-manager export my-skill --format openai` 能跑通，5 个平台格式导出正确。3 个示例 Skill 的 15 次导出（3×5 格式）全部验证通过。
 
-### Phase 2：桌面客户端 MVP（第 4-6 周）🔄 原型已验证
+### Phase 2：桌面客户端 MVP（第 4-6 周）✅ 基本完成
 
 **目标**：基本可用的桌面应用。Python + Flet。
 
-> **原型验证（2026-05-08）**：Flet 0.84 原型已跑通 — 侧边栏导航、Skill 卡片网格、详情页 + 导出预览、批量导出页均可用。Flet 与核心引擎集成零摩擦（`import skills_manager` 即用）。Flutter 引擎首次需下载（~40MB zip），后续秒开。结论：Flet 方案可行。
+> **原型验证（2026-05-08）**：Flet 0.84 原型已跑通。结论：Flet 方案可行。
+>
+> **MVP 实现（2026-05-08）**：原型单体文件（485 行）重构为模块化结构（10 个文件，~900 行），功能全部实现并通过端到端验证。
 
-- [x] Flet 项目脚手架（主应用结构）
-- [x] 主界面布局（侧边栏导航 + 内容区）— 原型完成
-- [x] Skill 浏览页（卡片列表）— 原型完成
-- [ ] 搜索功能（实时关键词搜索）
-- [x] Skill 详情页（参数表、导出预览）— 原型完成
-- [x] 导出面板（格式选择 → 预览 → 复制）— 原型完成
-- [ ] 批量导出（多选 → 批量导出文件）
-- [ ] 新建 Skill 引导（模板生成 SKILL.md 骨架）
-- [ ] 安装管理（本地目录 / .skill 包安装）
-- [x] 暗色 / 亮色主题切换 — Flet 内置支持
-- [ ] 基础错误处理和 Toast 提示
+- [x] Flet 项目脚手架（主应用结构）— `desktop/` 模块化包
+- [x] 主界面布局（侧边栏导航 + 内容区）
+- [x] Skill 浏览页（卡片列表 + 增量更新）
+- [x] 搜索功能（实时关键词搜索）— 前端过滤，不触发全页重建
+- [x] Skill 详情页（参数表、导出预览）
+- [x] 导出面板（格式选择 → 预览 → 弹窗展示/复制）
+- [x] 批量导出（多选 → 子文件夹 → 文件导出）
+- [x] 新建 Skill 引导（表单 → 骨架生成 → 选择目录保存并安装）
+- [x] 安装管理（本地目录 / .skill 包安装）
+- [x] 暗色 / 亮色主题切换
+- [x] 基础错误处理和 SnackBar 提示（3s 自动关闭）
+- [x] 卸载功能（详情页卸载按钮 + 确认对话框）
+- [x] 侧边栏导航高亮（修复 `_update_ui()` 替换对象无效问题，改为修改 content 属性）
 
-**交付物**：可安装运行的桌面应用，核心流程（浏览 → 导出）跑通。
+**交付物**：可安装运行的桌面应用，核心流程（浏览 → 搜索 → 详情 → 导出 → 安装 → 新建 → 卸载）全部跑通。
+
+> **实现说明**：桌面应用代码位于 `skills-manager-prototype/desktop/`，结构为 `main.py`（入口）→ `app.py`（主控）→ `pages/*.py`（各页面）+ `components.py`（通用组件）+ `dialogs.py`（对话框）。所有页面通过 `app` 对象共享状态（Store、skills 列表、导航等），避免全局变量。代码总量 856 行（不含原型文件 prototype.py 484 行）。
+>
+> **Flet 0.84 API 注意事项**：Flet 0.84.0 桌面版与网上大多数文档（针对 0.7x-0.8x）有显著 API 差异——`FilePicker` 改为纯 async Service（不能加入 overlay，按需创建）；`Dropdown.on_change` → `on_select`；`page.set_clipboard()` / `page.show_snack_bar()` / `page.open()` 均不存在，需用替代方案；`SnackBar.open=True` 需在加入 overlay 后设置才生效；`TextButton` 的 `ButtonStyle.bgcolor` 不可靠渲染；页面树中已有的控件不能通过替换 Python 对象来更新（`self.xxx = new_obj` 无效），必须修改已有对象的属性（如 `self.xxx.content = ...`）。详见项目记忆 `flet_084_api.md`。
 
 ### Phase 3：编辑器与增强（第 7-9 周）
 
-**目标**：内置编辑器、Profile 管理、远程安装。
+**目标**：内置编辑器、Profile 管理、远程安装。含 Phase 2 延后项（分类筛选、Markdown 编辑器）。
 
+- [ ] 分类筛选（一级分类 Chip 筛选，浏览页快速过滤）— Phase 2 延后
 - [ ] 内置 Markdown 编辑器（CodeMirror via Flet WebView 或自定义组件）
 - [ ] 实时解析预览（编辑 SKILL.md → 即时显示 IR）
 - [ ] 语法校验（frontmatter 格式检查、参数表格式检查）
@@ -405,7 +414,8 @@ skills-manager search "翻译"
 
 | 风险 | 等级 | 对策 |
 | --- | --- | --- |
-| Flet 生态成熟度 | 🟢 已验证 | Flet 0.84 原型跑通，Flutter 渲染正常。降级方案 PyQt 保留 |
+| Flet 生态成熟度 | 🟢 已验证 | Flet 0.84 MVP 已跑通，10 个模块全部功能验证通过。API 有小版本差异（FilePicker/Page 方法），已全部适配。降级方案 PyQt 保留 |
+| Flet API 变动 | 🟡 已处理 | Flet 0.84 与 0.7x-0.8x 文档有多个 API 不一致（Dropdown、SnackBar、clipboard、FilePicker），已逐一适配并记录到项目记忆 |
 | 国内网络下载 Flutter 引擎 | 🟡 需注意 | Flet 首次需从 GitHub 下载 ~40MB 引擎。对策：提供离线安装包或镜像 URL（`FLET_CLIENT_URL` 环境变量） |
 | Python 打包复杂度 | 🟡 待验证 | 使用 PyInstaller + Nuitka 打包；尽早测试三个平台 |
 | 大量 Skill 时性能 | 🟢 已评估 | 当前 JSON 索引在 < 100 Skill 时性能无问题；超过后平滑升级 SQLite+FTS5，Store 接口不变 |
@@ -418,7 +428,7 @@ skills-manager search "翻译"
 ## 十、开放问题
 
 1. ~~**Flet vs PyQt6**~~ → **已确认**：Flet 0.84 原型验证通过，Flutter 渲染现代感强，与 Python 核心引擎集成顺畅。降级方案 PyQt6 保留但不再优先。
-2. **编辑器组件**：用 Flet 内置 TextField + Markdown 预览，还是通过 Flet WebView 嵌入 CodeMirror？需要实测 Flet Markdown 控件渲染效果后决定。
+2. **编辑器组件**：当前 MVP 用 Flet 内置 TextField（multiline）实现 SKILL.md 编辑，预览区用 monospace 字体展示。Phase 3 评估 Flet WebView 嵌入 CodeMirror 或 Mermaid 渲染的可行性。
 3. **CLI 分发方式**：发布到 PyPI（`pip install skills-manager`），与桌面应用共享核心引擎。已确认 typer + rich 方案效果良好。
 4. **Rust 优化范围**：仅在基准测试显示 > 10 倍提速时才移植解析器 + 适配器。存储和 UI 留在 Python。当前 3 个 Skill 解析耗时 < 1ms，暂不触发。
 5. **存储方案升级**：当前用 JSON 文件索引（轻量、零依赖），Skill 数量 > 100 时迁移到 SQLite + FTS5 全文搜索。迁移成本低——Store 接口不变。
