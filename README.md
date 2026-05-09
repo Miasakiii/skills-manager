@@ -105,7 +105,7 @@ skills-manager/
 ## 技术栈
 
 | 层面 | 选择 |
-|---|---|
+| ---- | ---- |
 | 语言 | Python 3.11+ |
 | UI 框架 | Flet（基于 Flutter） |
 | 数据模型 | Pydantic |

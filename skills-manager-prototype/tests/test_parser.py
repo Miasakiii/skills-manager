@@ -215,6 +215,27 @@ category: language
         ir = parse_skill_content(content, name_hint="fallback")
         assert ir.name == "fallback"
 
+    def test_skill_type_and_intent(self):
+        content = """---
+name: jtbd
+version: "1.0.0"
+description: Jobs-to-be-Done 分析框架
+skill_type: interactive
+intent: 引导产品团队通过多轮对话深入理解用户需求
+---
+## 功能
+分析用户需求。
+"""
+        ir = parse_skill_content(content)
+        assert ir.skill_type == "interactive"
+        assert ir.intent == "引导产品团队通过多轮对话深入理解用户需求"
+
+    def test_skill_type_default_empty(self):
+        content = "---\nname: test\nversion: 1.0.0\ndescription: test\n---\n"
+        ir = parse_skill_content(content)
+        assert ir.skill_type == ""
+        assert ir.intent == ""
+
 
 class TestParseSkillMd:
     def test_parse_sample(self, tmp_path):

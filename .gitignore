@@ -28,3 +28,4 @@ htmlcov/
 # Project specific
 ~/.skills-manager/
 *.skill
+test-skill.json

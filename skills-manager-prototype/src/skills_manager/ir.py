@@ -59,6 +59,8 @@ class SkillIR:
     description: str
     summary: str = ""
     type: str = "tool"  # "prompt" | "tool" | "workflow" | "composite"
+    skill_type: str = ""  # "component" | "interactive" | "workflow"（语义类型）
+    intent: str = ""  # 详细意图说明
 
     # 参数定义
     parameters: list[Parameter] = field(default_factory=list)

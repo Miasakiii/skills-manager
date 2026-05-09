@@ -39,6 +39,10 @@ class App:
 
         self._refresh_skills()
 
+        # 首次启动无 Skill 时自动导入示例
+        if not self.skills:
+            self._auto_import_examples()
+
         self.sidebar = self._build_sidebar()
         self.content_area = ft.Container(expand=True, padding=24, content=self._build_current_page())
 
@@ -136,6 +140,72 @@ class App:
                 ] + nav_buttons,
             ),
         )
+
+    # ── 自动发现 ──────────────────────────────────────────
+
+    def _get_scan_paths(self) -> list[Path]:
+        """返回自动扫描的预设路径列表（完全兼容 cc-switch 生态）。"""
+        home = Path.home()
+        paths: list[Path] = [
+            # 自身 store
+            self.store.store_dir,
+            # cc-switch SSOT 主存储（用户 200+ skill 在这里）
+            home / ".cc-switch" / "skills",
+            # 各 CLI 工具 skills 目录
+            home / ".claude" / "skills",
+            home / ".codex" / "skills",
+            home / ".gemini" / "skills",
+            home / ".config" / "opencode" / "skills",
+            home / ".openclaw" / "skills",
+            home / ".agents" / "skills",
+        ]
+        # 项目内置示例
+        examples_dir = Path(__file__).parent.parent / "examples"
+        if examples_dir.is_dir():
+            paths.append(examples_dir)
+        # Claude Desktop 可能有独立目录
+        claude_desktop = home / ".claude-desktop" / "skills"
+        if claude_desktop.is_dir():
+            paths.append(claude_desktop)
+        # 用户自定义监视路径
+        for p in self.store.get_watch_paths():
+            paths.append(Path(p))
+        return paths
+
+    def auto_discover(self) -> list[Path]:
+        """自动扫描预设路径，返回发现但未安装的 Skill 目录列表。"""
+        return self.store.discover_in_paths(self._get_scan_paths())
+
+    def auto_discover_and_install(self) -> tuple[list[str], list[tuple[str, str]]]:
+        """自动发现并安装全部未安装的 Skill。"""
+        discovered = self.auto_discover()
+        if not discovered:
+            return [], []
+        installed = []
+        failed = []
+        for skill_dir in discovered:
+            try:
+                result = self.store.install(skill_dir, force=True)
+                installed.append(result.name)
+            except Exception as e:
+                failed.append((skill_dir.name, str(e)))
+        return installed, failed
+
+    def _auto_import_examples(self):
+        """首次启动时自动导入项目内置示例（仅 examples/ 目录）。"""
+        examples_dir = Path(__file__).parent.parent / "examples"
+        if not examples_dir.is_dir():
+            return
+        discovered = self.store.scan_directory(examples_dir)
+        if not discovered:
+            return
+        try:
+            installed, failed = self.store.scan_and_install(examples_dir)
+            self._refresh_skills()
+            names = ", ".join(installed)
+            self.show_snack(f"已自动导入 {len(installed)} 个示例 Skill: {names}")
+        except Exception:
+            pass
 
     # ── 安装对话框 ────────────────────────────────────────────
 

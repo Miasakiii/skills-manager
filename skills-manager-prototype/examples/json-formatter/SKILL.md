@@ -5,6 +5,8 @@ description: JSON 格式化、压缩与校验
 summary: |
   对 JSON 字符串进行格式化（美化）、压缩（去除空白）和语法校验。
   支持自定义缩进和排序。
+skill_type: component
+intent: 对 JSON 字符串进行格式化、压缩或语法校验
 type: tool
 tags: [json, formatting, validation]
 category: code

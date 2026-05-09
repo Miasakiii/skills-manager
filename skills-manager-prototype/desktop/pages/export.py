@@ -7,6 +7,7 @@ from pathlib import Path
 import flet as ft
 
 from skills_manager.adapters import get_adapter, list_formats
+from skills_manager.packager import pack_for_claude_code, pack_for_claude_desktop, pack_for_codex
 
 
 def build_export_page(app) -> ft.Control:
@@ -26,6 +27,7 @@ def build_export_page(app) -> ft.Control:
         app._export_selected = selected
 
     export_format = getattr(app, "_batch_export_format", "openai")
+    pack_format = getattr(app, "_batch_pack_format", "")
     output_dir = getattr(app, "_batch_output_dir", "")
 
     def toggle_all(e):
@@ -40,6 +42,9 @@ def build_export_page(app) -> ft.Control:
 
     def on_format_change(e):
         app._batch_export_format = e.control.value
+
+    def on_pack_format_change(e):
+        app._batch_pack_format = e.control.value
 
     async def pick_dir(_):
         path = await ft.FilePicker().get_directory_path()
@@ -71,6 +76,36 @@ def build_export_page(app) -> ft.Control:
         except Exception as e:
             app.show_snack(f"导出失败: {e}", error=True)
 
+    async def do_pack(_):
+        to_export = [s for s in skills if selected.get(s.name)]
+        if not to_export:
+            app.show_snack("请至少选择一个 Skill", error=True)
+            return
+        if not output_dir:
+            app.show_snack("请先选择输出目录", error=True)
+            return
+        if not pack_format:
+            app.show_snack("请先选择打包格式", error=True)
+            return
+
+        try:
+            skill_dirs = [Path(app.store.get_skill_md_path(s.name)).parent for s in to_export]
+            dest = Path(output_dir)
+
+            if pack_format == "claude-desktop":
+                result = pack_for_claude_desktop(skill_dirs, dest)
+            elif pack_format == "codex":
+                result = pack_for_codex(skill_dirs, dest)
+            elif pack_format == "claude-code":
+                result = pack_for_claude_code(skill_dirs, dest)
+            else:
+                app.show_snack(f"未知打包格式: {pack_format}", error=True)
+                return
+
+            app.show_snack(f"已打包 {len(to_export)} 个 Skill 到 {result}")
+        except Exception as e:
+            app.show_snack(f"打包失败: {e}", error=True)
+
     checkboxes = []
     for s in skills:
         checkboxes.append(ft.Checkbox(
@@ -94,13 +129,30 @@ def build_export_page(app) -> ft.Control:
             ft.Row([ft.Text("选择 Skills", size=16, weight=ft.FontWeight.BOLD), select_all]),
             ft.Column(controls=checkboxes, spacing=2),
             ft.Divider(),
-            ft.Text("目标格式", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("导出格式", size=16, weight=ft.FontWeight.BOLD),
             ft.Dropdown(options=[ft.DropdownOption(f) for f in list_formats()], value=export_format, width=200, on_select=on_format_change),
+            ft.Divider(),
+            ft.Text("打包格式", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("将 Skill 打包为平台特定格式", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Dropdown(
+                options=[
+                    ft.DropdownOption("", text="不打包"),
+                    ft.DropdownOption("claude-desktop", text="Claude Desktop"),
+                    ft.DropdownOption("codex", text="Codex"),
+                    ft.DropdownOption("claude-code", text="Claude Code"),
+                ],
+                value=pack_format,
+                width=200,
+                on_select=on_pack_format_change,
+            ),
             ft.Divider(),
             ft.Row([
                 ft.OutlinedButton("选择输出目录", icon=ft.Icons.FOLDER_OPEN, on_click=pick_dir),
                 ft.Text(output_dir or "未选择目录", size=13, color=ft.Colors.ON_SURFACE_VARIANT, italic=True),
             ], spacing=8),
-            ft.FilledButton("导出选中", icon=ft.Icons.FILE_DOWNLOAD, on_click=do_export),
+            ft.Row([
+                ft.FilledButton("导出选中", icon=ft.Icons.FILE_DOWNLOAD, on_click=do_export),
+                ft.FilledButton("打包选中", icon=ft.Icons.ARCHIVE, on_click=do_pack),
+            ], spacing=8),
         ],
     )

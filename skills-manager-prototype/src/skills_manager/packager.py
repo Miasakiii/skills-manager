@@ -1,11 +1,14 @@
 """打包与解包。
 
 将 Skill 目录打包为 .skill 文件，以及从 .skill 文件解包。
+支持导出为 Claude Desktop、Codex、Claude Code 等平台格式。
 """
 
 from __future__ import annotations
 
+import json
 import tarfile
+import zipfile
 from pathlib import Path
 
 from .ir import SkillIR
@@ -73,3 +76,127 @@ def unpack(package_path: Path, output_dir: Path | None = None) -> Path:
         return output_dir
 
     raise FileNotFoundError("No SKILL.md found in extracted package")
+
+
+def pack_for_claude_desktop(skills_dirs: list[Path], output_dir: Path) -> Path:
+    """打包为 Claude Desktop 格式（ZIP）。
+
+    Claude Desktop 使用 Skill.md（注意是 Skill.md 不是 SKILL.md）作为 skill 定义文件。
+
+    Args:
+        skills_dirs: Skill 目录路径列表。
+        output_dir: 输出目录。
+
+    Returns:
+        生成的 ZIP 文件路径。
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "claude-desktop-skills.zip"
+
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for skill_dir in skills_dirs:
+            skill_md = skill_dir / "SKILL.md"
+            if not skill_md.exists():
+                continue
+
+            ir = parse_skill_md(skill_md)
+            # Claude Desktop 使用 Skill.md 作为文件名
+            arcname = f"{ir.name}/Skill.md"
+            zf.write(skill_md, arcname)
+
+            # 复制其他文件（排除隐藏文件和元数据）
+            for item in skill_dir.rglob("*"):
+                if item.is_file() and not item.name.startswith("."):
+                    rel_path = item.relative_to(skill_dir)
+                    zf.write(item, f"{ir.name}/{rel_path}")
+
+    return output_path
+
+
+def pack_for_codex(skills_dirs: list[Path], output_dir: Path) -> Path:
+    """打包为 Codex 格式（ZIP）。
+
+    Codex 使用 .agents/skills/ 目录结构，每个 skill 一个目录。
+
+    Args:
+        skills_dirs: Skill 目录路径列表。
+        output_dir: 输出目录。
+
+    Returns:
+        生成的 ZIP 文件路径。
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "codex-skills.zip"
+
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for skill_dir in skills_dirs:
+            skill_md = skill_dir / "SKILL.md"
+            if not skill_md.exists():
+                continue
+
+            ir = parse_skill_md(skill_md)
+
+            # 复制 skill 文件到 .agents/skills/{name}/
+            for item in skill_dir.rglob("*"):
+                if item.is_file() and not item.name.startswith("."):
+                    rel_path = item.relative_to(skill_dir)
+                    zf.write(item, f".agents/skills/{ir.name}/{rel_path}")
+
+        # 生成 AGENTS.md
+        agents_md = _generate_agents_md(skills_dirs)
+        zf.writestr("AGENTS.md", agents_md)
+
+    return output_path
+
+
+def pack_for_claude_code(skills_dirs: list[Path], output_dir: Path) -> Path:
+    """打包为 Claude Code 格式（ZIP）。
+
+    Claude Code 使用 .claude/skills/ 目录结构。
+
+    Args:
+        skills_dirs: Skill 目录路径列表。
+        output_dir: 输出目录。
+
+    Returns:
+        生成的 ZIP 文件路径。
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "claude-code-skills.zip"
+
+    with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        for skill_dir in skills_dirs:
+            skill_md = skill_dir / "SKILL.md"
+            if not skill_md.exists():
+                continue
+
+            ir = parse_skill_md(skill_md)
+
+            # 复制 skill 文件到 .claude/skills/{name}/
+            for item in skill_dir.rglob("*"):
+                if item.is_file() and not item.name.startswith("."):
+                    rel_path = item.relative_to(skill_dir)
+                    zf.write(item, f".claude/skills/{ir.name}/{rel_path}")
+
+    return output_path
+
+
+def _generate_agents_md(skills_dirs: list[Path]) -> str:
+    """生成 AGENTS.md 内容。"""
+    lines = [
+        "# Agents Configuration",
+        "",
+        "The following skills are available:",
+        "",
+    ]
+
+    for skill_dir in skills_dirs:
+        skill_md = skill_dir / "SKILL.md"
+        if not skill_md.exists():
+            continue
+
+        ir = parse_skill_md(skill_md)
+        lines.append(f"- **{ir.name}**: {ir.description}")
+
+    lines.append("")
+    return "\n".join(lines)

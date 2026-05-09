@@ -11,7 +11,7 @@
 
 ### 1.1 架构总览
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────────┐
 │                        Skills Manager                               │
 │                                                                     │
@@ -74,7 +74,7 @@
 
 ### 1.3 项目结构
 
-```
+```text
 skills-manager/
 ├── pyproject.toml                    # 项目元数据 + 依赖
 ├── README.md
@@ -150,7 +150,7 @@ skills-manager/
 
 ### 2.1 目录结构
 
-```
+```text
 my-skill/
 ├── SKILL.md            # 必需：元数据 + 文档 + 参数定义
 ├── handler.py          # 可选：执行逻辑（Python）
@@ -202,6 +202,7 @@ license: MIT                        # 可选
 ```
 
 **最小可用 frontmatter**（只需 4 个字段）：
+
 ```yaml
 ---
 name: hello
@@ -259,7 +260,7 @@ summary: 向用户打招呼，支持中英文。
 
 **解析逻辑**：
 
-```
+```text
 输入表格：
 | 参数 | 类型 | 必需 | 说明 |
 |---|---|---|---|
@@ -282,7 +283,7 @@ summary: 向用户打招呼，支持中英文。
 **类型映射**：
 
 | Markdown 类型 | JSON Schema 类型 | Python 类型 |
-|---|---|---|
+| ------------ | --------------- | ---------- |
 | string | string | str |
 | int / integer | integer | int |
 | float / number | number | float |
@@ -299,7 +300,7 @@ summary: 向用户打招呼，支持中英文。
 
 `.skill` 文件 = `.tar.gz`，顶层目录为 Skill 名称：
 
-```
+```text
 translator-1.0.0.skill
 └── translator/
     ├── SKILL.md
@@ -398,7 +399,7 @@ class SkillIR(BaseModel):
 
 ### 3.2 SKILL.md → IR 解析流程
 
-```
+```text
 SKILL.md 文件
     │
     ├── 读取文件内容
@@ -424,7 +425,7 @@ SKILL.md 文件
 ### 4.1 一级分类（固定，不轻易扩展）
 
 | 分类 | 标识 | 图标 | 说明 |
-|---|---|---|---|
+| ---- | ---- | ---- | ---- |
 | 语言处理 | `language` | 📝 | 翻译、语法、改写、摘要、信息提取 |
 | 编程开发 | `code` | 🔧 | 代码审查、生成、测试、调试、文档、格式化 |
 | 数据分析 | `data` | 📊 | 数据分析、可视化、清洗、转换、统计 |
@@ -713,7 +714,7 @@ def list_adapters() -> list[str]:
 
 ### 6.1 存储结构
 
-```
+```text
 ~/.skills-manager/                     # 应用数据目录
 ├── config.toml                        # 全局配置
 ├── skills.db                          # SQLite 数据库（索引 + 元数据）
@@ -820,7 +821,7 @@ base_url = "https://api.openai.com/v1"
 ### 7.1 技术栈
 
 | 组件 | 选择 | 说明 |
-|---|---|---|
+| ---- | ---- | ---- |
 | UI 框架 | Flet 0.25+ | 基于 Flutter 渲染，Python 原生 |
 | 状态管理 | Flet 内置（Page + controls） | 通过 control 属性响应式更新 |
 | Markdown 编辑器 | Flet TextField + Markdown widget | 或通过 Flet WebView 嵌入 CodeMirror |
@@ -831,7 +832,7 @@ base_url = "https://api.openai.com/v1"
 
 ### 7.2 页面结构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │  ┌──────────┐  ┌──────────────────────────────────────────┐ │
 │  │          │  │                                          │ │
@@ -863,7 +864,7 @@ base_url = "https://api.openai.com/v1"
 ### 7.3 核心组件
 
 | 组件 | 说明 |
-|---|---|
+| ---- | ---- |
 | `SkillCard` | Skill 卡片：名称、版本、分类图标、摘要、标签 |
 | `SkillDetail` | 详情面板：Tab 切换（参数/示例/文档/导出） |
 | `ExportPanel` | 导出面板：格式选择、预览、复制/保存 |
@@ -977,7 +978,7 @@ ft.app(target=main)
 ### 8.1 错误分类
 
 | 错误类型 | 说明 | 前端展示 |
-|---|---|---|
+| -------- | ---- | -------- |
 | 解析错误 | SKILL.md 格式不合法 | 红色提示 + 具体行号 |
 | 导出错误 | 适配器转换失败 | Toast 错误消息 |
 | 存储错误 | 文件读写 / SQLite 错误 | Toast 错误消息 |
@@ -1020,7 +1021,7 @@ pytest tests/
 ### 9.2 平台打包分发
 
 | 平台 | 工具 | 产物 |
-|---|---|---|
+| ---- | ---- | ---- |
 | Windows | PyInstaller + NSIS | `.exe` 安装包 |
 | macOS | PyInstaller + create-dmg | `.dmg` |
 | Linux | PyInstaller + AppImage | `.AppImage` / `.deb` |
@@ -1061,7 +1062,7 @@ jobs:
 ### 10.1 单元测试（pytest）
 
 | 模块 | 测试内容 |
-|---|---|
+| ---- | -------- |
 | parser | SKILL.md 解析：frontmatter 提取、表格解析、类型映射、枚举检测 |
 | adapters | 每个适配器的输出格式正确性、边界情况（无参数、嵌套类型） |
 | store | 安装、卸载、索引更新、搜索、FTS 查询 |
@@ -1072,7 +1073,7 @@ jobs:
 ### 10.2 GUI 测试
 
 | 测试内容 | 工具 |
-|---|---|
+| -------- | ---- |
 | 组件渲染 | Flet 测试工具 / 截图对比 |
 | 用户交互 | 模拟点击、输入、导出操作 |
 | 状态管理 | AppState 单元测试 |
@@ -1080,7 +1081,7 @@ jobs:
 ### 10.3 集成测试
 
 | 场景 | 验证方式 |
-|---|---|
+| ---- | ---- |
 | 完整流程：安装 → 浏览 → 导出 | 端到端测试 |
 | 多格式导出一致性 | 同一 IR 导出到 5 个格式，对比快照 |
 | 大量 Skill 性能 | 1000+ Skill 列表渲染性能 |
@@ -1144,7 +1145,7 @@ build = [
 
 **目标**：用 Python 快速验证核心逻辑，确认解析器 + 5 个适配器的正确性。
 
-```
+```text
 skills-manager/
 ├── pyproject.toml
 ├── src/skills_manager/
@@ -1165,6 +1166,7 @@ skills-manager/
 ```
 
 **验证命令**：
+
 ```bash
 skills-manager export examples/translator --format openai
 pytest tests/  # 全部通过

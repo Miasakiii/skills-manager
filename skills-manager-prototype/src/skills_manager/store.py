@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -14,6 +15,7 @@ from types import SimpleNamespace
 
 from .ir import SkillIR
 from .parser import parse_skill_md
+from .validator import validate_skill_dir
 
 
 class StoreError(Exception):
@@ -50,9 +52,12 @@ class Store:
         Returns:
             安装后的 Skill 信息。
         """
+        # 验证 skill 格式
+        validation = validate_skill_dir(source)
+        if not validation.valid:
+            raise StoreError(f"验证失败: {'; '.join(validation.errors)}")
+
         skill_md = source / "SKILL.md"
-        if not skill_md.exists():
-            raise StoreError(f"No SKILL.md found in {source}")
 
         ir = parse_skill_md(skill_md)
         install_name = name or ir.name
@@ -79,6 +84,9 @@ class Store:
 
         # 更新索引
         self._update_index(install_name, ir, str(source))
+
+        # 自动同步到各 agent 目录（symlink 优先，让 agent 立即可用）
+        self.sync_skill_to_agents(install_name)
 
         return self.get(install_name)
 
@@ -113,14 +121,159 @@ class Store:
             return skill_md.parent
         return None
 
+    # ── 自动发现 ──────────────────────────────────────────
+
+    def discover_in_paths(self, scan_paths: list[Path]) -> list[Path]:
+        """扫描预设路径，返回已发现但未安装的 Skill 目录列表。
+
+        排除已安装的（按 name 匹配）和隐藏目录。
+        """
+        managed = {s.name for s in self.list_all()}
+        discovered: list[Path] = []
+        seen: set[str] = set()
+
+        for scan_path in scan_paths:
+            if not scan_path.is_dir():
+                continue
+            try:
+                for item in sorted(scan_path.iterdir()):
+                    if not item.is_dir() or item.name.startswith("."):
+                        continue
+                    if item.name in managed or item.name in seen:
+                        continue
+                    if (item / "SKILL.md").exists():
+                        discovered.append(item)
+                        seen.add(item.name)
+            except PermissionError:
+                continue
+
+        return discovered
+
+    # ── 扫描 ──────────────────────────────────────────────
+
+    @staticmethod
+    def scan_directory(root: Path) -> list[Path]:
+        """递归扫描目录，返回所有包含 SKILL.md 的子目录路径。"""
+        results = []
+        for item in sorted(root.iterdir()):
+            if item.is_dir() and not item.name.startswith("."):
+                if (item / "SKILL.md").exists():
+                    results.append(item)
+                else:
+                    # 递归扫描子目录
+                    results.extend(Store.scan_directory(item))
+        return results
+
+    def scan_and_install(self, root: Path) -> tuple[list[str], list[tuple[str, str]]]:
+        """扫描目录并批量安装所有发现的 Skill。
+
+        Returns:
+            (installed_names, failed_names_with_errors)
+        """
+        discovered = self.scan_directory(root)
+        installed = []
+        failed = []
+        for skill_dir in discovered:
+            try:
+                result = self.install(skill_dir, force=True)
+                installed.append(result.name)
+            except Exception as e:
+                failed.append((skill_dir.name, str(e)))
+        return installed, failed
+
     # ── 卸载 ──────────────────────────────────────────────
 
     def uninstall(self, name: str) -> None:
-        """卸载 Skill。"""
+        """卸载 Skill（同时清理各 agent 目录中的链接）。"""
+        self.remove_skill_from_agents(name)
         target = self.store_dir / name
         if target.exists():
             shutil.rmtree(target)
         self._remove_from_index(name)
+
+    # ── 同步到 Agent ──────────────────────────────────────
+
+    @staticmethod
+    def get_agent_skills_dirs() -> list[Path]:
+        """返回所有存在的 agent skills 目录（存在才返回，用于创建链接）。"""
+        home = Path.home()
+        candidates = [
+            home / ".cc-switch" / "skills",
+            home / ".claude" / "skills",
+            home / ".codex" / "skills",
+            home / ".gemini" / "skills",
+            home / ".config" / "opencode" / "skills",
+            home / ".openclaw" / "skills",
+            home / ".agents" / "skills",
+        ]
+        claude_desktop = home / ".claude-desktop" / "skills"
+        if claude_desktop.is_dir():
+            candidates.append(claude_desktop)
+        return [d for d in candidates if d.is_dir()]
+
+    def sync_skill_to_agents(self, name: str) -> dict[str, bool]:
+        """将指定 Skill 同步（symlink）到所有 agent 目录。
+
+        返回 {agent_dir_name: is_symlink} 字典。
+        """
+        source = self.store_dir / name
+        if not source.is_dir():
+            raise StoreError(f"Skill 源目录不存在: {source}")
+        results: dict[str, bool] = {}
+        for agent_dir in self.get_agent_skills_dirs():
+            dest = agent_dir / name
+            is_link = self._create_link(source, dest)
+            results[agent_dir.name] = is_link
+        return results
+
+    def remove_skill_from_agents(self, name: str) -> None:
+        """从所有 agent 目录中移除 Skill 的链接或副本。"""
+        for agent_dir in self.get_agent_skills_dirs():
+            self._remove_link(agent_dir / name)
+
+    @staticmethod
+    def _create_link(src: Path, dest: Path) -> bool:
+        """创建目录符号链接。优先 symlink（省磁盘），权限不足时回退复制。
+
+        返回 True 表示 symlink 成功，False 表示回退到复制或跳过。
+        """
+        # 目标已是有效 skill 目录（含 SKILL.md）→ 不覆盖，保护用户数据
+        if dest.is_dir() and (dest / "SKILL.md").exists():
+            return False
+
+        # 清理旧的 symlink 或非 skill 目录
+        try:
+            if dest.is_symlink():
+                dest.unlink()
+            elif dest.exists():
+                shutil.rmtree(dest)
+        except (OSError, PermissionError):
+            pass
+
+        # 尝试 symlink
+        try:
+            dest.symlink_to(src.resolve(), target_is_directory=True)
+            return True
+        except (OSError, NotImplementedError):
+            pass
+
+        # 回退：复制
+        try:
+            shutil.copytree(src, dest)
+        except (OSError, shutil.Error):
+            pass
+        return False
+
+    @staticmethod
+    def _remove_link(dest: Path) -> None:
+        """删除符号链接或复制的目录。"""
+        try:
+            if dest.is_symlink():
+                dest.unlink()
+            elif dest.is_dir():
+                shutil.rmtree(dest)
+        except (OSError, PermissionError):
+            pass
 
     # ── 查询 ──────────────────────────────────────────────
 
@@ -168,6 +321,7 @@ class Store:
         query: str,
         tag: str | None = None,
         category: str | None = None,
+        skill_type: str | None = None,
     ) -> list[SimpleNamespace]:
         """搜索 Skills。"""
         results = []
@@ -180,6 +334,9 @@ class Store:
             # 标签过滤
             if tag and tag not in (skill.tags or []):
                 continue
+            # 语义类型过滤
+            if skill_type and getattr(skill, 'skill_type', '') != skill_type:
+                continue
             # 关键词匹配
             searchable = " ".join([
                 skill.name,
@@ -191,6 +348,38 @@ class Store:
                 results.append(skill)
 
         return results
+
+    # ── 监视路径管理 ──────────────────────────────────────
+
+    def get_watch_paths(self) -> list[str]:
+        """获取用户自定义的监视路径列表。"""
+        path = self.base_dir / "watch_paths.json"
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                return []
+        return []
+
+    def add_watch_path(self, watch_path: str) -> None:
+        """添加一个监视路径。"""
+        paths = self.get_watch_paths()
+        if watch_path not in paths:
+            paths.append(watch_path)
+            self._save_watch_paths(paths)
+
+    def remove_watch_path(self, watch_path: str) -> None:
+        """移除一个监视路径。"""
+        paths = self.get_watch_paths()
+        if watch_path in paths:
+            paths.remove(watch_path)
+            self._save_watch_paths(paths)
+
+    def _save_watch_paths(self, paths: list[str]) -> None:
+        path = self.base_dir / "watch_paths.json"
+        path.write_text(
+            json.dumps(paths, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
 
     # ── 索引管理 ──────────────────────────────────────────
 
@@ -211,6 +400,8 @@ class Store:
             "description": ir.description,
             "summary": ir.summary,
             "type": ir.type,
+            "skill_type": ir.skill_type,
+            "intent": ir.intent,
             "tags": ir.tags,
             "category": ir.category,
             "installed_at": datetime.now(timezone.utc).isoformat(),

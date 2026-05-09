@@ -6,6 +6,8 @@ summary: |
   将文本翻译到 7 种目标语言，自动检测源语言。
   支持 formal / casual / technical 三种翻译风格。
   需要配置翻译 API Key（支持 Google / DeepL / 百度）。
+skill_type: component
+intent: 将文本翻译到指定目标语言，保持术语一致性
 type: tool
 tags: [translation, i18n]
 category: language

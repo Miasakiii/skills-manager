@@ -6,6 +6,8 @@ summary: |
   对代码片段进行审查，检测潜在的 bug、性能瓶颈和安全漏洞。
   支持 Python / JavaScript / TypeScript / Go / Rust 五种语言。
   输出结构化的审查报告，包含问题位置、严重级别和修复建议。
+skill_type: component
+intent: 对代码进行审查，检测 bug、性能和安全问题
 type: tool
 tags: [review, security, debugging]
 category: code

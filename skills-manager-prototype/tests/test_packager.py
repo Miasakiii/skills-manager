@@ -1,10 +1,17 @@
 """测试打包与解包。"""
 
+import zipfile
 from pathlib import Path
 
 import pytest
 
-from skills_manager.packager import pack, unpack
+from skills_manager.packager import (
+    pack,
+    pack_for_claude_code,
+    pack_for_claude_desktop,
+    pack_for_codex,
+    unpack,
+)
 
 
 @pytest.fixture
@@ -49,3 +56,59 @@ class TestUnpack:
     def test_unpack_nonexistent(self, tmp_path):
         with pytest.raises(FileNotFoundError):
             unpack(tmp_path / "nonexistent.skill")
+
+
+class TestPackForClaudeDesktop:
+    def test_pack_creates_zip(self, skill_dir, tmp_path):
+        output_dir = tmp_path / "output"
+        result = pack_for_claude_desktop([skill_dir], output_dir)
+        assert result.exists()
+        assert result.suffix == ".zip"
+        assert result.name == "claude-desktop-skills.zip"
+
+    def test_zip_contains_skill_md(self, skill_dir, tmp_path):
+        output_dir = tmp_path / "output"
+        result = pack_for_claude_desktop([skill_dir], output_dir)
+        with zipfile.ZipFile(result, "r") as zf:
+            names = zf.namelist()
+            assert any("Skill.md" in n for n in names)
+
+    def test_zip_contains_handler(self, skill_dir, tmp_path):
+        output_dir = tmp_path / "output"
+        result = pack_for_claude_desktop([skill_dir], output_dir)
+        with zipfile.ZipFile(result, "r") as zf:
+            names = zf.namelist()
+            assert any("handler.py" in n for n in names)
+
+
+class TestPackForCodex:
+    def test_pack_creates_zip(self, skill_dir, tmp_path):
+        output_dir = tmp_path / "output"
+        result = pack_for_codex([skill_dir], output_dir)
+        assert result.exists()
+        assert result.suffix == ".zip"
+        assert result.name == "codex-skills.zip"
+
+    def test_zip_contains_agents_structure(self, skill_dir, tmp_path):
+        output_dir = tmp_path / "output"
+        result = pack_for_codex([skill_dir], output_dir)
+        with zipfile.ZipFile(result, "r") as zf:
+            names = zf.namelist()
+            assert any(".agents/skills/" in n for n in names)
+            assert any("AGENTS.md" in n for n in names)
+
+
+class TestPackForClaudeCode:
+    def test_pack_creates_zip(self, skill_dir, tmp_path):
+        output_dir = tmp_path / "output"
+        result = pack_for_claude_code([skill_dir], output_dir)
+        assert result.exists()
+        assert result.suffix == ".zip"
+        assert result.name == "claude-code-skills.zip"
+
+    def test_zip_contains_claude_structure(self, skill_dir, tmp_path):
+        output_dir = tmp_path / "output"
+        result = pack_for_claude_code([skill_dir], output_dir)
+        with zipfile.ZipFile(result, "r") as zf:
+            names = zf.namelist()
+            assert any(".claude/skills/" in n for n in names)
