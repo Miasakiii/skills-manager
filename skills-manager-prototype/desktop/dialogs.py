@@ -8,6 +8,13 @@ import flet as ft
 
 
 def build_install_dialog(app) -> ft.AlertDialog:
+    # URL 输入框
+    url_input = ft.TextField(
+        label="URL 地址",
+        hint_text="https://github.com/user/repo 或 .skill 文件链接",
+        expand=True,
+    )
+
     async def pick_directory(_):
         path = await ft.FilePicker().get_directory_path()
         if not path:
@@ -29,6 +36,20 @@ def build_install_dialog(app) -> ft.AlertDialog:
         app._close_active_dialog()
         try:
             result = app.store.install_from_package(pkg_path)
+            app._refresh_skills()
+            app.show_snack(f"已安装 {result.name} v{result.version}")
+            app._update_ui()
+        except Exception as ex:
+            app.show_snack(f"安装失败: {ex}", error=True)
+
+    async def install_from_url(_):
+        url = url_input.value.strip()
+        if not url:
+            app.show_snack("请输入 URL", error=True)
+            return
+        app._close_active_dialog()
+        try:
+            result = app.store.install_from_url(url)
             app._refresh_skills()
             app.show_snack(f"已安装 {result.name} v{result.version}")
             app._update_ui()
@@ -71,9 +92,13 @@ def build_install_dialog(app) -> ft.AlertDialog:
             spacing=12,
             tight=True,
             controls=[
-                ft.Text("选择安装来源", size=13),
+                ft.Text("从本地安装", size=13),
                 ft.FilledButton("从目录安装", icon=ft.Icons.FOLDER_OPEN, on_click=pick_directory),
                 ft.OutlinedButton("从 .skill 包安装", icon=ft.Icons.ARCHIVE, on_click=pick_package),
+                ft.Divider(height=4),
+                ft.Text("从 URL 安装", size=13),
+                url_input,
+                ft.FilledButton("从 URL 安装", icon=ft.Icons.LANGUAGE, on_click=install_from_url),
                 ft.Divider(height=4),
                 ft.Text("批量导入", size=13),
                 ft.FilledButton("自动扫描导入", icon=ft.Icons.FOLDER_SPECIAL, on_click=auto_scan),

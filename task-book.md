@@ -347,18 +347,18 @@ skills-manager search "翻译"
 
 **目标**：内置编辑器、Profile 管理、远程安装。含 Phase 2 延后项（分类筛选、Markdown 编辑器）。
 
-- [ ] 分类筛选（一级分类 Chip 筛选，浏览页快速过滤）— Phase 2 延后
-- [ ] 内置 Markdown 编辑器（CodeMirror via Flet WebView 或自定义组件）
-- [ ] 实时解析预览（编辑 SKILL.md → 即时显示 IR）
-- [ ] 语法校验（frontmatter 格式检查、参数表格式检查）
-- [ ] Profile 管理界面（创建 / 编辑 / 导出）
-- [ ] 拖拽式 Profile 配置
-- [ ] 从 URL / GitHub 安装
-- [ ] 更新功能
-- [ ] 场景推荐
-- [ ] 导出历史记录
-- [ ] 全局快捷键
-- [ ] 设置页（默认格式、主题、存储路径等）
+- [x] 分类筛选（一级分类 Chip 筛选，浏览页快速过滤）— Phase 2 延后
+- [x] 内置 Markdown 编辑器（CodeMirror via Flet WebView 或自定义组件）
+- [x] 实时解析预览（编辑 SKILL.md → 即时显示 IR）
+- [x] 语法校验（frontmatter 格式检查、参数表格式检查）
+- [x] Profile 管理界面（创建 / 编辑 / 导出）
+- [x] 拖拽式 Profile 配置
+- [x] 从 URL / GitHub 安装
+- [x] 更新功能
+- [x] 场景推荐
+- [x] 导出历史记录
+- [x] 全局快捷键
+- [x] 设置页（默认格式、主题、存储路径等）
 
 **交付物**：功能完整的桌面应用，覆盖任务书 80% 功能。
 

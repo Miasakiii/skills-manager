@@ -274,3 +274,99 @@ class TestCLIDoctor:
         assert result.exit_code == 0
         assert "Skills Manager Doctor" in result.output
         assert "Version" in result.output
+
+
+class TestCLIUpgrade:
+    """升级命令测试。"""
+
+    def test_upgrade(self, store, sample_skill_dir, tmp_path):
+        """测试升级。"""
+        store.install(sample_skill_dir)
+
+        # 创建新版本
+        new_version_dir = tmp_path / "new-version"
+        new_version_dir.mkdir()
+        (new_version_dir / "SKILL.md").write_text(
+            """---
+name: test-skill
+version: "2.0.0"
+description: Updated test skill
+summary: For testing
+tags: [test]
+category: misc
+---
+
+## 功能
+
+Updated test function.
+
+## 参数
+
+| 参数 | 类型 | 必需 | 说明 |
+| --- | --- | --- | --- |
+| input | string | ✅ | Input text |
+""",
+            encoding="utf-8",
+        )
+        (new_version_dir / "handler.py").write_text("def run(input): return input", encoding="utf-8")
+
+        result = runner.invoke(app, ["upgrade", "test-skill", str(new_version_dir)])
+        assert result.exit_code == 0
+        assert "Upgraded" in result.output
+
+    def test_upgrade_nonexistent(self, store, tmp_path):
+        """测试升级不存在的 skill。"""
+        new_version_dir = tmp_path / "new-version"
+        new_version_dir.mkdir()
+        (new_version_dir / "SKILL.md").write_text(
+            "---\nname: test\nversion: 1.0.0\ndescription: Test\n---\n",
+            encoding="utf-8",
+        )
+
+        result = runner.invoke(app, ["upgrade", "nonexistent", str(new_version_dir)])
+        assert result.exit_code == 1
+
+
+class TestCLIRollback:
+    """回滚命令测试。"""
+
+    def test_rollback(self, store, sample_skill_dir, tmp_path):
+        """测试回滚。"""
+        # 安装 v1
+        store.install(sample_skill_dir)
+
+        # 升级到 v2
+        new_version_dir = tmp_path / "v2"
+        new_version_dir.mkdir()
+        (new_version_dir / "SKILL.md").write_text(
+            "---\nname: test-skill\nversion: 2.0.0\ndescription: V2\n---\n",
+            encoding="utf-8",
+        )
+        store.upgrade("test-skill", new_version_dir)
+
+        # 回滚
+        result = runner.invoke(app, ["rollback", "test-skill"])
+        assert result.exit_code == 0
+        assert "Rolled back" in result.output
+
+    def test_rollback_nonexistent(self, store):
+        """测试回滚不存在的 skill。"""
+        result = runner.invoke(app, ["rollback", "nonexistent"])
+        assert result.exit_code == 1
+
+
+class TestCLIHistory:
+    """版本历史命令测试。"""
+
+    def test_history(self, store, sample_skill_dir):
+        """测试查看版本历史。"""
+        store.install(sample_skill_dir)
+        result = runner.invoke(app, ["history", "test-skill"])
+        assert result.exit_code == 0
+        assert "1.0.0" in result.output
+
+    def test_history_nonexistent(self, store):
+        """测试查看不存在的 skill 的历史。"""
+        result = runner.invoke(app, ["history", "nonexistent"])
+        assert result.exit_code == 0
+        assert "No version history" in result.output

@@ -71,8 +71,16 @@ def build_export_page(app) -> ft.Control:
                 content = adapter.export(ir)
                 out_path = dest / f"{ir.name}{adapter.file_extension}"
                 out_path.write_text(content, encoding="utf-8")
+                # 记录导出历史
+                app.store.add_export_history(
+                    skill_name=s.name,
+                    format_name=export_format,
+                    output_path=str(out_path),
+                )
                 count += 1
             app.show_snack(f"已导出 {count} 个 Skill 到 {output_dir}")
+            _rebuild_history()
+            app._update_ui()
         except Exception as e:
             app.show_snack(f"导出失败: {e}", error=True)
 
@@ -119,6 +127,55 @@ def build_export_page(app) -> ft.Control:
         on_change=toggle_all,
     )
 
+    # 导出历史记录容器
+    history_column = ft.Column(spacing=4, scroll=ft.ScrollMode.AUTO)
+
+    def _rebuild_history():
+        """重建导出历史列表。"""
+        history = app.store.get_export_history()
+        history_column.controls.clear()
+
+        if not history:
+            history_column.controls.append(
+                ft.Text(
+                    "暂无导出记录",
+                    size=12,
+                    color=ft.Colors.ON_SURFACE_VARIANT,
+                )
+            )
+            return
+
+        # 显示最近 20 条
+        for entry in reversed(history[-20:]):
+            time_str = entry.get("exported_at", "")[:19].replace("T", " ")
+            history_column.controls.append(
+                ft.Row(
+                    spacing=8,
+                    controls=[
+                        ft.Icon(ft.Icons.FILE_DOWNLOAD, size=14),
+                        ft.Text(
+                            f"{entry['skill_name']} → {entry['format']}",
+                            size=12,
+                            expand=True,
+                        ),
+                        ft.Text(
+                            time_str,
+                            size=11,
+                            color=ft.Colors.ON_SURFACE_VARIANT,
+                        ),
+                    ],
+                )
+            )
+
+    def clear_history(_):
+        """清空导出历史。"""
+        app.store.clear_export_history()
+        _rebuild_history()
+        app._update_ui()
+        app.show_snack("已清空导出历史")
+
+    _rebuild_history()
+
     return ft.Column(
         scroll=ft.ScrollMode.AUTO,
         spacing=16,
@@ -154,5 +211,16 @@ def build_export_page(app) -> ft.Control:
                 ft.FilledButton("导出选中", icon=ft.Icons.FILE_DOWNLOAD, on_click=do_export),
                 ft.FilledButton("打包选中", icon=ft.Icons.ARCHIVE, on_click=do_pack),
             ], spacing=8),
+            ft.Divider(),
+            ft.Row([
+                ft.Text("导出历史", size=16, weight=ft.FontWeight.BOLD),
+                ft.Container(expand=True),
+                ft.TextButton(
+                    "清空历史",
+                    icon=ft.Icons.DELETE_OUTLINE,
+                    on_click=clear_history,
+                ),
+            ]),
+            history_column,
         ],
     )

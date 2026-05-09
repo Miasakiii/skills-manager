@@ -55,6 +55,18 @@ def build_detail_page(app) -> ft.Control:
         app._active_dialog = build_uninstall_dialog(app, ir.name)
         app.page.show_dialog(app._active_dialog)
 
+    def do_update(_):
+        """执行更新。"""
+        try:
+            result = app.store.update(ir.name)
+            app._refresh_skills()
+            app.show_snack(f"'{ir.name}' 已更新到 v{result.version}")
+        except Exception as e:
+            app.show_snack(f"更新失败: {e}", error=True)
+
+    # 检查是否可更新
+    can_update, update_reason = app.store.can_update(ir.name)
+
     def copy_export(_):
         app.copy_to_clipboard(generate_preview())
 
@@ -81,7 +93,16 @@ def build_detail_page(app) -> ft.Control:
         controls=[
             ft.Row([
                 ft.TextButton("← 返回", icon=ft.Icons.ARROW_BACK, on_click=lambda _: app.go_back()),
-                ft.TextButton("卸载", icon=ft.Icons.DELETE, on_click=lambda _: _show_uninstall()),
+                ft.Row([
+                    ft.TextButton(
+                        "更新",
+                        icon=ft.Icons.UPDATE,
+                        on_click=do_update,
+                        tooltip=update_reason,
+                        disabled=not can_update,
+                    ),
+                    ft.TextButton("卸载", icon=ft.Icons.DELETE, on_click=lambda _: _show_uninstall()),
+                ]),
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             ft.Row([
                 ft.Column(spacing=8, expand=True, controls=[

@@ -60,20 +60,17 @@ pip install skills-manager
 
 ```bash
 # Skill 管理
-skills-manager install <source>              # 安装（目录 / .skill / URL / gh:user/repo）
+skills-manager install <source>              # 安装（目录 / .skill 包）
+skills-manager install-url <url>             # 从 URL / GitHub 安装
 skills-manager uninstall <name>              # 卸载
 skills-manager list                          # 列出已安装
 skills-manager info <name>                   # 查看详情
-
-# 浏览与推荐
-skills-manager browse [--category <cat>]     # 按分类浏览
 skills-manager search <query>                # 关键词搜索
-skills-manager recommend <场景描述>           # 根据场景推荐 Skill
 
-# Agent 分发
-skills-manager profile create <name>         # 创建 Agent Profile
-skills-manager profile add <profile> <skill> # 添加 Skill 到 Profile
-skills-manager profile export <profile> --format openai  # 导出给 Agent 使用
+# 版本管理
+skills-manager upgrade <name>                # 从原始来源更新
+skills-manager rollback <name>               # 回滚到上一版本
+skills-manager history <name>                # 查看版本历史
 
 # 格式导出
 skills-manager export <name> --format openai|claude|gemini|mcp|schema
@@ -84,8 +81,29 @@ skills-manager pack <dir>                    # 打包为 .skill 文件
 
 # 工具
 skills-manager doctor                        # 环境检查
-skills-manager init                          # 初始化 ~/.skills-manager/
 ```
+
+## 桌面应用
+
+基于 Flet 构建的跨平台桌面客户端，提供可视化管理体验：
+
+```bash
+cd skills-manager-prototype/desktop
+python main.py
+```
+
+功能：
+
+- 卡片式浏览、分类筛选、关键词搜索
+- 一键导出到 5 种平台格式
+- 内置编辑器，实时预览和语法校验
+- 批量导入、批量导出
+- Profile 管理（Agent Skill 组合）
+- 场景推荐引擎
+- 版本管理（升级 / 回滚 / 历史）
+- 从 URL / GitHub 安装
+- 导出历史记录
+- 全局快捷键
 
 ## 项目结构
 
@@ -94,12 +112,27 @@ skills-manager/
 ├── task-book.md                        # 项目目标、范围、路线图
 ├── tech-design.md                      # 格式规范、架构、实现细节
 ├── src/skills_manager/                 # 核心引擎（Python）
+│   ├── parser.py                       # SKILL.md 解析器
+│   ├── ir.py                           # 中间表示（IR）
+│   ├── adapters/                       # 格式适配器
+│   ├── store.py                        # 本地存储管理
+│   ├── validator.py                    # 格式验证器
+│   ├── recommend.py                    # 场景推荐引擎
+│   ├── packager.py                     # 打包/解包
+│   └── cli.py                          # CLI 入口
 ├── desktop/                            # Flet 桌面应用
-├── examples/                           # 示例 Skills
-│   ├── translator/                     # 完整 Tool Skill 示例
-│   ├── json-formatter/                 # 纯 Python 工具示例
-│   └── code-reviewer/                  # Prompt Skill 示例
-└── tests/
+│   ├── app.py                          # 主控逻辑
+│   ├── pages/                          # 页面模块
+│   ├── components.py                   # 通用组件
+│   └── dialogs.py                      # 对话框
+├── examples/                           # 示例 Skills（6 个）
+│   ├── translator/                     # 多语言翻译
+│   ├── code-reviewer/                  # 代码审查
+│   ├── code-generator/                 # 代码生成
+│   ├── json-formatter/                 # JSON 格式化
+│   ├── deploy-pipeline/                # 部署流水线
+│   └── interview-prep/                 # 面试准备
+└── tests/                              # 测试（196 个，100% 通过）
 ```
 
 ## 技术栈
@@ -107,10 +140,10 @@ skills-manager/
 | 层面 | 选择 |
 | ---- | ---- |
 | 语言 | Python 3.11+ |
-| UI 框架 | Flet（基于 Flutter） |
-| 数据模型 | Pydantic |
-| 存储 | SQLite |
-| CLI | Click |
+| UI 框架 | Flet 0.84（基于 Flutter） |
+| 数据模型 | Python dataclass |
+| 存储 | JSON 文件索引 |
+| CLI | typer + rich |
 | 打包 | PyInstaller / Nuitka |
 
 ## 文档

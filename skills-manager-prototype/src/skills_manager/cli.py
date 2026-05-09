@@ -135,6 +135,21 @@ def install(
         raise typer.Exit(1)
 
 
+@app.command("install-url")
+def install_url(
+    url: str = typer.Argument(..., help="URL 地址（.skill 包或 GitHub 仓库）"),
+) -> None:
+    """从 URL 安装 Skill。"""
+    store = Store()
+
+    try:
+        result = store.install_from_url(url)
+        console.print(f"[green]✓[/green] Installed {result.name} v{result.version}")
+    except StoreError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
 # ── 卸载 ──────────────────────────────────────────────────
 
 
@@ -267,6 +282,73 @@ def pack(
         result = pack_skill(source, output_dir)
         console.print(f"[green]✓[/green] Packed to {result}")
     except FileNotFoundError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+# ── 版本管理 ──────────────────────────────────────────────
+
+
+@app.command()
+def upgrade(
+    name: str = typer.Argument(..., help="Skill 名称"),
+    source: str = typer.Argument(..., help="新版本的 Skill 目录路径"),
+) -> None:
+    """升级 Skill 到新版本。"""
+    store = Store()
+    source_path = Path(source)
+
+    try:
+        result = store.upgrade(name, source_path)
+        console.print(f"[green]✓[/green] Upgraded {name} to v{result.version}")
+    except (StoreError, FileNotFoundError) as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+@app.command()
+def rollback(
+    name: str = typer.Argument(..., help="Skill 名称"),
+    version: str = typer.Argument(None, help="要回滚的版本号（默认上一个版本）"),
+) -> None:
+    """回滚 Skill 到指定版本。"""
+    store = Store()
+
+    try:
+        result = store.rollback(name, version)
+        console.print(f"[green]✓[/green] Rolled back {name} to v{result.version}")
+    except StoreError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+@app.command("history")
+def version_history(
+    name: str = typer.Argument(..., help="Skill 名称"),
+) -> None:
+    """查看 Skill 的版本历史。"""
+    store = Store()
+
+    try:
+        history = store.get_version_history(name)
+        if not history:
+            console.print(f"[yellow]No version history for '{name}'[/yellow]")
+            return
+
+        table = Table(title=f"Version History: {name}")
+        table.add_column("Version", style="cyan")
+        table.add_column("Description")
+        table.add_column("Installed At", style="green")
+
+        for entry in history:
+            table.add_row(
+                entry["version"],
+                entry.get("description", ""),
+                entry.get("installed_at", ""),
+            )
+
+        console.print(table)
+    except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
 

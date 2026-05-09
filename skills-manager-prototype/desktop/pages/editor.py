@@ -9,6 +9,7 @@ import flet as ft
 from skills_manager.adapters import get_adapter, list_formats
 from skills_manager.parser import parse_skill_md
 from skills_manager.ir import SkillIR
+from skills_manager.validator import validate_skill_md
 
 SKILL_TEMPLATE = """---
 name: {name}
@@ -75,6 +76,15 @@ def build_editor_page(app) -> ft.Control:
         border_radius=8,
         padding=16,
         expand=True,
+    )
+
+    # 校验结果区域
+    validation_column = ft.Column(spacing=4)
+    validation_container = ft.Container(
+        content=validation_column,
+        bgcolor=ft.Colors.SURFACE_CONTAINER,
+        border_radius=8,
+        padding=12,
     )
 
     # 格式选择
@@ -167,6 +177,34 @@ def build_editor_page(app) -> ft.Control:
             else:
                 preview_text.value = "请先填写表单"
 
+        # 实时校验
+        validation_column.controls.clear()
+        if content:
+            vr = validate_skill_md(content)
+            if vr.errors:
+                for err in vr.errors:
+                    validation_column.controls.append(
+                        ft.Row([
+                            ft.Icon(ft.Icons.ERROR_OUTLINE, size=14, color=ft.Colors.ERROR),
+                            ft.Text(err, size=12, color=ft.Colors.ERROR),
+                        ], spacing=4)
+                    )
+            if vr.warnings:
+                for warn in vr.warnings:
+                    validation_column.controls.append(
+                        ft.Row([
+                            ft.Icon(ft.Icons.WARNING_AMBER, size=14, color=ft.Colors.ORANGE),
+                            ft.Text(warn, size=12, color=ft.Colors.ORANGE),
+                        ], spacing=4)
+                    )
+            if not vr.errors and not vr.warnings:
+                validation_column.controls.append(
+                    ft.Row([
+                        ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=14, color=ft.Colors.GREEN),
+                        ft.Text("格式校验通过", size=12, color=ft.Colors.GREEN),
+                    ], spacing=4)
+                )
+
         app._update_ui()
 
     def on_field_change(field_name, value):
@@ -194,6 +232,11 @@ def build_editor_page(app) -> ft.Control:
         n = name.strip()
         if not content:
             app.show_snack("请先生成 Skill 骨架", error=True)
+            return
+        # 保存前校验
+        vr = validate_skill_md(content)
+        if vr.errors:
+            app.show_snack(f"格式有误，请先修复: {vr.errors[0]}", error=True)
             return
         save_dir = await ft.FilePicker().get_directory_path()
         if not save_dir:
@@ -287,7 +330,7 @@ def build_editor_page(app) -> ft.Control:
                     ],
                 ),
             ),
-            # 右侧：预览
+            # 右侧：预览 + 校验
             ft.Container(
                 expand=True,
                 content=ft.Column(
@@ -298,6 +341,8 @@ def build_editor_page(app) -> ft.Control:
                             format_dropdown,
                         ]),
                         preview_container,
+                        ft.Text("格式校验", size=14, weight=ft.FontWeight.BOLD),
+                        validation_container,
                     ],
                 ),
             ),

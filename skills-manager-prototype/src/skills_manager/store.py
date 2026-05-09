@@ -70,6 +70,9 @@ class Store:
 
         # 复制文件
         if target.exists():
+            # 备份当前版本（如果存在且 force=True）
+            if force:
+                self._backup_current_version(install_name)
             shutil.rmtree(target)
         shutil.copytree(source, target)
 
@@ -81,6 +84,16 @@ class Store:
         (target / ".skill_meta.json").write_text(
             json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
         )
+
+        # 记录版本历史
+        history = self.get_version_history(install_name)
+        history.append({
+            "version": ir.version,
+            "installed_at": datetime.now(timezone.utc).isoformat(),
+            "source": str(source),
+            "description": ir.description,
+        })
+        self._save_version_history(install_name, history)
 
         # 更新索引
         self._update_index(install_name, ir, str(source))
@@ -120,6 +133,135 @@ class Store:
         for skill_md in search_dir.rglob("SKILL.md"):
             return skill_md.parent
         return None
+
+    def install_from_url(self, url: str) -> SimpleNamespace:
+        """从 URL 安装 Skill。
+
+        支持：
+        - 直接 .skill 包文件 URL
+        - GitHub 仓库 URL（自动下载 zip）
+
+        Args:
+            url: URL 地址。
+
+        Returns:
+            安装后的 Skill 信息。
+        """
+        try:
+            import httpx
+        except ImportError:
+            raise StoreError(
+                "需要安装 httpx：pip install skills-manager[remote]"
+            )
+
+        tmp_dir = self.base_dir / ".tmp"
+        tmp_dir.mkdir(exist_ok=True)
+
+        try:
+            # 判断是否为 GitHub 仓库 URL
+            if "github.com" in url and not url.endswith((".skill", ".tar.gz", ".zip")):
+                return self._install_from_github(url, tmp_dir)
+
+            # 直接下载文件
+            return self._install_from_file_url(url, tmp_dir)
+        finally:
+            if tmp_dir.exists():
+                shutil.rmtree(tmp_dir)
+
+    def _install_from_file_url(
+        self, url: str, tmp_dir: Path
+    ) -> SimpleNamespace:
+        """从文件 URL 安装。"""
+        import httpx
+
+        # 下载文件
+        response = httpx.get(url, follow_redirects=True, timeout=30)
+        response.raise_for_status()
+
+        # 保存到临时文件
+        file_name = url.split("/")[-1] or "download"
+        file_path = tmp_dir / file_name
+        file_path.write_bytes(response.content)
+
+        # 如果是 .skill 包，直接安装
+        if file_name.endswith(".skill"):
+            return self.install_from_package(file_path)
+
+        # 如果是压缩包，解压后查找 SKILL.md
+        if file_name.endswith((".tar.gz", ".tgz", ".zip")):
+            return self._install_from_archive(file_path, tmp_dir)
+
+        raise StoreError(f"不支持的文件格式: {file_name}")
+
+    def _install_from_github(
+        self, url: str, tmp_dir: Path
+    ) -> SimpleNamespace:
+        """从 GitHub 仓库安装。"""
+        import httpx
+
+        # 解析 GitHub URL
+        # 支持: https://github.com/user/repo
+        # 支持: https://github.com/user/repo/tree/branch/path
+        parts = url.replace("https://github.com/", "").strip("/").split("/")
+        if len(parts) < 2:
+            raise StoreError(f"无效的 GitHub URL: {url}")
+
+        user, repo = parts[0], parts[1]
+        branch = "main"
+        sub_path = ""
+
+        if len(parts) > 3 and parts[2] == "tree":
+            branch = parts[3] if len(parts) > 3 else "main"
+            sub_path = "/".join(parts[4:]) if len(parts) > 4 else ""
+
+        # 下载 zip
+        zip_url = f"https://github.com/{user}/{repo}/archive/refs/heads/{branch}.zip"
+        response = httpx.get(zip_url, follow_redirects=True, timeout=30)
+        response.raise_for_status()
+
+        zip_path = tmp_dir / "repo.zip"
+        zip_path.write_bytes(response.content)
+
+        # 解压
+        import zipfile
+        with zipfile.ZipFile(zip_path) as zf:
+            zf.extractall(tmp_dir)
+
+        # 查找 SKILL.md
+        extracted_dir = tmp_dir / f"{repo}-{branch}"
+        if sub_path:
+            search_dir = extracted_dir / sub_path
+        else:
+            search_dir = extracted_dir
+
+        skill_dir = self._find_skill_dir(search_dir)
+        if not skill_dir:
+            raise StoreError("GitHub 仓库中未找到 SKILL.md")
+
+        return self.install(skill_dir)
+
+    def _install_from_archive(
+        self, archive_path: Path, tmp_dir: Path
+    ) -> SimpleNamespace:
+        """从压缩包安装。"""
+        import tarfile
+        import zipfile
+
+        extract_dir = tmp_dir / "extracted"
+        extract_dir.mkdir(exist_ok=True)
+
+        if archive_path.name.endswith(".zip"):
+            with zipfile.ZipFile(archive_path) as zf:
+                zf.extractall(extract_dir)
+        else:
+            with tarfile.open(archive_path) as tf:
+                tf.extractall(extract_dir)
+
+        skill_dir = self._find_skill_dir(extract_dir)
+        if not skill_dir:
+            raise StoreError("压缩包中未找到 SKILL.md")
+
+        return self.install(skill_dir)
 
     # ── 自动发现 ──────────────────────────────────────────
 
@@ -180,6 +322,35 @@ class Store:
             except Exception as e:
                 failed.append((skill_dir.name, str(e)))
         return installed, failed
+
+    def scan_directory_with_info(self, root: Path) -> list[dict]:
+        """扫描目录，返回每个 Skill 的详细信息。
+
+        Returns:
+            列表，每项包含 path, name, version, description, installed。
+        """
+        discovered = self.scan_directory(root)
+        results = []
+        for skill_dir in discovered:
+            skill_md = skill_dir / "SKILL.md"
+            try:
+                ir = parse_skill_md(skill_md)
+                results.append({
+                    "path": skill_dir,
+                    "name": ir.name,
+                    "version": ir.version,
+                    "description": ir.description,
+                    "installed": self.exists(ir.name),
+                })
+            except Exception:
+                results.append({
+                    "path": skill_dir,
+                    "name": skill_dir.name,
+                    "version": "",
+                    "description": "解析失败",
+                    "installed": False,
+                })
+        return results
 
     # ── 卸载 ──────────────────────────────────────────────
 
@@ -414,3 +585,478 @@ class Store:
         index = self._load_index()
         index["skills"].pop(name, None)
         self._save_index(index)
+
+    # ── 导出历史 ──────────────────────────────────────────────
+
+    def get_export_history(self) -> list[dict]:
+        """获取导出历史记录。
+
+        Returns:
+            导出历史列表，每个元素包含：
+            - skill_name: Skill 名称
+            - format: 导出格式
+            - output_path: 输出路径
+            - exported_at: 导出时间
+        """
+        history_path = self.base_dir / "export_history.json"
+        if history_path.exists():
+            try:
+                return json.loads(history_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                return []
+        return []
+
+    def add_export_history(
+        self,
+        skill_name: str,
+        format_name: str,
+        output_path: str,
+    ) -> None:
+        """添加导出历史记录。
+
+        Args:
+            skill_name: Skill 名称。
+            format_name: 导出格式。
+            output_path: 输出路径。
+        """
+        history = self.get_export_history()
+        history.append({
+            "skill_name": skill_name,
+            "format": format_name,
+            "output_path": output_path,
+            "exported_at": datetime.now(timezone.utc).isoformat(),
+        })
+        # 只保留最近 100 条记录
+        if len(history) > 100:
+            history = history[-100:]
+        history_path = self.base_dir / "export_history.json"
+        history_path.write_text(
+            json.dumps(history, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def clear_export_history(self) -> None:
+        """清空导出历史记录。"""
+        history_path = self.base_dir / "export_history.json"
+        if history_path.exists():
+            history_path.unlink()
+
+    # ── Profile 管理 ──────────────────────────────────────────
+
+    def get_profiles(self) -> list[dict]:
+        """获取所有 Profile。
+
+        Returns:
+            Profile 列表，每个元素包含：
+            - name: Profile 名称
+            - description: 描述
+            - skills: 包含的 Skill 名称列表
+            - created_at: 创建时间
+            - updated_at: 更新时间
+        """
+        profiles_path = self.base_dir / "profiles.json"
+        if profiles_path.exists():
+            try:
+                return json.loads(profiles_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                return []
+        return []
+
+    def _save_profiles(self, profiles: list[dict]) -> None:
+        """保存 Profile 列表。"""
+        profiles_path = self.base_dir / "profiles.json"
+        profiles_path.write_text(
+            json.dumps(profiles, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def create_profile(
+        self,
+        name: str,
+        description: str = "",
+        skills: list[str] | None = None,
+    ) -> dict:
+        """创建 Profile。
+
+        Args:
+            name: Profile 名称。
+            description: 描述。
+            skills: 包含的 Skill 名称列表。
+
+        Returns:
+            创建的 Profile 信息。
+        """
+        profiles = self.get_profiles()
+
+        # 检查名称是否已存在
+        for p in profiles:
+            if p["name"] == name:
+                raise StoreError(f"Profile '{name}' 已存在")
+
+        now = datetime.now(timezone.utc).isoformat()
+        profile = {
+            "name": name,
+            "description": description,
+            "skills": skills or [],
+            "created_at": now,
+            "updated_at": now,
+        }
+        profiles.append(profile)
+        self._save_profiles(profiles)
+        return profile
+
+    def update_profile(
+        self,
+        name: str,
+        description: str | None = None,
+        skills: list[str] | None = None,
+    ) -> dict:
+        """更新 Profile。
+
+        Args:
+            name: Profile 名称。
+            description: 新描述（None 则不更新）。
+            skills: 新的 Skill 列表（None 则不更新）。
+
+        Returns:
+            更新后的 Profile 信息。
+        """
+        profiles = self.get_profiles()
+
+        for p in profiles:
+            if p["name"] == name:
+                if description is not None:
+                    p["description"] = description
+                if skills is not None:
+                    p["skills"] = skills
+                p["updated_at"] = datetime.now(timezone.utc).isoformat()
+                self._save_profiles(profiles)
+                return p
+
+        raise StoreError(f"Profile '{name}' 不存在")
+
+    def delete_profile(self, name: str) -> None:
+        """删除 Profile。
+
+        Args:
+            name: Profile 名称。
+        """
+        profiles = self.get_profiles()
+        profiles = [p for p in profiles if p["name"] != name]
+        self._save_profiles(profiles)
+
+    def get_profile(self, name: str) -> dict:
+        """获取单个 Profile。
+
+        Args:
+            name: Profile 名称。
+
+        Returns:
+            Profile 信息。
+        """
+        profiles = self.get_profiles()
+        for p in profiles:
+            if p["name"] == name:
+                return p
+        raise StoreError(f"Profile '{name}' 不存在")
+
+    def add_skill_to_profile(self, profile_name: str, skill_name: str) -> None:
+        """向 Profile 添加 Skill。
+
+        Args:
+            profile_name: Profile 名称。
+            skill_name: Skill 名称。
+        """
+        profiles = self.get_profiles()
+        for p in profiles:
+            if p["name"] == profile_name:
+                if skill_name not in p["skills"]:
+                    p["skills"].append(skill_name)
+                    p["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._save_profiles(profiles)
+                return
+        raise StoreError(f"Profile '{profile_name}' 不存在")
+
+    def remove_skill_from_profile(self, profile_name: str, skill_name: str) -> None:
+        """从 Profile 移除 Skill。
+
+        Args:
+            profile_name: Profile 名称。
+            skill_name: Skill 名称。
+        """
+        profiles = self.get_profiles()
+        for p in profiles:
+            if p["name"] == profile_name:
+                if skill_name in p["skills"]:
+                    p["skills"].remove(skill_name)
+                    p["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    self._save_profiles(profiles)
+                return
+        raise StoreError(f"Profile '{profile_name}' 不存在")
+
+    # ── 版本管理 ──────────────────────────────────────────────
+
+    def get_version_history(self, name: str) -> list[dict]:
+        """获取 Skill 的版本历史。
+
+        Args:
+            name: Skill 名称。
+
+        Returns:
+            版本历史列表，每个元素包含 version, installed_at, source 信息。
+        """
+        history_path = self.store_dir / name / ".version_history.json"
+        if history_path.exists():
+            try:
+                return json.loads(history_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                return []
+        return []
+
+    def _save_version_history(self, name: str, history: list[dict]) -> None:
+        """保存版本历史。"""
+        history_path = self.store_dir / name / ".version_history.json"
+        history_path.write_text(
+            json.dumps(history, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+    def _backup_current_version(self, name: str) -> None:
+        """备份当前版本到 versions 目录。"""
+        skill_dir = self.store_dir / name
+        if not skill_dir.exists():
+            return
+
+        # 读取当前版本信息
+        skill_md = skill_dir / "SKILL.md"
+        if not skill_md.exists():
+            return
+
+        ir = parse_skill_md(skill_md)
+        versions_dir = skill_dir / ".versions"
+        versions_dir.mkdir(exist_ok=True)
+
+        # 创建版本快照目录
+        version_name = ir.version.replace(".", "_")
+        snapshot_dir = versions_dir / f"v{version_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        snapshot_dir.mkdir(exist_ok=True)
+
+        # 复制当前文件到快照（排除版本元数据）
+        for item in skill_dir.iterdir():
+            if item.name.startswith("."):
+                continue
+            if item.is_file():
+                shutil.copy2(item, snapshot_dir / item.name)
+            elif item.is_dir():
+                shutil.copytree(item, snapshot_dir / item.name)
+
+        # 记录版本历史
+        history = self.get_version_history(name)
+        history.append({
+            "version": ir.version,
+            "snapshot": snapshot_dir.name,
+            "installed_at": datetime.now(timezone.utc).isoformat(),
+            "description": ir.description,
+        })
+        self._save_version_history(name, history)
+
+    def upgrade(self, name: str, source: Path) -> SimpleNamespace:
+        """升级 Skill 到新版本。
+
+        Args:
+            name: Skill 名称。
+            source: 新版本的 Skill 目录路径。
+
+        Returns:
+            升级后的 Skill 信息。
+        """
+        if not (self.store_dir / name).exists():
+            raise StoreError(f"Skill '{name}' not installed")
+
+        # 验证新版本
+        validation = validate_skill_dir(source)
+        if not validation.valid:
+            raise StoreError(f"验证失败: {'; '.join(validation.errors)}")
+
+        # 解析新版本
+        new_ir = parse_skill_md(source / "SKILL.md")
+
+        # 备份当前版本（会在内部保存版本历史）
+        self._backup_current_version(name)
+
+        # 读取当前版本历史（备份后，删除前）
+        history = self.get_version_history(name)
+
+        # 安装新版本（保留 .versions 目录）
+        target = self.store_dir / name
+        versions_dir = target / ".versions"
+        versions_tmp = self.base_dir / ".versions_tmp" / name
+        if versions_dir.exists():
+            versions_tmp.parent.mkdir(parents=True, exist_ok=True)
+            if versions_tmp.exists():
+                shutil.rmtree(versions_tmp)
+            shutil.move(str(versions_dir), str(versions_tmp))
+
+        shutil.rmtree(target)
+        shutil.copytree(source, target)
+
+        # 恢复 .versions 目录
+        if versions_tmp.exists():
+            shutil.move(str(versions_tmp), str(versions_dir))
+
+        # 写入安装元数据
+        meta = {
+            "installed_at": datetime.now(timezone.utc).isoformat(),
+            "source": str(source),
+            "upgraded": True,
+        }
+        (target / ".skill_meta.json").write_text(
+            json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+
+        # 记录新版本到历史
+        history.append({
+            "version": new_ir.version,
+            "installed_at": datetime.now(timezone.utc).isoformat(),
+            "source": str(source),
+            "description": new_ir.description,
+        })
+        self._save_version_history(name, history)
+
+        # 更新索引
+        self._update_index(name, new_ir, str(source))
+
+        # 同步到 agent 目录
+        self.sync_skill_to_agents(name)
+
+        return self.get(name)
+
+    def update(self, name: str) -> SimpleNamespace:
+        """从原始来源重新安装最新版本。
+
+        Args:
+            name: Skill 名称。
+
+        Returns:
+            更新后的 Skill 信息。
+        """
+        skill_info = self.get(name)
+        source = getattr(skill_info, "source", "")
+
+        if not source:
+            raise StoreError(f"Skill '{name}' 没有来源信息，无法更新")
+
+        # 判断来源类型
+        if source.startswith(("http://", "https://", "github:")):
+            # URL 来源：重新下载安装
+            return self.install_from_url(source)
+
+        # 本地目录来源
+        source_path = Path(source)
+        if not source_path.exists():
+            raise StoreError(f"来源目录不存在: {source}")
+
+        return self.upgrade(name, source_path)
+
+    def can_update(self, name: str) -> tuple[bool, str]:
+        """检查 Skill 是否可以更新。
+
+        Returns:
+            (是否可更新, 原因说明)
+        """
+        try:
+            skill_info = self.get(name)
+        except StoreError:
+            return False, "Skill 不存在"
+
+        source = getattr(skill_info, "source", "")
+        if not source:
+            return False, "没有来源信息"
+
+        if source.startswith(("http://", "https://", "github:")):
+            return True, f"来源: {source}"
+
+        source_path = Path(source)
+        if source_path.exists():
+            return True, f"来源: {source_path}"
+        return False, f"来源目录不存在: {source}"
+
+    def rollback(self, name: str, version: str | None = None) -> SimpleNamespace:
+        """回滚 Skill 到指定版本。
+
+        Args:
+            name: Skill 名称。
+            version: 要回滚的版本号，None 则回滚到上一个版本。
+
+        Returns:
+            回滚后的 Skill 信息。
+        """
+        skill_dir = self.store_dir / name
+        if not skill_dir.exists():
+            raise StoreError(f"Skill '{name}' not installed")
+
+        # 获取版本历史
+        history = self.get_version_history(name)
+        if not history:
+            raise StoreError(f"No version history for '{name}'")
+
+        # 找到目标版本（只查找有快照的条目）
+        snapshot_entries = [e for e in history if "snapshot" in e]
+        if version:
+            target_entry = None
+            for entry in reversed(snapshot_entries):
+                if entry["version"] == version:
+                    target_entry = entry
+                    break
+            if not target_entry:
+                raise StoreError(f"Version '{version}' not found in history")
+        else:
+            # 回滚到上一个版本
+            if len(snapshot_entries) < 1:
+                raise StoreError(f"No previous version to rollback for '{name}'")
+            target_entry = snapshot_entries[-1]
+
+        # 查找快照目录
+        snapshot_name = target_entry["snapshot"]
+        snapshot_dir = skill_dir / ".versions" / snapshot_name
+        if not snapshot_dir.exists():
+            raise StoreError(f"Snapshot '{snapshot_name}' not found")
+
+        # 备份当前版本（回滚前）
+        self._backup_current_version(name)
+
+        # 恢复快照
+        # 删除当前文件（排除版本元数据）
+        for item in skill_dir.iterdir():
+            if item.name.startswith("."):
+                continue
+            if item.is_file():
+                item.unlink()
+            elif item.is_dir():
+                shutil.rmtree(item)
+
+        # 复制快照文件
+        for item in snapshot_dir.iterdir():
+            if item.is_file():
+                shutil.copy2(item, skill_dir / item.name)
+            elif item.is_dir():
+                shutil.copytree(item, skill_dir / item.name)
+
+        # 解析恢复的版本
+        ir = parse_skill_md(skill_dir / "SKILL.md")
+
+        # 更新索引
+        meta_path = skill_dir / ".skill_meta.json"
+        source = ""
+        if meta_path.exists():
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+                source = meta.get("source", "")
+            except (json.JSONDecodeError, OSError):
+                pass
+
+        self._update_index(name, ir, source)
+
+        # 同步到 agent 目录
+        self.sync_skill_to_agents(name)
+
+        return self.get(name)

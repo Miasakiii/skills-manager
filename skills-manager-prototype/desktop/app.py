@@ -46,6 +46,9 @@ class App:
         self.sidebar = self._build_sidebar()
         self.content_area = ft.Container(expand=True, padding=24, content=self._build_current_page())
 
+        # 注册全局快捷键
+        page.on_keyboard_event = self._on_keyboard
+
         page.add(ft.Row([self.sidebar, ft.VerticalDivider(width=1), self.content_area], expand=True))
 
     # ── 数据 ──────────────────────────────────────────────────
@@ -87,6 +90,9 @@ class App:
         from .pages.export import build_export_page
         from .pages.editor import build_editor_page
         from .pages.settings import build_settings_page
+        from .pages.import_page import build_import_page
+        from .pages.profiles import build_profiles_page
+        from .pages.recommend import build_recommend_page
 
         if self.selected_skill_name:
             return build_detail_page(self)
@@ -94,6 +100,12 @@ class App:
             return build_browse_page(self)
         if self.current_page == "export":
             return build_export_page(self)
+        if self.current_page == "import":
+            return build_import_page(self)
+        if self.current_page == "profiles":
+            return build_profiles_page(self)
+        if self.current_page == "recommend":
+            return build_recommend_page(self)
         if self.current_page == "editor":
             return build_editor_page(self)
         if self.current_page == "settings":
@@ -106,6 +118,9 @@ class App:
         nav_items = [
             ("browse", ft.Icons.GRID_VIEW, "浏览"),
             ("export", ft.Icons.FILE_DOWNLOAD, "批量导出"),
+            ("import", ft.Icons.FILE_UPLOAD, "批量导入"),
+            ("profiles", ft.Icons.PERSON, "Profile"),
+            ("recommend", ft.Icons.AUTO_AWESOME, "推荐"),
             ("editor", ft.Icons.EDIT, "编辑器"),
             ("settings", ft.Icons.SETTINGS, "设置"),
         ]
@@ -219,6 +234,38 @@ class App:
             self._active_dialog.open = False
             self.page.update()
             self._active_dialog = None
+
+    # ── 全局快捷键 ────────────────────────────────────────────
+
+    def _on_keyboard(self, e: ft.KeyboardEvent):
+        """处理全局键盘快捷键。"""
+        # Ctrl+E: 快速导出
+        if e.ctrl and e.key == "E" and not e.shift and not e.alt:
+            self.navigate("export")
+            return
+
+        # Ctrl+F: 聚焦搜索框（跳转到浏览页）
+        if e.ctrl and e.key == "F" and not e.shift and not e.alt:
+            self.navigate("browse")
+            return
+
+        # Ctrl+N: 新建 Skill
+        if e.ctrl and e.key == "N" and not e.shift and not e.alt:
+            self.navigate("editor")
+            return
+
+        # Ctrl+I: 批量导入
+        if e.ctrl and e.key == "I" and not e.shift and not e.alt:
+            self.navigate("import")
+            return
+
+        # Escape: 返回/关闭对话框
+        if e.key == "Escape":
+            if self._active_dialog:
+                self._close_active_dialog()
+            elif self.selected_skill_name:
+                self.go_back()
+            return
 
     # ── 通用工具 ──────────────────────────────────────────────
 

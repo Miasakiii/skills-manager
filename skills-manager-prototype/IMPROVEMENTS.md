@@ -1,6 +1,7 @@
 # Skills Manager 改进计划
 
-> 参考 [Product Manager Skills](https://github.com/deanpeters/Product-Manager-Skills) 项目的优秀实践，记录可借鉴的改进方向和实施方案。
+> 参考 [Product Manager Skills](https://github.com/deanpeters/Product-Manager-Skills)
+> 项目的优秀实践，记录可借鉴的改进方向和实施方案。
 
 **状态说明**：
 
@@ -60,7 +61,8 @@ ir.skill_type = fm.get("type", "")  # 优先用 type 字段
 
 ### 2.1 背景
 
-Product Manager Skills 有 `scripts/validate-skills.sh` 验证 SKILL.md 格式。我们需要在安装前检查格式是否合规，避免无效 skill 进入 store。
+Product Manager Skills 有 `scripts/validate-skills.sh` 验证 SKILL.md 格式。
+我们需要在安装前检查格式是否合规，避免无效 skill 进入 store。
 
 ### 2.2 实施方案
 
@@ -156,7 +158,9 @@ def search(self, query, tag=None, category=None, skill_type=None):
 
 ### 4.1 背景
 
-Product Manager Skills 的 `CLAUDE.md` 和 `AGENTS.md` 指导 agent 如何与项目协作。我们可以更进一步：安装 skill 后自动生成或更新 agent 目录中的 CLAUDE.md，让 agent 知道有哪些 skill 可用。
+Product Manager Skills 的 `CLAUDE.md` 和 `AGENTS.md` 指导 agent 如何与项目协作。
+我们可以更进一步：安装 skill 后自动生成或更新 agent 目录中的 CLAUDE.md，
+让 agent 知道有哪些 skill 可用。
 
 ### 4.2 实施方案
 
@@ -201,7 +205,8 @@ def update_agent_claude_md(agent_dir: Path, skills: list[dict]) -> None:
 
 ### 5.1 背景
 
-Product Manager Skills 支持导出为 Claude Desktop pack、Codex pack 等格式。我们可以参考，让用户一键打包 skill 为特定平台的安装包。
+Product Manager Skills 支持导出为 Claude Desktop pack、Codex pack 等格式。
+我们可以参考，让用户一键打包 skill 为特定平台的安装包。
 
 ### 5.2 实施方案
 
@@ -249,7 +254,7 @@ skills-manager pack --format claude-desktop --output ./dist skill1 skill2
 | P2 | 打包功能 | 大 | 多平台分发 | P0 IR 扩展 | ✅ |
 | P3 | 测试覆盖率提升 | 中 | 质量保障 | 无 | ✅ |
 | P3 | CLI 集成测试 | 中 | 命令行可靠性 | 无 | ✅ |
-| P4 | 编辑器增强 | 大 | 用户体验 | 无 | ⏳ |
+| P4 | 编辑器增强 | 大 | 用户体验 | 无 | ✅ |
 | P4 | 更多示例 Skill | 小 | 文档和演示 | 无 | ✅ |
 
 建议实施顺序：P0 → P1 → P2，每完成一个即可独立发布。
@@ -335,7 +340,7 @@ skills-manager pack --format claude-desktop --output ./dist skill1 skill2
 - 类型筛选功能正常：component 4 个、interactive 1 个、workflow 1 个
 - 所有示例通过格式验证
 
-#### 编辑器基础预览 ⏳
+#### 编辑器基础预览 ✅
 
 **目标**：在编辑 SKILL.md 时，实时预览导出效果。
 
@@ -343,7 +348,15 @@ skills-manager pack --format claude-desktop --output ./dist skill1 skill2
 
 - 在 `desktop/pages/editor.py` 添加预览面板
 - 解析当前内容 → 调用 adapter.export() → 显示结果
-- 支持切换预览格式（OpenAI/Claude/Gemini 等）
+- 支持切换预览格式（OpenAI/Claude/Gemini/MCP/Schema）
+
+**已实现功能**：
+
+- 左右分栏布局：左侧表单、右侧预览
+- 表单字段：名称、版本、描述、语义类型、意图说明、分类、标签
+- 实时预览：表单变化时自动更新预览内容
+- 格式切换：SKILL.md / OpenAI / Claude / Gemini / MCP / JSON Schema
+- 生成 SKILL.md 骨架并保存安装
 
 **工作量**：中（约 2-3 天）
 
@@ -351,30 +364,35 @@ skills-manager pack --format claude-desktop --output ./dist skill1 skill2
 
 ### 9.2 中期目标（1 个月）
 
-#### 版本管理功能 ⏳
+#### 版本管理功能 ✅
 
 **目标**：支持 Skill 版本升级和回滚。
 
-**核心功能**：
+**已实现功能**：
 
-- 安装时记录版本历史
-- 支持 `skills-manager upgrade <name>` 升级
-- 支持 `skills-manager rollback <name>` 回滚
-- 版本冲突检测
+- 安装时自动记录版本历史（`.version_history.json`）
+- 升级时创建版本快照（`.versions/` 目录），支持回滚
+- CLI 命令：`skills-manager upgrade <name> <source>` 升级到新版本
+- CLI 命令：`skills-manager rollback <name> [version]` 回滚到指定版本
+- CLI 命令：`skills-manager history <name>` 查看版本历史
+- 升级前自动备份当前版本，保留完整快照
+- 回滚时支持指定版本号，默认回滚到上一个版本
 
 **工作量**：中（约 1 周）
 
 **价值**：高（生产环境必备）
 
-#### 批量导入向导 ⏳
+#### 批量导入向导 ✅
 
 **目标**：从目录批量导入多个 Skill。
 
-**实施方案**：
+**已实现功能**：
 
-- 在桌面应用添加"批量导入"按钮
-- 选择根目录 → 扫描所有 SKILL.md → 显示列表 → 确认导入
-- 支持过滤和选择性导入
+- 桌面应用新增"批量导入"页面
+- 选择目录 → 扫描所有 SKILL.md → 显示详细列表
+- 支持全选/单选，已安装 Skill 标记 `[已安装]`
+- 批量导入选中 Skill，显示导入结果
+- 新增 `Store.scan_directory_with_info()` 方法
 
 **工作量**：小（约 2 天）
 
@@ -434,9 +452,9 @@ graph TD
     F --> G[依赖管理]
 
     style A fill:#90EE90
-    style B fill:#87CEEB
-    style C fill:#87CEEB
-    style D fill:#FFD700
+    style B fill:#90EE90
+    style C fill:#90EE90
+    style D fill:#90EE90
     style E fill:#87CEEB
     style F fill:#FFA500
     style G fill:#FFA500
@@ -444,8 +462,7 @@ graph TD
 
 **建议优先级**：
 
-1. **立即开始**：更多示例 Skill（小工作量，完善文档）
-2. **下周启动**：编辑器预览（中等工作量，高价值）
-3. **两周后**：版本管理（生产环境必备）
-4. **一个月后**：批量导入向导
-5. **三个月后**：Skill 市场集成
+1. **已完成**：更多示例 Skill、编辑器预览、版本管理
+2. **下一步**：批量导入向导（提升批量操作效率）
+3. **一个月后**：Skill 市场集成（构建生态系统）
+4. **长期目标**：依赖管理（支持复杂 Skill 组合）
