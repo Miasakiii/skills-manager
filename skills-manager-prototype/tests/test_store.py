@@ -814,3 +814,57 @@ class TestStoreProfiles:
         """测试从不存在的 Profile 移除 Skill。"""
         with pytest.raises(StoreError, match="不存在"):
             store.remove_skill_from_profile("nonexistent", "translator")
+
+
+class TestIndexRecovery:
+    """索引损坏恢复测试。"""
+
+    def test_corrupted_index_recovers(self, store, sample_skill_dir):
+        """索引文件 JSON 损坏时自动使用空索引。"""
+        store.install(sample_skill_dir)
+        # 破坏索引文件
+        store.index_path.write_text("这不是合法的 JSON", encoding="utf-8")
+        store._index_cache = None  # 清除缓存迫使其重读
+        # 不应该崩溃，应该返回空列表
+        skills = store.list_all()
+        assert isinstance(skills, list)
+
+    def test_corrupted_index_with_backup(self, store, sample_skill_dir):
+        """主索引损坏但有有效备份时，从备份恢复。"""
+        store.install(sample_skill_dir)
+        # 备份已由 _save_index 自动创建
+        # 破坏主索引
+        store.index_path.write_text("损坏的内容", encoding="utf-8")
+        store._index_cache = None
+        skills = store.list_all()
+        # 应该从备份恢复
+        assert len(skills) > 0
+
+    def test_both_corrupted_index_and_backup(self, store, sample_skill_dir):
+        """主索引和备份都损坏时，返回空列表。"""
+        store.install(sample_skill_dir)
+        # 破坏主索引和备份
+        store.index_path.write_text("损坏", encoding="utf-8")
+        backup = store.index_path.with_suffix(".json.bak")
+        backup.write_text("也损坏", encoding="utf-8")
+        store._index_cache = None
+        skills = store.list_all()
+        assert skills == []
+
+    def test_missing_directory_auto_cleanup(self, store, sample_skill_dir):
+        """手动删除 skill 目录后，list_all 自动清理索引。"""
+        result = store.install(sample_skill_dir)
+        name = result.name  # 使用安装后返回的实际名称（来自 frontmatter）
+        assert name == "test-skill"
+        import shutil
+        shutil.rmtree(store.store_dir / name)
+        skills = store.list_all()
+        assert all(s.name != name for s in skills)
+
+    def test_backup_created_on_save(self, store, sample_skill_dir):
+        """保存索引时自动创建备份文件。"""
+        store.install(sample_skill_dir)
+        backup = store.index_path.with_suffix(".json.bak")
+        assert backup.exists()
+        data = json.loads(backup.read_text(encoding="utf-8"))
+        assert "skills" in data

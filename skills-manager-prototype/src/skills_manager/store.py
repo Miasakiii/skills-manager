@@ -14,8 +14,12 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from .ir import SkillIR
+from .logging import get_logger
 from .parser import parse_skill_md
+from .security import sanitize_name, validate_path_safety
 from .validator import validate_skill_dir
+
+logger = get_logger(__name__)
 
 
 class StoreError(Exception):
@@ -55,14 +59,23 @@ class Store:
         # 验证 skill 格式
         validation = validate_skill_dir(source)
         if not validation.valid:
+            logger.warning("安装验证失败: %s — %s", source, "; ".join(validation.errors))
             raise StoreError(f"验证失败: {'; '.join(validation.errors)}")
 
         skill_md = source / "SKILL.md"
 
         ir = parse_skill_md(skill_md)
-        install_name = name or ir.name
+
+        # 自动分类：如果未指定 category，根据关键词推断
+        if not ir.category:
+            ir.category = self._infer_category(ir)
+
+        install_name = sanitize_name(name or ir.name)
 
         target = self.store_dir / install_name
+        if not validate_path_safety(target, self.store_dir):
+            raise StoreError(f"不安全的 Skill 名称: {install_name}")
+
         if target.exists() and not force:
             raise StoreError(
                 f"'{install_name}' already installed. Use force=True to overwrite."
@@ -101,6 +114,7 @@ class Store:
         # 自动同步到各 agent 目录（symlink 优先，让 agent 立即可用）
         self.sync_skill_to_agents(install_name)
 
+        logger.info("已安装 Skill: %s v%s (来源: %s)", install_name, ir.version, source)
         return self.get(install_name)
 
     def install_from_package(self, package_path: Path) -> SimpleNamespace:
@@ -361,6 +375,7 @@ class Store:
         if target.exists():
             shutil.rmtree(target)
         self._remove_from_index(name)
+        logger.info("已卸载 Skill: %s", name)
 
     # ── 同步到 Agent ──────────────────────────────────────
 
@@ -451,9 +466,19 @@ class Store:
     def list_all(self) -> list[SimpleNamespace]:
         """列出所有已安装 Skill。"""
         index = self._load_index()
-        return [
-            SimpleNamespace(name=k, **v) for k, v in index["skills"].items()
-        ]
+        result = []
+        stale = []
+        for k, v in index["skills"].items():
+            if not (self.store_dir / k).is_dir():
+                stale.append(k)
+                logger.debug("Skill 目录已不存在，自动清理: %s", k)
+                continue
+            result.append(SimpleNamespace(name=k, **v))
+        if stale:
+            for k in stale:
+                del index["skills"][k]
+            self._save_index(index)
+        return result
 
     def get(self, name: str) -> SimpleNamespace:
         """获取单个 Skill 信息。"""
@@ -524,13 +549,7 @@ class Store:
 
     def get_watch_paths(self) -> list[str]:
         """获取用户自定义的监视路径列表。"""
-        path = self.base_dir / "watch_paths.json"
-        if path.exists():
-            try:
-                return json.loads(path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                return []
-        return []
+        return self._read_json(self.base_dir / "watch_paths.json", [])
 
     def add_watch_path(self, watch_path: str) -> None:
         """添加一个监视路径。"""
@@ -547,22 +566,100 @@ class Store:
             self._save_watch_paths(paths)
 
     def _save_watch_paths(self, paths: list[str]) -> None:
-        path = self.base_dir / "watch_paths.json"
+        self._write_json(self.base_dir / "watch_paths.json", paths)
+
+    # ── 自动分类 ──────────────────────────────────────────
+
+    CATEGORY_KEYWORDS = {
+        "code": ["code", "program", "develop", "api", "sdk", "git", "debug", "python", "javascript", "typescript", "rust", "go", "java", "c++"],
+        "language": ["translat", "language", "i18n", "locale", "多语言", "翻译"],
+        "data": ["data", "analy", "chart", "csv", "excel", "report", "数据", "分析"],
+        "research": ["search", "research", "retriev", "query", "搜索", "研究"],
+        "writing": ["write", "content", "doc", "blog", "copy", "写作", "文档"],
+        "automation": ["automat", "deploy", "ci", "cd", "pipeline", "自动化", "部署"],
+        "agent": ["agent", "mcp", "tool", "skill", "代理", "工具"],
+    }
+
+    def _infer_category(self, ir: SkillIR) -> str | None:
+        """根据关键词推断 Skill 分类。"""
+        # 收集要匹配的文本
+        texts = []
+        if ir.name:
+            texts.append(ir.name.lower())
+        if ir.description:
+            texts.append(ir.description.lower())
+        if ir.summary:
+            texts.append(ir.summary.lower())
+        if ir.tags:
+            texts.extend(t.lower() for t in ir.tags)
+        combined = " ".join(texts)
+
+        # 统计每个分类的匹配次数
+        scores: dict[str, int] = {}
+        for category, keywords in self.CATEGORY_KEYWORDS.items():
+            score = sum(1 for kw in keywords if kw in combined)
+            if score > 0:
+                scores[category] = score
+
+        if not scores:
+            return None
+
+        # 返回得分最高的分类
+        return max(scores, key=scores.get)
+
+    # ── JSON 工具方法 ──────────────────────────────────────────
+
+    def _read_json(self, path: Path, default=None):
+        """读取 JSON 文件，不存在或解析失败返回默认值。"""
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                return default if default is not None else []
+        return default if default is not None else []
+
+    def _write_json(self, path: Path, data) -> None:
+        """写入 JSON 文件。"""
         path.write_text(
-            json.dumps(paths, indent=2, ensure_ascii=False), encoding="utf-8"
+            json.dumps(data, indent=2, ensure_ascii=False),
+            encoding="utf-8",
         )
 
     # ── 索引管理 ──────────────────────────────────────────
 
     def _load_index(self) -> dict:
+        if hasattr(self, '_index_cache') and self._index_cache is not None:
+            return self._index_cache
         if self.index_path.exists():
-            return json.loads(self.index_path.read_text(encoding="utf-8"))
-        return {"version": 1, "skills": {}}
+            try:
+                data = json.loads(self.index_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                logger.warning("索引文件损坏，尝试从备份恢复")
+                backup = self.index_path.with_suffix(".json.bak")
+                if backup.exists():
+                    try:
+                        data = json.loads(backup.read_text(encoding="utf-8"))
+                        logger.info("已从备份恢复索引")
+                    except (json.JSONDecodeError, OSError):
+                        data = {"version": 1, "skills": {}}
+                        logger.warning("备份也损坏，使用空索引")
+                else:
+                    data = {"version": 1, "skills": {}}
+        else:
+            data = {"version": 1, "skills": {}}
+        self._index_cache = data
+        return data
 
     def _save_index(self, index: dict) -> None:
-        self.index_path.write_text(
-            json.dumps(index, indent=2, ensure_ascii=False), encoding="utf-8"
-        )
+        text = json.dumps(index, indent=2, ensure_ascii=False)
+        self.index_path.write_text(text, encoding="utf-8")
+        # 同步写备份，防止主文件写入中途崩溃
+        backup = self.index_path.with_suffix(".json.bak")
+        try:
+            backup.write_text(text, encoding="utf-8")
+        except OSError:
+            pass
+        self._index_cache = None
 
     def _update_index(self, name: str, ir: SkillIR, source: str) -> None:
         index = self._load_index()
@@ -586,6 +683,90 @@ class Store:
         index["skills"].pop(name, None)
         self._save_index(index)
 
+    # ── 使用历史 ──────────────────────────────────────────────
+
+    def get_usage_history(self) -> list[dict]:
+        """获取使用历史记录。
+
+        Returns:
+            使用历史列表，每个元素包含：
+            - skill_name: Skill 名称
+            - action: 操作类型（view / export / edit）
+            - used_at: 使用时间
+        """
+        return self._read_json(self.base_dir / "usage_history.json", [])
+
+    def add_usage(
+        self,
+        skill_name: str,
+        action: str = "view",
+    ) -> None:
+        """添加使用记录。
+
+        Args:
+            skill_name: Skill 名称。
+            action: 操作类型（view / export / edit）。
+        """
+        history = self.get_usage_history()
+        history.append({
+            "skill_name": skill_name,
+            "action": action,
+            "used_at": datetime.now(timezone.utc).isoformat(),
+        })
+        # 只保留最近 200 条记录
+        if len(history) > 200:
+            history = history[-200:]
+        self._write_json(self.base_dir / "usage_history.json", history)
+
+    def get_recent_skills(self, limit: int = 5) -> list[str]:
+        """获取最近使用的 Skill 名称列表。
+
+        Args:
+            limit: 返回数量上限。
+
+        Returns:
+            最近使用的 Skill 名称列表（去重，按使用时间倒序）。
+        """
+        history = self.get_usage_history()
+        seen = set()
+        recent = []
+        # 从后往前遍历，获取最新的使用记录
+        for entry in reversed(history):
+            name = entry.get("skill_name", "")
+            if name and name not in seen:
+                seen.add(name)
+                recent.append(name)
+            if len(recent) >= limit:
+                break
+        return recent
+
+    def get_favorites(self) -> list[str]:
+        """获取收藏的 Skill 名称列表。"""
+        return self._read_json(self.base_dir / "favorites.json", [])
+
+    def toggle_favorite(self, skill_name: str) -> bool:
+        """切换收藏状态。
+
+        Args:
+            skill_name: Skill 名称。
+
+        Returns:
+            True 表示已收藏，False 表示已取消收藏。
+        """
+        favorites = self.get_favorites()
+        if skill_name in favorites:
+            favorites.remove(skill_name)
+            is_fav = False
+        else:
+            favorites.append(skill_name)
+            is_fav = True
+        self._write_json(self.base_dir / "favorites.json", favorites)
+        return is_fav
+
+    def is_favorite(self, skill_name: str) -> bool:
+        """检查 Skill 是否已收藏。"""
+        return skill_name in self.get_favorites()
+
     # ── 导出历史 ──────────────────────────────────────────────
 
     def get_export_history(self) -> list[dict]:
@@ -598,13 +779,7 @@ class Store:
             - output_path: 输出路径
             - exported_at: 导出时间
         """
-        history_path = self.base_dir / "export_history.json"
-        if history_path.exists():
-            try:
-                return json.loads(history_path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                return []
-        return []
+        return self._read_json(self.base_dir / "export_history.json", [])
 
     def add_export_history(
         self,
@@ -629,11 +804,7 @@ class Store:
         # 只保留最近 100 条记录
         if len(history) > 100:
             history = history[-100:]
-        history_path = self.base_dir / "export_history.json"
-        history_path.write_text(
-            json.dumps(history, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        self._write_json(self.base_dir / "export_history.json", history)
 
     def clear_export_history(self) -> None:
         """清空导出历史记录。"""
@@ -654,21 +825,11 @@ class Store:
             - created_at: 创建时间
             - updated_at: 更新时间
         """
-        profiles_path = self.base_dir / "profiles.json"
-        if profiles_path.exists():
-            try:
-                return json.loads(profiles_path.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                return []
-        return []
+        return self._read_json(self.base_dir / "profiles.json", [])
 
     def _save_profiles(self, profiles: list[dict]) -> None:
         """保存 Profile 列表。"""
-        profiles_path = self.base_dir / "profiles.json"
-        profiles_path.write_text(
-            json.dumps(profiles, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+        self._write_json(self.base_dir / "profiles.json", profiles)
 
     def create_profile(
         self,
@@ -928,6 +1089,7 @@ class Store:
         # 同步到 agent 目录
         self.sync_skill_to_agents(name)
 
+        logger.info("已升级 Skill: %s → v%s", name, new_ir.version)
         return self.get(name)
 
     def update(self, name: str) -> SimpleNamespace:
@@ -1059,4 +1221,5 @@ class Store:
         # 同步到 agent 目录
         self.sync_skill_to_agents(name)
 
+        logger.info("已回滚 Skill: %s → v%s", name, ir.version)
         return self.get(name)

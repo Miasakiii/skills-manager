@@ -6,6 +6,8 @@ from pathlib import Path
 
 import flet as ft
 
+from ..components import FONT_TITLE, FONT_SUBTITLE
+
 
 def build_import_page(app) -> ft.Control:
     """构建批量导入页面。"""
@@ -16,7 +18,7 @@ def build_import_page(app) -> ft.Control:
     # 扫描路径显示
     path_text = ft.Text(
         scan_path or "请选择要扫描的目录",
-        size=13,
+        size=FONT_SUBTITLE,
         color=ft.Colors.ON_SURFACE_VARIANT,
     )
 
@@ -39,10 +41,10 @@ def build_import_page(app) -> ft.Control:
                 ft.Container(
                     content=ft.Text(
                         "点击「扫描」查找目录中的 Skill",
-                        size=13,
+                        size=FONT_SUBTITLE,
                         color=ft.Colors.ON_SURFACE_VARIANT,
                     ),
-                    alignment=ft.alignment.center,
+                    alignment=ft.alignment.Alignment(0, 0),
                     padding=32,
                 )
             )
@@ -108,7 +110,7 @@ def build_import_page(app) -> ft.Control:
                                 size=11,
                                 color=ft.Colors.PRIMARY,
                             ),
-                            alignment=ft.alignment.center_right,
+                            alignment=ft.alignment.Alignment(1, 0),
                             expand=True,
                         ),
                     ],
@@ -233,8 +235,8 @@ def build_import_page(app) -> ft.Control:
         spacing=12,
         expand=True,
         controls=[
-            ft.Text("批量导入", size=22, weight=ft.FontWeight.BOLD),
-            ft.Text("从目录扫描并批量导入多个 Skill", size=13),
+            ft.Text("批量导入", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+            ft.Text("从目录扫描并批量导入多个 Skill", size=FONT_SUBTITLE),
             ft.Divider(),
             # 目录选择行
             ft.Row(

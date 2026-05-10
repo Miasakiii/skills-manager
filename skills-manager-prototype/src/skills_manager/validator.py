@@ -11,7 +11,10 @@ from pathlib import Path
 import yaml
 
 from .ir import SkillIR
+from .logging import get_logger
 from .parser import ParseError, parse_skill_content
+
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -98,6 +101,7 @@ def validate_skill_md(content: str, dir_name: str = "") -> ValidationResult:
     except yaml.YAMLError as e:
         result.valid = False
         result.errors.append(f"frontmatter YAML 解析失败: {e}")
+        logger.warning("YAML 解析失败: %s", e)
         return result
 
     # 检查必填字段

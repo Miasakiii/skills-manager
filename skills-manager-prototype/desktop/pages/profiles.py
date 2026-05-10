@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import flet as ft
 
+from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_CARD_NAME, FONT_CARD_DESC, FONT_SECTION
+
 
 def build_profiles_page(app) -> ft.Control:
     """构建 Profile 管理页面。"""
@@ -28,7 +30,7 @@ def build_profiles_page(app) -> ft.Control:
                 ft.Container(
                     content=ft.Text(
                         "暂无 Profile，点击「新建」创建",
-                        size=13,
+                        size=FONT_SUBTITLE,
                         color=ft.Colors.ON_SURFACE_VARIANT,
                     ),
                     padding=16,
@@ -59,12 +61,12 @@ def build_profiles_page(app) -> ft.Control:
                                     controls=[
                                         ft.Text(
                                             p["name"],
-                                            size=14,
+                                            size=FONT_CARD_NAME,
                                             weight=ft.FontWeight.BOLD,
                                         ),
                                         ft.Text(
                                             p.get("description", "") or f"{skill_count} 个 Skill",
-                                            size=12,
+                                            size=FONT_CARD_DESC,
                                             color=ft.Colors.ON_SURFACE_VARIANT,
                                         ),
                                     ],
@@ -89,10 +91,10 @@ def build_profiles_page(app) -> ft.Control:
             edit_area.content = ft.Container(
                 content=ft.Text(
                     "选择或创建 Profile 进行编辑",
-                    size=13,
+                    size=FONT_SUBTITLE,
                     color=ft.Colors.ON_SURFACE_VARIANT,
                 ),
-                alignment=ft.alignment.center,
+                alignment=ft.alignment.Alignment(0, 0),
                 padding=32,
             )
             return
@@ -139,7 +141,7 @@ def build_profiles_page(app) -> ft.Control:
                 ft.Row([
                     ft.Text(
                         f"编辑 Profile: {editing_profile}",
-                        size=18,
+                        size=FONT_TITLE,
                         weight=ft.FontWeight.BOLD,
                     ),
                     ft.Container(expand=True),
@@ -150,21 +152,21 @@ def build_profiles_page(app) -> ft.Control:
                 ]),
                 ft.Text(
                     profile.get("description", ""),
-                    size=13,
+                    size=FONT_SUBTITLE,
                     color=ft.Colors.ON_SURFACE_VARIANT,
                 ),
                 ft.Divider(),
-                ft.Text("包含的 Skill", size=14, weight=ft.FontWeight.BOLD),
+                ft.Text("包含的 Skill", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
                 ft.Text(
                     "勾选要包含在此 Profile 中的 Skill",
-                    size=12,
+                    size=FONT_SUBTITLE,
                     color=ft.Colors.ON_SURFACE_VARIANT,
                 ),
                 ft.Column(controls=skill_checkboxes, spacing=4),
                 ft.Divider(),
                 ft.Text(
                     f"已选择 {len(profile_skills)} 个 Skill",
-                    size=12,
+                    size=FONT_SUBTITLE,
                     color=ft.Colors.ON_SURFACE_VARIANT,
                 ),
             ],
@@ -250,7 +252,7 @@ def build_profiles_page(app) -> ft.Control:
                         ft.Row([
                             ft.Text(
                                 "Profile 管理",
-                                size=22,
+                                size=FONT_TITLE,
                                 weight=ft.FontWeight.BOLD,
                             ),
                             ft.Container(expand=True),
@@ -262,7 +264,7 @@ def build_profiles_page(app) -> ft.Control:
                         ]),
                         ft.Text(
                             "管理 Agent 的 Skill 组合配置",
-                            size=13,
+                            size=FONT_SUBTITLE,
                         ),
                         ft.Divider(),
                         profiles_list,

@@ -235,7 +235,7 @@ def info(
         param_table.add_column("Required")
         param_table.add_column("Description")
         for p in ir.parameters:
-            req = "✅" if p.required else "❌"
+            req = "是" if p.required else "否"
             param_table.add_row(p.name, p.type, req, p.description)
         console.print(param_table)
 
@@ -388,3 +388,30 @@ def doctor() -> None:
             console.print(f"    {dep}: [red]✗[/red]")
 
     console.print("\n[green]All checks passed.[/green]")
+
+
+# ── Claude Code 兼容性检查 ──────────────────────────────────
+
+
+@app.command()
+def check(
+    fix: bool = typer.Option(False, "--fix", "-f", help="自动修复可修复的问题"),
+) -> None:
+    """检查 Claude Code skills 兼容性。"""
+    from .claude_code_checker import ClaudeCodeChecker
+
+    checker = ClaudeCodeChecker()
+    reports = checker.scan()
+
+    if not reports:
+        console.print("[yellow]未找到 skills 目录[/yellow]")
+        return
+
+    console.print(checker.summary(reports))
+
+    if fix:
+        fixed = checker.auto_fix(reports)
+        if fixed:
+            console.print(f"\n[green]已修复 {fixed} 个 skill[/green]")
+        else:
+            console.print("\n没有需要修复的问题")

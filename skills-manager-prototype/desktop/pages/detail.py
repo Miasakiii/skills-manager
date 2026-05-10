@@ -5,27 +5,34 @@ from __future__ import annotations
 import flet as ft
 
 from skills_manager.adapters import get_adapter, list_formats
+from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION
 
 
 def build_detail_page(app) -> ft.Control:
     try:
         ir = app.store.get_skill_ir(app.selected_skill_name)
+        # 记录使用历史
+        app.store.add_usage(app.selected_skill_name, action="view")
     except Exception as e:
         app.selected_skill_name = None
         app.show_snack(f"加载 Skill 失败: {e}", error=True)
         from .browse import build_browse_page
         return build_browse_page(app)
 
-    # 参数表
+    # 参数表（斑马条纹）
     param_rows = []
-    for p in ir.parameters:
-        param_rows.append(ft.DataRow(cells=[
-            ft.DataCell(ft.Text(p.name, weight=ft.FontWeight.BOLD)),
-            ft.DataCell(ft.Text(p.type)),
-            ft.DataCell(ft.Icon(ft.Icons.CHECK if p.required else ft.Icons.CLOSE, size=16,
-                                color=ft.Colors.GREEN if p.required else ft.Colors.GREY)),
-            ft.DataCell(ft.Text(p.description, size=12)),
-        ]))
+    for i, p in enumerate(ir.parameters):
+        row_color = ft.Colors.SURFACE_CONTAINER_HIGHEST if i % 2 == 0 else ft.Colors.SURFACE
+        param_rows.append(ft.DataRow(
+            cells=[
+                ft.DataCell(ft.Text(p.name, weight=ft.FontWeight.BOLD)),
+                ft.DataCell(ft.Text(p.type)),
+                ft.DataCell(ft.Icon(ft.Icons.CHECK if p.required else ft.Icons.CLOSE, size=16,
+                                    color=ft.Colors.GREEN if p.required else ft.Colors.GREY)),
+                ft.DataCell(ft.Text(p.description, size=12)),
+            ],
+            color=row_color,
+        ))
 
     param_table = ft.DataTable(
         columns=[
@@ -48,7 +55,7 @@ def build_detail_page(app) -> ft.Control:
     def switch_format(e):
         app.export_format = e.control.value
         preview_text.value = generate_preview()
-        app._update_ui()
+        app.page.update()
 
     def _show_uninstall():
         from ..dialogs import build_uninstall_dialog
@@ -106,18 +113,18 @@ def build_detail_page(app) -> ft.Control:
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
             ft.Row([
                 ft.Column(spacing=8, expand=True, controls=[
-                    ft.Text(ir.name, size=28, weight=ft.FontWeight.BOLD),
-                    ft.Text(f"v{ir.version}  ·  {ir.category or '未分类'}", size=13, color=ft.Colors.ON_SURFACE_VARIANT),
+                    ft.Text(ir.name, size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+                    ft.Text(f"v{ir.version}  ·  {ir.category or '未分类'}", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
                 ]),
                 ft.FilledButton("复制导出", icon=ft.Icons.CONTENT_COPY, on_click=copy_export),
                 ft.OutlinedButton("保存文件", icon=ft.Icons.SAVE, on_click=save_to_file),
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Text(ir.description, size=15, italic=True),
+            ft.Text(ir.description, size=FONT_SUBTITLE, italic=True),
             ft.Divider(),
-            ft.Text(f"参数定义", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text(f"参数定义", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             param_table if ir.parameters else ft.Text("无参数", color=ft.Colors.ON_SURFACE_VARIANT),
             ft.Divider(),
-            ft.Text("导出预览", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("导出预览", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Dropdown(
                 options=[ft.DropdownOption(f) for f in list_formats()],
                 value=app.export_format,
@@ -126,9 +133,10 @@ def build_detail_page(app) -> ft.Control:
             ),
             ft.Container(
                 content=preview_text,
-                bgcolor=ft.Colors.SURFACE_CONTAINER,
+                bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
                 border_radius=8,
                 padding=16,
+                border=ft.border.all(1, ft.Colors.OUTLINE_VARIANT),
             ),
         ],
     )

@@ -19,6 +19,8 @@ class App:
         self.current_page = "browse"
         self.export_format = "openai"
         self.theme_mode = ft.ThemeMode.LIGHT
+        self.compact_mode = True  # 简洁/详细模式
+        self._health_cache: tuple | None = None  # (errors, warnings) 缓存
 
         # 对话框引用
         self._active_dialog: ft.AlertDialog | None = None
@@ -129,30 +131,93 @@ class App:
         for page_id, icon, label in nav_items:
             is_active = self.current_page == page_id
             nav_buttons.append(ft.Container(
-                content=ft.Row([ft.Icon(icon, size=18), ft.Text(label, size=13)], spacing=10),
-                bgcolor=ft.Colors.SECONDARY_CONTAINER if is_active else ft.Colors.TRANSPARENT,
+                content=ft.Row([
+                    ft.Icon(
+                        icon,
+                        size=18,
+                        color=ft.Colors.PRIMARY if is_active else ft.Colors.ON_SURFACE_VARIANT,
+                    ),
+                    ft.Text(
+                        label,
+                        size=13,
+                        weight=ft.FontWeight.BOLD if is_active else ft.FontWeight.NORMAL,
+                        color=ft.Colors.PRIMARY if is_active else ft.Colors.ON_SURFACE,
+                    ),
+                ], spacing=10),
+                bgcolor=ft.Colors.PRIMARY_CONTAINER if is_active else ft.Colors.TRANSPARENT,
                 border_radius=8,
                 padding=ft.Padding(12, 8, 12, 8),
+                border=ft.Border(
+                    left=ft.BorderSide(3, ft.Colors.PRIMARY if is_active else ft.Colors.TRANSPARENT),
+                    top=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                    right=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                    bottom=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                ),
                 ink=True,
                 on_click=lambda _, pid=page_id: self.navigate(pid),
             ))
 
         return ft.Container(
             width=180,
-            padding=ft.Padding(12, 16, 12, 16),
+            padding=ft.Padding(0, 0, 0, 0),
             bgcolor=ft.Colors.SURFACE,
             content=ft.Column(
-                spacing=4,
+                spacing=0,
                 controls=[
-                    ft.Text("Skills Manager", size=16, weight=ft.FontWeight.BOLD),
-                    ft.Text(f"v0.1.0  ·  {len(self.skills)} 个 Skill", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
-                    ft.Divider(height=20),
-                    ft.TextButton(
-                        content=ft.Row([ft.Icon(ft.Icons.ADD, size=18), ft.Text("安装 Skill", size=13)], spacing=10),
-                        on_click=lambda _: self._show_install_dialog(),
+                    # 头部区域
+                    ft.Container(
+                        padding=ft.Padding(12, 16, 12, 8),
+                        content=ft.Column(
+                            spacing=4,
+                            controls=[
+                                ft.Text("Skills Manager", size=16, weight=ft.FontWeight.BOLD),
+                                ft.Text(f"v0.1.0  ·  {len(self.skills)} 个 Skill", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
+                            ],
+                        ),
                     ),
-                    ft.Divider(height=8),
-                ] + nav_buttons,
+                    ft.Divider(height=1),
+                    # 安装按钮
+                    ft.Container(
+                        padding=ft.Padding(8, 8, 8, 4),
+                        content=ft.TextButton(
+                            content=ft.Row([ft.Icon(ft.Icons.ADD, size=18), ft.Text("安装 Skill", size=13)], spacing=10),
+                            on_click=lambda _: self._show_install_dialog(),
+                        ),
+                    ),
+                    ft.Divider(height=1),
+                    # 导航区域
+                    ft.Container(
+                        padding=ft.Padding(8, 8, 8, 8),
+                        expand=True,
+                        content=ft.Column(
+                            spacing=4,
+                            controls=nav_buttons,
+                        ),
+                    ),
+                    # 健康检查
+                    ft.Container(
+                        padding=ft.Padding(8, 0, 8, 4),
+                        content=ft.TextButton(
+                            content=ft.Row([
+                                ft.Icon(ft.Icons.HEALTH_AND_SAFETY, size=16, color=self._health_status_color()),
+                                ft.Text(self._health_status_text(), size=11),
+                            ], spacing=8),
+                            on_click=lambda _: self._show_health_dialog(),
+                        ),
+                    ),
+                    # 底部版本信息
+                    ft.Container(
+                        padding=ft.Padding(12, 8, 12, 12),
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                        content=ft.Column(
+                            spacing=2,
+                            controls=[
+                                ft.Text("Skills Manager", size=10, color=ft.Colors.ON_SURFACE_VARIANT),
+                                ft.Text("v0.1.0", size=10, color=ft.Colors.OUTLINE),
+                            ],
+                        ),
+                    ),
+                ],
             ),
         )
 
@@ -222,7 +287,115 @@ class App:
         except Exception:
             pass
 
-    # ── 安装对话框 ────────────────────────────────────────────
+    # ── 健康检查 ──────────────────────────────────────────────
+
+    def _run_health_check(self):
+        """运行兼容性扫描并缓存结果。"""
+        if self._health_cache is not None:
+            return self._health_cache
+        from skills_manager.claude_code_checker import ClaudeCodeChecker
+        checker = ClaudeCodeChecker()
+        reports = checker.scan()
+        errors = sum(r.error_count for r in reports)
+        warnings = sum(r.warning_count for r in reports)
+        self._health_cache = (checker, reports, errors, warnings)
+        return self._health_cache
+
+    def _clear_health_cache(self):
+        self._health_cache = None
+
+    def _health_status_color(self):
+        _, _, errors, warnings = self._run_health_check()
+        if errors > 0:
+            return ft.Colors.ERROR
+        if warnings > 0:
+            return ft.Colors.WARNING
+        return ft.Colors.GREEN
+
+    def _health_status_text(self):
+        _, _, errors, warnings = self._run_health_check()
+        parts = []
+        if errors > 0:
+            parts.append(f"{errors} 个错误")
+        if warnings > 0:
+            parts.append(f"{warnings} 个警告")
+        if not parts:
+            return "健康"
+        return "，".join(parts)
+
+    def _show_health_dialog(self):
+        self._clear_health_cache()  # 每次打开对话框重新扫描
+        checker, reports, errors, warnings = self._run_health_check()
+        total = len(reports)
+        ok_count = sum(1 for r in reports if r.ok)
+
+        # 摘要行
+        if errors == 0 and warnings == 0:
+            summary_text = f"共 {total} 个 Skills，全部正常"
+            summary_color = ft.Colors.GREEN
+        elif errors > 0:
+            summary_text = f"共 {total} 个 Skills，{ok_count} 个正常，{errors} 个错误，{warnings} 个警告"
+            summary_color = ft.Colors.ERROR
+        else:
+            summary_text = f"共 {total} 个 Skills，{ok_count} 个正常，{warnings} 个警告"
+            summary_color = ft.Colors.WARNING
+
+        # 问题列表
+        issue_rows = []
+        for r in reports:
+            if not r.issues:
+                continue
+            for issue in r.issues:
+                icon = ft.Icons.ERROR if issue.severity == "error" else ft.Icons.WARNING
+                color = ft.Colors.ERROR if issue.severity == "error" else ft.Colors.WARNING
+                fixable_note = "  [可自动修复]" if issue.auto_fixable else ""
+                issue_rows.append(
+                    ft.Row([
+                        ft.Icon(icon, size=14, color=color),
+                        ft.Text(f"{r.name}: {issue.message}{fixable_note}", size=12),
+                    ], spacing=6)
+                )
+
+        has_fixable = any(i.auto_fixable for r in reports for i in r.issues)
+
+        def do_fix(e):
+            fixed = checker.auto_fix(reports)
+            self._clear_health_cache()
+            self.show_snack(f"已修复 {fixed} 个 Skill")
+            # 关闭旧对话框
+            self._close_active_dialog()
+            # 刷新并重新打开
+            self._show_health_dialog()
+
+        actions = [ft.TextButton("关闭", on_click=lambda e: self._close_active_dialog())]
+        if has_fixable:
+            actions.insert(0, ft.FilledButton("一键修复", icon=ft.Icons.AUTO_FIX_HIGH, on_click=do_fix))
+
+        dialog = ft.AlertDialog(
+            title=ft.Row([
+                ft.Icon(ft.Icons.HEALTH_AND_SAFETY, color=summary_color),
+                ft.Text("健康检查", size=16, weight=ft.FontWeight.BOLD),
+            ]),
+            content=ft.Container(
+                content=ft.Column(
+                    spacing=8,
+                    controls=[
+                        ft.Text(summary_text, size=13, color=summary_color, weight=ft.FontWeight.BOLD),
+                        ft.Divider(),
+                        ft.Column(
+                            spacing=4,
+                            controls=issue_rows or [ft.Text("没有发现问题", size=12, color=ft.Colors.ON_SURFACE_VARIANT)],
+                            scroll=ft.ScrollMode.AUTO,
+                            height=min(len(issue_rows) * 30, 300),
+                        ),
+                    ],
+                ),
+                width=500,
+            ),
+            actions=actions,
+        )
+        self._active_dialog = dialog
+        self.page.show_dialog(dialog)
 
     def _show_install_dialog(self):
         from .dialogs import build_install_dialog

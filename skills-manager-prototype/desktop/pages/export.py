@@ -8,6 +8,7 @@ import flet as ft
 
 from skills_manager.adapters import get_adapter, list_formats
 from skills_manager.packager import pack_for_claude_code, pack_for_claude_desktop, pack_for_codex
+from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_META, FONT_TAG
 
 
 def build_export_page(app) -> ft.Control:
@@ -139,7 +140,7 @@ def build_export_page(app) -> ft.Control:
             history_column.controls.append(
                 ft.Text(
                     "暂无导出记录",
-                    size=12,
+                    size=FONT_META,
                     color=ft.Colors.ON_SURFACE_VARIANT,
                 )
             )
@@ -155,12 +156,12 @@ def build_export_page(app) -> ft.Control:
                         ft.Icon(ft.Icons.FILE_DOWNLOAD, size=14),
                         ft.Text(
                             f"{entry['skill_name']} → {entry['format']}",
-                            size=12,
+                            size=FONT_META,
                             expand=True,
                         ),
                         ft.Text(
                             time_str,
-                            size=11,
+                            size=FONT_TAG,
                             color=ft.Colors.ON_SURFACE_VARIANT,
                         ),
                     ],
@@ -180,17 +181,17 @@ def build_export_page(app) -> ft.Control:
         scroll=ft.ScrollMode.AUTO,
         spacing=16,
         controls=[
-            ft.Text("批量导出", size=22, weight=ft.FontWeight.BOLD),
-            ft.Text("选择要导出的 Skills 和目标格式", size=13),
+            ft.Text("批量导出", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+            ft.Text("选择要导出的 Skills 和目标格式", size=FONT_SUBTITLE),
             ft.Divider(),
-            ft.Row([ft.Text("选择 Skills", size=16, weight=ft.FontWeight.BOLD), select_all]),
+            ft.Row([ft.Text("选择 Skills", size=FONT_SECTION, weight=ft.FontWeight.BOLD), select_all]),
             ft.Column(controls=checkboxes, spacing=2),
             ft.Divider(),
-            ft.Text("导出格式", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("导出格式", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Dropdown(options=[ft.DropdownOption(f) for f in list_formats()], value=export_format, width=200, on_select=on_format_change),
             ft.Divider(),
-            ft.Text("打包格式", size=16, weight=ft.FontWeight.BOLD),
-            ft.Text("将 Skill 打包为平台特定格式", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text("打包格式", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
+            ft.Text("将 Skill 打包为平台特定格式", size=FONT_META, color=ft.Colors.ON_SURFACE_VARIANT),
             ft.Dropdown(
                 options=[
                     ft.DropdownOption("", text="不打包"),
@@ -205,7 +206,7 @@ def build_export_page(app) -> ft.Control:
             ft.Divider(),
             ft.Row([
                 ft.OutlinedButton("选择输出目录", icon=ft.Icons.FOLDER_OPEN, on_click=pick_dir),
-                ft.Text(output_dir or "未选择目录", size=13, color=ft.Colors.ON_SURFACE_VARIANT, italic=True),
+                ft.Text(output_dir or "未选择目录", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT, italic=True),
             ], spacing=8),
             ft.Row([
                 ft.FilledButton("导出选中", icon=ft.Icons.FILE_DOWNLOAD, on_click=do_export),
@@ -213,7 +214,7 @@ def build_export_page(app) -> ft.Control:
             ], spacing=8),
             ft.Divider(),
             ft.Row([
-                ft.Text("导出历史", size=16, weight=ft.FontWeight.BOLD),
+                ft.Text("导出历史", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
                 ft.Container(expand=True),
                 ft.TextButton(
                     "清空历史",

@@ -132,3 +132,46 @@ def build_uninstall_dialog(app, skill_name: str) -> ft.AlertDialog:
                           style=ft.ButtonStyle(color=ft.Colors.ERROR)),
         ],
     )
+
+
+def build_batch_uninstall_dialog(app, skill_names: list[str]) -> ft.AlertDialog:
+    def do_batch_uninstall(_):
+        app._close_active_dialog()
+        success = []
+        failed = []
+        for name in skill_names:
+            try:
+                app.store.uninstall(name)
+                success.append(name)
+            except Exception as ex:
+                failed.append((name, str(ex)))
+        app._refresh_skills()
+        app.checked_skills = set()
+        app.batch_mode = False
+        if success:
+            app.show_snack(f"已卸载 {len(success)} 个 Skill")
+        if failed:
+            app.show_snack(f"{len(failed)} 个卸载失败", error=True)
+        app._update_ui()
+
+    return ft.AlertDialog(
+        title=ft.Text("批量卸载"),
+        content=ft.Column(
+            spacing=8,
+            tight=True,
+            controls=[
+                ft.Text(f"确定要卸载以下 {len(skill_names)} 个 Skill 吗？"),
+                ft.Text(
+                    "、".join(skill_names),
+                    size=12,
+                    color=ft.Colors.ON_SURFACE_VARIANT,
+                ),
+                ft.Text("此操作不可撤销。", color=ft.Colors.ERROR),
+            ],
+        ),
+        actions=[
+            ft.TextButton("取消", on_click=lambda _: app._close_active_dialog()),
+            ft.TextButton("卸载", on_click=do_batch_uninstall,
+                          style=ft.ButtonStyle(color=ft.Colors.ERROR)),
+        ],
+    )

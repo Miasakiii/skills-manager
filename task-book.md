@@ -130,7 +130,6 @@ tags: [translation, i18n]
 ```
 
 输出：
-```json
 {"translated_text": "你好世界", "confidence": 0.95, "detected_lang": "en"}
 ```
 ````

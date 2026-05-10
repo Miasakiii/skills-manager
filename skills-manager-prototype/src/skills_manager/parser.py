@@ -18,6 +18,7 @@ from .ir import (
     SecurityConfig,
     SkillIR,
 )
+from .security import sanitize_name
 
 # Markdown 类型 → JSON Schema 类型
 TYPE_MAP: dict[str, str] = {
@@ -87,7 +88,7 @@ def parse_skill_content(content: str, name_hint: str = "") -> SkillIR:
     parameters = _parse_parameters(param_rows)
 
     return SkillIR(
-        name=fm.get("name", name_hint),
+        name=sanitize_name(fm.get("name") or name_hint),
         version=str(fm.get("version", "0.0.0")),
         description=fm.get("description", ""),
         summary=fm.get("summary", fm.get("description", "")),

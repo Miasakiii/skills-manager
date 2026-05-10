@@ -8,45 +8,9 @@ import flet as ft
 
 from skills_manager.adapters import get_adapter, list_formats
 from skills_manager.parser import parse_skill_md
+from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION
 from skills_manager.ir import SkillIR
 from skills_manager.validator import validate_skill_md
-
-SKILL_TEMPLATE = """---
-name: {name}
-version: "{version}"
-description: {description}
-tags: [{tags}]
-category: {category}
----
-
-## 功能
-
-{description}
-
-## 参数
-
-| 参数 | 类型 | 必需 | 说明 |
-| --- | --- | --- | --- |
-| input | string | ✅ | 输入内容 |
-
-## 返回
-
-| 字段 | 类型 | 说明 |
-| --- | --- | --- |
-| result | string | 处理结果 |
-
-## 示例
-
-输入：
-```json
-{{"input": "example"}}
-```
-
-输出：
-```json
-{{"result": "output"}}
-```
-"""
 
 CATEGORIES = ["language", "code", "data", "research", "writing", "automation", "agent", "misc"]
 
@@ -205,7 +169,7 @@ def build_editor_page(app) -> ft.Control:
                     ], spacing=4)
                 )
 
-        app._update_ui()
+        app.page.update()
 
     def on_field_change(field_name, value):
         """字段变化时更新预览。"""
@@ -214,6 +178,7 @@ def build_editor_page(app) -> ft.Control:
 
     def on_format_change(value):
         """切换预览格式。"""
+        nonlocal preview_format
         app._preview_format = value
         preview_format = value
         update_preview()
@@ -271,8 +236,8 @@ def build_editor_page(app) -> ft.Control:
                     scroll=ft.ScrollMode.AUTO,
                     spacing=12,
                     controls=[
-                        ft.Text("新建 Skill", size=22, weight=ft.FontWeight.BOLD),
-                        ft.Text("填写基本信息，自动生成 SKILL.md", size=13),
+                        ft.Text("新建 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+                        ft.Text("填写基本信息，自动生成 SKILL.md", size=FONT_SUBTITLE),
                         ft.Divider(),
                         ft.TextField(
                             label="名称",
@@ -337,11 +302,11 @@ def build_editor_page(app) -> ft.Control:
                     spacing=8,
                     controls=[
                         ft.Row([
-                            ft.Text("预览", size=18, weight=ft.FontWeight.BOLD),
+                            ft.Text("预览", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
                             format_dropdown,
                         ]),
                         preview_container,
-                        ft.Text("格式校验", size=14, weight=ft.FontWeight.BOLD),
+                        ft.Text("格式校验", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
                         validation_container,
                     ],
                 ),
