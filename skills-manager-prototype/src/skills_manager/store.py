@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -17,6 +18,7 @@ from .ir import SkillIR
 from .logging import get_logger
 from .parser import parse_skill_md
 from .security import sanitize_name, validate_path_safety
+from .translator import _detect_language, translate_text, translate_skill_md
 from .validator import validate_skill_dir
 
 logger = get_logger(__name__)
@@ -45,6 +47,7 @@ class Store:
         source: Path,
         name: str | None = None,
         force: bool = False,
+        translate: bool = True,
     ) -> SimpleNamespace:
         """安装 Skill 到本地存储。
 
@@ -52,6 +55,7 @@ class Store:
             source: Skill 目录路径（必须包含 SKILL.md）。
             name: 自定义安装名，默认使用 IR 中的 name。
             force: 是否覆盖已有的同名 Skill。
+            translate: 是否自动翻译英文描述为中文。
 
         Returns:
             安装后的 Skill 信息。
@@ -88,6 +92,18 @@ class Store:
                 self._backup_current_version(install_name)
             shutil.rmtree(target)
         shutil.copytree(source, target)
+
+        # 自动翻译英文描述为中文（可通过环境变量禁用）
+        if translate and not os.environ.get("SKILLS_NO_AUTO_TRANSLATE") and self._should_translate(ir):
+            try:
+                skill_md_content = (target / "SKILL.md").read_text(encoding="utf-8")
+                translated = translate_skill_md(skill_md_content)
+                if translated != skill_md_content:
+                    (target / "SKILL.md").write_text(translated, encoding="utf-8")
+                    ir = parse_skill_md(target / "SKILL.md")
+                    logger.info("已自动翻译 %s 的英文描述为中文", install_name)
+            except Exception:
+                pass
 
         # 写入安装元数据
         meta = {
@@ -570,18 +586,94 @@ class Store:
 
     # ── 自动分类 ──────────────────────────────────────────
 
-    CATEGORY_KEYWORDS = {
-        "code": ["code", "program", "develop", "api", "sdk", "git", "debug", "python", "javascript", "typescript", "rust", "go", "java", "c++"],
-        "language": ["translat", "language", "i18n", "locale", "多语言", "翻译"],
-        "data": ["data", "analy", "chart", "csv", "excel", "report", "数据", "分析"],
-        "research": ["search", "research", "retriev", "query", "搜索", "研究"],
-        "writing": ["write", "content", "doc", "blog", "copy", "写作", "文档"],
-        "automation": ["automat", "deploy", "ci", "cd", "pipeline", "自动化", "部署"],
-        "agent": ["agent", "mcp", "tool", "skill", "代理", "工具"],
+    # 标准分类列表（9 类）
+    STANDARD_CATEGORIES = {
+        "language", "code", "data", "research", "writing",
+        "automation", "agent", "misc",
     }
+
+    # 非标准分类 → 标准分类的映射
+    CATEGORY_REMAP = {
+        # 开发相关 → code
+        "development": "code", "programming": "code",
+        "backend": "code", "mobile": "code",
+        "testing": "code", "qa": "code", "quality": "code",
+        "security": "code",
+        "devops": "automation", "deployment": "automation",
+        "infrastructure": "automation", "monitoring": "automation",
+        "cloud": "automation", "ci/cd": "automation", "logging": "automation",
+        "database": "data",
+        # 设计/媒体 → misc
+        "design": "misc", "ui": "misc", "ux": "misc", "frontend": "misc",
+        "video": "misc", "audio": "misc", "image": "misc", "media": "misc",
+        "art": "misc",
+        # 其他 → misc
+        "career": "misc", "coaching": "misc", "education": "misc",
+        "business": "misc", "finance": "misc", "legal": "misc",
+        "healthcare": "misc", "health": "misc", "medical": "misc",
+        "productivity": "misc", "communication": "writing",
+    }
+
+    CATEGORY_KEYWORDS = {
+        "code": [
+            "code", "program", "develop", "api", "sdk", "git", "debug", "refactor",
+            "python", "javascript", "typescript", "rust", "golang", "java", "c++", "cpp",
+            "kotlin", "swift", "dart", "flutter", "react", "vue", "angular", "node",
+            "express", "fastapi", "django", "spring", "laravel", "next", "nuxt",
+            "nestjs", "postgres", "sql", "docker", "kubernetes", "pattern",
+            "coding", "architect", "hexagonal", "backend", "mobile",
+            "test", "tdd", "qa", "secur", "vulnerab", "compliance", "auth",
+            "代码", "编程", "开发", "架构", "测试", "安全",
+        ],
+        "language": [
+            "translat", "language", "i18n", "locale", "翻译", "多语言", "国际化",
+        ],
+        "data": [
+            "data", "analy", "chart", "csv", "excel", "report", "dashboard",
+            "metric", "statistic", "warehouse", "database",
+            "数据", "分析", "报表", "图表",
+        ],
+        "research": [
+            "search", "research", "retriev", "query", "knowledge", "rag",
+            "deep research", "health", "medical", "clinical", "patient",
+            "搜索", "研究", "检索", "知识", "医疗",
+        ],
+        "writing": [
+            "write", "content", "doc", "blog", "copy", "article",
+            "writing", "documentation", "communication",
+            "写作", "文档", "文章", "文案",
+        ],
+        "automation": [
+            "automat", "deploy", "ci", "cd", "pipeline", "workflow",
+            "devops", "infrastructure", "orchestrat", "monitoring",
+            "cloud", "logging", "billing", "procurement", "logistics",
+            "inventory", "supply", "pricing",
+            "自动化", "部署", "流水线", "运维",
+        ],
+        "agent": [
+            "agent", "mcp", "harness", "loop",
+            "代理", "自主",
+        ],
+    }
+
+    @staticmethod
+    def _normalize_category(category: str | None) -> str | None:
+        """将非标准分类映射到标准分类。"""
+        if not category:
+            return None
+        cat = category.lower().strip()
+        if cat in Store.STANDARD_CATEGORIES:
+            return cat
+        return Store.CATEGORY_REMAP.get(cat)
 
     def _infer_category(self, ir: SkillIR) -> str | None:
         """根据关键词推断 Skill 分类。"""
+        # 先尝试标准化已有分类
+        if ir.category:
+            normalized = self._normalize_category(ir.category)
+            if normalized:
+                return normalized
+
         # 收集要匹配的文本
         texts = []
         if ir.name:
@@ -606,6 +698,82 @@ class Store:
 
         # 返回得分最高的分类
         return max(scores, key=scores.get)
+
+    def reclassify_all(self) -> int:
+        """对所有已安装 Skill 重新运行分类（标准化 + 推断）。
+
+        Returns:
+            被修改的 Skill 数量。
+        """
+        changed = 0
+        for skill in self.list_all():
+            name = skill.name
+            current_category = getattr(skill, "category", None)
+
+            # 检查是否需要标准化
+            normalized = self._normalize_category(current_category)
+            if normalized and normalized != current_category:
+                self._update_index_category(name, normalized)
+                changed += 1
+                continue
+
+            # 如果无法标准化，尝试推断新分类
+            if not normalized:
+                try:
+                    ir = self.get_skill_ir(name)
+                    inferred = self._infer_category(ir)
+                    if inferred and inferred != current_category:
+                        self._update_index_category(name, inferred)
+                        changed += 1
+                except Exception:
+                    continue
+
+        return changed
+
+    def _update_index_category(self, name: str, category: str) -> None:
+        """更新索引中单个 Skill 的分类。"""
+        index = self._load_index()
+        if name in index["skills"]:
+            index["skills"][name]["category"] = category
+            self._save_index(index)
+
+    # ── 翻译 ──────────────────────────────────────────────────
+
+    @staticmethod
+    def _should_translate(ir: SkillIR) -> bool:
+        """检测 IR 的 description 或 summary 是否需要翻译为中文。"""
+        texts = [t for t in (ir.description, ir.summary) if t]
+        return any(_detect_language(t) == "en" for t in texts)
+
+    def translate_skill(self, name: str, target_lang: str | None = "zh-CN") -> bool:
+        """翻译已安装 Skill 的 SKILL.md 中的描述。
+
+        Args:
+            name: Skill 名称。
+            target_lang: 目标语言，None 时自动检测反向翻译。
+
+        Returns:
+            是否实际修改了内容。
+        """
+        skill_md_path = self.get_skill_md_path(name)
+        if not skill_md_path.exists():
+            raise StoreError(f"SKILL.md 不存在: '{name}'")
+
+        content = skill_md_path.read_text(encoding="utf-8")
+        translated = translate_skill_md(content, target_lang=target_lang)
+        if translated == content:
+            return False
+
+        skill_md_path.write_text(translated, encoding="utf-8")
+        # 更新索引中的描述
+        ir = parse_skill_md(skill_md_path)
+        index = self._load_index()
+        if name in index["skills"]:
+            index["skills"][name]["description"] = ir.description
+            index["skills"][name]["summary"] = ir.summary
+            self._save_index(index)
+        logger.info("已翻译 Skill 描述: %s", name)
+        return True
 
     # ── JSON 工具方法 ──────────────────────────────────────────
 

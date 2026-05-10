@@ -69,6 +69,7 @@ SKILL_TYPE_ICONS = {
     "component": (ft.Icons.WIDGETS_OUTLINED, "模板"),
     "interactive": (ft.Icons.CHAT_BUBBLE_OUTLINED, "对话"),
     "workflow": (ft.Icons.ACCOUNT_TREE_OUTLINED, "流程"),
+    "tool": (ft.Icons.BUILD_OUTLINED, "工具"),
 }
 
 # ── 分类颜色映射 ──────────────────────────────────────────

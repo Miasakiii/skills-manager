@@ -71,6 +71,23 @@ def build_detail_page(app) -> ft.Control:
         except Exception as e:
             app.show_snack(f"更新失败: {e}", error=True)
 
+    def do_translate(_):
+        """翻译描述为中文。"""
+        try:
+            from skills_manager.translator import translate_skill_md
+            content = app.store.get_skill_content(ir.name)
+            translated = translate_skill_md(content, target_lang="zh-CN")
+            if translated != content:
+                app.store.get_skill_md_path(ir.name).write_text(translated, encoding="utf-8")
+                app._refresh_skills()
+                app.show_snack(f"'{ir.name}' 的描述已翻译为中文")
+                app.selected_skill_name = ir.name
+                app._update_ui()
+            else:
+                app.show_snack(f"'{ir.name}' 已经是中文或翻译服务不可用")
+        except Exception as e:
+            app.show_snack(f"翻译失败: {e}", error=True)
+
     # 检查是否可更新
     can_update, update_reason = app.store.can_update(ir.name)
 
@@ -99,8 +116,9 @@ def build_detail_page(app) -> ft.Control:
         spacing=16,
         controls=[
             ft.Row([
-                ft.TextButton("← 返回", icon=ft.Icons.ARROW_BACK, on_click=lambda _: app.go_back()),
+                ft.TextButton("返回", icon=ft.Icons.ARROW_BACK, on_click=lambda _: app.go_back()),
                 ft.Row([
+                    ft.TextButton("翻译", icon=ft.Icons.TRANSLATE, on_click=do_translate),
                     ft.TextButton(
                         "更新",
                         icon=ft.Icons.UPDATE,

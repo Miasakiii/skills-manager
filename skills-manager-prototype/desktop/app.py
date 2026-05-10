@@ -45,6 +45,19 @@ class App:
         if not self.skills:
             self._auto_import_examples()
 
+        # 后台自动分类（对未分类的 skill 运行关键词推断）
+        uncategorized = sum(1 for s in self.skills if not getattr(s, "category", None))
+        if uncategorized > 0:
+            import threading
+            def _auto_classify():
+                try:
+                    changed = self.store.reclassify_all()
+                    if changed > 0:
+                        self._refresh_skills()
+                except Exception:
+                    pass
+            threading.Thread(target=_auto_classify, daemon=True).start()
+
         # 后台检查更新
         self._check_for_updates()
 
@@ -174,7 +187,7 @@ class App:
                             spacing=4,
                             controls=[
                                 ft.Text("Skills Manager", size=16, weight=ft.FontWeight.BOLD),
-                                ft.Text(f"v0.1.0  ·  {len(self.skills)} 个 Skill", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
+                                ft.Text(f"v0.1.1  ·  {len(self.skills)} 个 Skill", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
                             ],
                         ),
                     ),
@@ -210,13 +223,28 @@ class App:
                     ),
                     # 底部版本信息
                     ft.Container(
-                        padding=ft.Padding(12, 8, 12, 12),
+                        padding=ft.Padding(16, 12, 16, 12),
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
-                        content=ft.Column(
-                            spacing=2,
+                        border=ft.Border(
+                            top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                            left=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                            right=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                            bottom=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                        ),
+                        content=ft.Row(
+                            spacing=8,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             controls=[
-                                ft.Text("Skills Manager", size=10, color=ft.Colors.ON_SURFACE_VARIANT),
-                                ft.Text("v0.1.0", size=10, color=ft.Colors.OUTLINE),
+                                ft.Icon(ft.Icons.INFO, size=14, color=ft.Colors.OUTLINE),
+                                ft.Text("Skills Manager", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
+                                ft.Container(
+                                    content=ft.Text("v0.1.1", size=10, color=ft.Colors.ON_SURFACE_VARIANT),
+                                    bgcolor=ft.Colors.SURFACE_CONTAINER,
+                                    border_radius=4,
+                                    padding=ft.Padding(6, 2, 6, 2),
+                                    ink=True,
+                                    on_click=lambda _: self._show_update_dialog(),
+                                ),
                             ],
                         ),
                     ),
@@ -325,6 +353,45 @@ class App:
                 pass
 
         threading.Thread(target=_check, daemon=True).start()
+
+    def _show_update_dialog(self):
+        """点击版本号时手动检查更新并显示对话框。"""
+        # 先显示检查中
+        self.show_snack("正在检查更新...")
+
+        import threading
+
+        def _check_and_show():
+            try:
+                from skills_manager.updater import check_update
+                info = check_update()
+                if info is None:
+                    summary = "无法检查更新，请检查网络连接"
+                    color = ft.Colors.WARNING
+                elif info.has_update:
+                    summary = f"新版本可用: v{info.latest_version} (当前 v{info.current_version})"
+                    color = ft.Colors.WARNING
+                    if info.release_url:
+                        summary += f"\n下载: {info.release_url}"
+                else:
+                    summary = f"已是最新版本 v{info.current_version}"
+                    color = ft.Colors.GREEN
+            except Exception:
+                summary = "检查更新失败，请稍后重试"
+                color = ft.Colors.ERROR
+
+            dialog = ft.AlertDialog(
+                title=ft.Row([
+                    ft.Icon(ft.Icons.SYSTEM_UPDATE, color=color),
+                    ft.Text("检查更新", size=16, weight=ft.FontWeight.BOLD),
+                ]),
+                content=ft.Text(summary, size=13),
+                actions=[ft.TextButton("关闭", on_click=lambda e: self._close_active_dialog())],
+            )
+            self._active_dialog = dialog
+            self.page.show_dialog(dialog)
+
+        threading.Thread(target=_check_and_show, daemon=True).start()
 
     def _health_status_color(self):
         _, _, errors, warnings = self._run_health_check()

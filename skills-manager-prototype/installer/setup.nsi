@@ -9,7 +9,7 @@
 
 ; ── 基本信息 ────────────────────────────────────────────────
 !define PRODUCT_NAME "Skills Manager"
-!define PRODUCT_VERSION "0.1.0"
+!define PRODUCT_VERSION "0.1.1"
 !define PRODUCT_PUBLISHER "Skills Manager"
 !define PRODUCT_WEB_SITE "https://github.com/user/skills-manager"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"

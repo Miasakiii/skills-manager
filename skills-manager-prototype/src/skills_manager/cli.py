@@ -411,6 +411,72 @@ def check_update() -> None:
         console.print(f"[green]已是最新版本 v{info.current_version}[/green]")
 
 
+# ── 翻译 ──────────────────────────────────────────────────
+
+
+@app.command()
+def translate(
+    name: str = typer.Argument(..., help="Skill 名称"),
+    to_english: bool = typer.Option(False, "--to-en", "-e", help="翻译为英文（默认翻译为中文）"),
+) -> None:
+    """将 Skill 的描述翻译为中文或英文。"""
+    store = Store()
+    target = "en" if to_english else "zh-CN"
+    try:
+        changed = store.translate_skill(name, target_lang=target)
+        direction = "英文" if to_english else "中文"
+        if changed:
+            console.print(f"[green]OK[/green] 已将 {name} 的描述翻译为{direction}")
+        else:
+            console.print(f"[yellow]跳过[/yellow] {name} 已经是{direction}或翻译服务不可用")
+    except StoreError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+@app.command()
+def translate_all(
+    to_english: bool = typer.Option(False, "--to-en", "-e", help="翻译为英文（默认翻译为中文）"),
+) -> None:
+    """批量翻译所有已安装 Skill 的描述。"""
+    store = Store()
+    skills = store.list_all()
+    if not skills:
+        console.print("[yellow]没有已安装的 Skill[/yellow]")
+        return
+
+    target = "en" if to_english else "zh-CN"
+    direction = "英文" if to_english else "中文"
+    translated = 0
+    skipped = 0
+    for s in skills:
+        try:
+            if store.translate_skill(s.name, target_lang=target):
+                console.print(f"  [green]OK[/green] {s.name}")
+                translated += 1
+            else:
+                skipped += 1
+        except Exception as e:
+            console.print(f"  [red]Error[/red] {s.name}: {e}")
+
+    console.print()
+    console.print(f"翻译完成: {translated} 个已翻译为{direction}, {skipped} 个跳过")
+
+
+# ── 重分类 ──────────────────────────────────────────────────
+
+
+@app.command()
+def reclassify() -> None:
+    """重新对所有已安装 Skill 运行自动分类。"""
+    store = Store()
+    changed = store.reclassify_all()
+    if changed > 0:
+        console.print(f"[green]OK[/green] 已更新 {changed} 个 Skill 的分类")
+    else:
+        console.print("所有 Skill 的分类都是最新的")
+
+
 # ── Claude Code 兼容性检查 ──────────────────────────────────
 
 

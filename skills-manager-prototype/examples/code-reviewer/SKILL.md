@@ -45,7 +45,7 @@ license: MIT
 
 **输出**：
 ```json
-{"issues": [], "summary": "No issues found. Clean and simple function.", "score": 100}
+{"issues": [], "summary": "未发现问题，代码简洁清晰。", "score": 100}
 ```
 
 ## 适用场景
