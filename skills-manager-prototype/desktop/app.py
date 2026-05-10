@@ -45,6 +45,9 @@ class App:
         if not self.skills:
             self._auto_import_examples()
 
+        # 后台检查更新
+        self._check_for_updates()
+
         self.sidebar = self._build_sidebar()
         self.content_area = ft.Container(expand=True, padding=24, content=self._build_current_page())
 
@@ -303,6 +306,25 @@ class App:
 
     def _clear_health_cache(self):
         self._health_cache = None
+
+    # ── 更新检查 ──────────────────────────────────────────────
+
+    def _check_for_updates(self):
+        """后台检查新版本，发现则提示。"""
+        import threading
+
+        def _check():
+            try:
+                from skills_manager.updater import check_update
+                info = check_update()
+                if info and info.has_update:
+                    self.show_snack(
+                        f"Skills Manager v{info.latest_version} 已发布 (当前 v{info.current_version})"
+                    )
+            except Exception:
+                pass
+
+        threading.Thread(target=_check, daemon=True).start()
 
     def _health_status_color(self):
         _, _, errors, warnings = self._run_health_check()

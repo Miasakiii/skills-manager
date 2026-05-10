@@ -1,0 +1,189 @@
+name: Build & Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  # ── 构建 Python 包 (sdist + wheel) ────────────────────────
+  build-pypi:
+    runs-on: ubuntu-latest
+    outputs:
+      whl_name: ${{ steps.build.outputs.whl_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install build
+      - id: build
+        run: |
+          python -m build
+          echo "whl_name=$(ls dist/*.whl | head -1 | xargs basename)" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-packages
+          path: dist/
+
+  # ── 发布到 PyPI ──────────────────────────────────────────
+  publish-pypi:
+    needs: build-pypi
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/skillfmt/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: python-packages
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+
+  # ── 跨平台桌面/CLI 构建 ──────────────────────────────────
+  build-desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            exe_ext: .exe
+            desktop_ext: .exe
+            cli_name: skillfmt
+            desktop_name: skills-manager-desktop
+          - os: macos-latest
+            exe_ext: ""
+            desktop_ext: .app
+            cli_name: skillfmt
+            desktop_name: skills-manager-desktop
+          - os: ubuntu-latest
+            exe_ext: ""
+            desktop_ext: ""
+            cli_name: skillfmt
+            desktop_name: skills-manager-desktop
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system deps (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmpv-dev libgtk-3-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
+
+      - name: Install NSIS (Windows)
+        if: runner.os == 'Windows'
+        run: choco install nsis --no-progress -y
+
+      - name: Install Python deps
+        run: |
+          pip install ".[dev]"
+          pip install pyinstaller flet-cli
+
+      - name: Build CLI
+        run: |
+          pyinstaller --onefile --name "${{ matrix.cli_name }}" --console --clean --distpath dist pyinstaller/cli_launcher.py
+
+      - name: Build Desktop (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          flet pack desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop;desktop" --add-data "src/skills_manager;skills_manager" --add-data "examples;examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
+
+      - name: Build Desktop (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          flet pack desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop:desktop" --add-data "src/skills_manager:skills_manager" --add-data "examples:examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
+          # Wrap .app in .dmg using built-in hdiutil
+          if [ -d "dist/${{ matrix.desktop_name }}.app" ]; then
+            mkdir -p dist/dmg
+            cp -R "dist/${{ matrix.desktop_name }}.app" dist/dmg/
+            hdiutil create -volname "${{ matrix.desktop_name }}" -srcfolder dist/dmg -ov -format UDZO "dist/${{ matrix.desktop_name }}.dmg" || true
+          fi
+
+      - name: Build Desktop (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          flet pack desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop:desktop" --add-data "src/skills_manager:skills_manager" --add-data "examples:examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
+          # Create tar.gz of the output directory
+          if [ -d "dist/${{ matrix.desktop_name }}" ]; then
+            tar -czf "dist/${{ matrix.desktop_name }}-linux.tar.gz" -C dist "${{ matrix.desktop_name }}"
+          fi
+
+      - name: Build Windows installer (NSIS)
+        if: runner.os == 'Windows'
+        run: |
+          # NSIS script expects specific filenames in dist/
+          mv dist/${{ matrix.cli_name }}.exe dist/skills-manager-cli.exe
+          mv dist/${{ matrix.desktop_name }}.exe dist/skills-manager-desktop.exe
+          # Build NSIS installer
+          makensis /INPUTCHARSET UTF8 installer\setup.nsi
+          # Rename for clarity
+          mv dist/skills-manager-setup.exe "dist/skills-manager-setup-windows.exe"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-builds
+          path: dist/
+
+  # ── 创建 GitHub Release ──────────────────────────────────
+  create-release:
+    needs: [build-desktop]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: "*-builds"
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release
+          # Collect all exe/bin/app files
+          find artifacts/ -type f \( -name "*.exe" -o -name "*.app" -o -name "*.dmg" -o -name "*.tar.gz" -o -name "*.whl" -o -name "*.gz" \) | while read f; do
+            cp "$f" release/ 2>/dev/null || true
+          done
+          # Linux binary (no extension)
+          find artifacts/ -type f -name "skillfmt" -not -name "*.exe" -not -name "*.app" | while read f; do
+            cp "$f" release/ 2>/dev/null || true
+          done
+          ls -la release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Skills Manager ${{ github.ref_name }}"
+          body: |
+            ## Skills Manager ${{ github.ref_name }}
+
+            ### 安装
+
+            **pip install**
+            ```bash
+            pip install skillfmt
+            ```
+
+            **Windows 安装包**
+            下载 `skills-manager-setup-windows.exe` 运行安装向导。
+
+            **独立可执行文件**
+            - Windows: `skillfmt.exe` (CLI) / `skills-manager-desktop.exe` (桌面)
+            - macOS: `skillfmt` (CLI) / `skills-manager-desktop.app` (桌面)
+            - Linux: `skillfmt` (CLI) / `skills-manager-desktop` (桌面)
+
+            ### 功能
+            - CLI 工具 `skillfmt` — 安装、导出、搜索、管理 AI Skills
+            - 桌面应用 — 可视化浏览、编辑、导出
+            - 支持 5 种导出格式：OpenAI / Claude / Gemini / MCP / JSON Schema
+          files: release/*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}

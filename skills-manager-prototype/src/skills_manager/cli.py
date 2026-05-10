@@ -87,7 +87,7 @@ def export(
             else:
                 out_path = Path(f"{skill.name}{adapter.file_extension}")
             out_path.write_text(content, encoding="utf-8")
-            console.print(f"[green]✓[/green] {skill.name} → {out_path}")
+            console.print(f"[green]OK[/green] {skill.name} -> {out_path}")
     else:
         if not name:
             console.print("[red]Error:[/red] Please specify a skill name or use --current-dir")
@@ -106,7 +106,7 @@ def _output_result(content: str, output: str | None, name: str, ext: str) -> Non
         out_path = Path(output)
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(content, encoding="utf-8")
-        console.print(f"[green]✓[/green] Exported to {out_path}")
+        console.print(f"[green]OK[/green] Exported to {out_path}")
     else:
         console.print(content)
 
@@ -129,7 +129,7 @@ def install(
             result = store.install_from_package(source_path)
         else:
             result = store.install(source_path, name=name, force=force)
-        console.print(f"[green]✓[/green] Installed {result.name} v{result.version}")
+        console.print(f"[green]OK[/green] Installed {result.name} v{result.version}")
     except (StoreError, FileNotFoundError) as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -144,7 +144,7 @@ def install_url(
 
     try:
         result = store.install_from_url(url)
-        console.print(f"[green]✓[/green] Installed {result.name} v{result.version}")
+        console.print(f"[green]OK[/green] Installed {result.name} v{result.version}")
     except StoreError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -161,7 +161,7 @@ def uninstall(
     store = Store()
     try:
         store.uninstall(name)
-        console.print(f"[green]✓[/green] Uninstalled {name}")
+        console.print(f"[green]OK[/green] Uninstalled {name}")
     except StoreError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -280,7 +280,7 @@ def pack(
 
     try:
         result = pack_skill(source, output_dir)
-        console.print(f"[green]✓[/green] Packed to {result}")
+        console.print(f"[green]OK[/green] Packed to {result}")
     except FileNotFoundError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -300,7 +300,7 @@ def upgrade(
 
     try:
         result = store.upgrade(name, source_path)
-        console.print(f"[green]✓[/green] Upgraded {name} to v{result.version}")
+        console.print(f"[green]OK[/green] Upgraded {name} to v{result.version}")
     except (StoreError, FileNotFoundError) as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -316,7 +316,7 @@ def rollback(
 
     try:
         result = store.rollback(name, version)
-        console.print(f"[green]✓[/green] Rolled back {name} to v{result.version}")
+        console.print(f"[green]OK[/green] Rolled back {name} to v{result.version}")
     except StoreError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -367,7 +367,7 @@ def doctor() -> None:
     # 检查存储目录
     store = Store()
     console.print(f"  Store path: {store.base_dir}")
-    console.print(f"  Store exists: {'✓' if store.base_dir.exists() else '✗'}")
+    console.print(f"  Store exists: {'yes' if store.base_dir.exists() else 'no'}")
 
     # 检查已安装数量
     skills = store.list_all()
@@ -383,11 +383,32 @@ def doctor() -> None:
     for dep in deps:
         try:
             __import__(dep)
-            console.print(f"    {dep}: ✓")
+            console.print(f"    {dep}: OK")
         except ImportError:
-            console.print(f"    {dep}: [red]✗[/red]")
+            console.print(f"    {dep}: [red]MISSING[/red]")
 
     console.print("\n[green]All checks passed.[/green]")
+
+
+# ── 更新检查 ──────────────────────────────────────────────────
+
+
+@app.command()
+def check_update() -> None:
+    """检查是否有新版本可用。"""
+    from .updater import check_update as do_check, format_update_message
+
+    info = do_check()
+    if info is None:
+        console.print("[yellow]无法检查更新，请检查网络连接[/yellow]")
+        return
+
+    if info.has_update:
+        console.print(f"[yellow]更新可用:[/yellow] v{info.latest_version} (当前 v{info.current_version})")
+        if info.release_url:
+            console.print(f"  下载: [cyan]{info.release_url}[/cyan]")
+    else:
+        console.print(f"[green]已是最新版本 v{info.current_version}[/green]")
 
 
 # ── Claude Code 兼容性检查 ──────────────────────────────────
