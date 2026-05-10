@@ -29,3 +29,8 @@ htmlcov/
 ~/.skills-manager/
 *.skill
 test-skill.json
+
+# Internal planning docs (not for public repo)
+task-book.md
+tech-design.md
+IMPROVEMENTS.md

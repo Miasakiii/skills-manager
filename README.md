@@ -284,13 +284,6 @@ mypy src/
 2. 返回 `ValidationResult`（errors 或 warnings）
 3. 添加测试用例
 
-## 文档
-
-- [任务书](../task-book.md) — 解决什么问题、做什么不做什么、路线图
-- [技术设计文档](../tech-design.md) — 格式规范、IR、适配器、CLI、存储、实现细节
-- [改进计划](./IMPROVEMENTS.md) — 参考 Product Manager Skills 的改进方向
-- [用户指南](./docs/user-guide.md) — 详细使用说明
-
 ## 许可
 
 MIT
