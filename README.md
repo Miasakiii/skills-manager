@@ -1,24 +1,35 @@
 # Skills Manager
 
-> 用一种极简格式定义 AI Skill，一键导出为 OpenAI / Claude / Gemini / MCP 等主流平台格式。
+> 写一次 AI Skill 定义，一键导出为 OpenAI / Claude / Gemini / MCP 等主流平台格式。
 
-## 核心理念
+[![PyPI](https://img.shields.io/pypi/v/skillfmt)](https://pypi.org/project/skillfmt/)
+[![Test](https://img.shields.io/badge/tests-271%20passed-green)](https://github.com/Miasakiii/skills-manager)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**不要做 Skill 的 npm，做 Skill 的 babel。**
+## 快速安装
 
-AI Agent 生态的工具格式碎片化，同一个能力要在每个平台手写一遍定义。Skills Manager 让你只写一次，到处导出。
+```bash
+pip install skillfmt
+```
+
+CLI 命令 `skillfmt` 安装后即可使用。桌面应用请从 [Releases](https://github.com/Miasakiii/skills-manager/releases) 下载。
 
 ## 快速开始
 
-### 1. 写一个 Skill（5 分钟）
+### 1. 创建一个 Skill
 
-创建 `my-skill/SKILL.md`：
+创建目录 `my-skill/`，在其中创建 `SKILL.md`：
 
 ```markdown
 ---
 name: hello
 version: "1.0.0"
 description: 一个简单的问候工具
+summary: 向用户打招呼，支持中英文。
+skill_type: component
+intent: 用于测试和演示的简单问候工具
+tags: [demo, greeting]
+category: misc
 ---
 
 ## 功能
@@ -28,128 +39,257 @@ description: 一个简单的问候工具
 ## 参数
 
 | 参数 | 类型 | 必需 | 说明 |
-|---|---|---|---|
-| name | string | ✅ | 用户名称 |
-| language | string | ❌ | 语言：zh / en，默认 zh |
+|------|------|------|------|
+| name | string | 是 | 用户名称 |
+| language | string | 否 | 语言：zh / en，默认 zh |
+
+## 示例
+
+```json
+{"name": "世界", "language": "zh"}
 ```
 
-### 2. 导出
+```json
+{"greeting": "你好，世界！"}
+```
+
+## 适用场景
+
+- 测试 Skill 系统
+- 演示基本功能
+
+## 不适用
+
+- 生产环境使用
+```
+
+### 2. 安装并导出
 
 ```bash
-# 导出为 OpenAI Function Calling 格式
-skills-manager export hello --format openai
+# 安装 Skill
+skillfmt install ./my-skill
 
-# 导出为 Claude Tool Use 格式
-skills-manager export hello --format claude
+# 导出为 OpenAI 格式
+skillfmt export hello --format openai
 
-# 导出为可运行的 MCP Server
-skills-manager export hello --format mcp --output hello_mcp.py
+# 导出为 Claude 格式
+skillfmt export hello --format claude
+
+# 导出为 MCP Server
+skillfmt export hello --format mcp --output hello_mcp.py
 ```
 
-### 3. 使用
+### 3. 桌面应用
 
-将导出的 JSON 直接粘贴到你的 Agent 代码中，零修改。
-
-## 安装
+从 [Releases](https://github.com/Miasakiii/skills-manager/releases) 下载安装包，或从源码运行：
 
 ```bash
-pip install skills-manager
+python -m desktop
 ```
 
-## 命令速查
+### 4. 检查更新
 
 ```bash
-# Skill 管理
-skills-manager install <source>              # 安装（目录 / .skill 包）
-skills-manager install-url <url>             # 从 URL / GitHub 安装
-skills-manager uninstall <name>              # 卸载
-skills-manager list                          # 列出已安装
-skills-manager info <name>                   # 查看详情
-skills-manager search <query>                # 关键词搜索
-
-# 版本管理
-skills-manager upgrade <name>                # 从原始来源更新
-skills-manager rollback <name>               # 回滚到上一版本
-skills-manager history <name>                # 查看版本历史
-
-# 格式导出
-skills-manager export <name> --format openai|claude|gemini|mcp|schema
-skills-manager export --all --format openai  # 批量导出
-
-# 打包
-skills-manager pack <dir>                    # 打包为 .skill 文件
-
-# 工具
-skills-manager doctor                        # 环境检查
+skillfmt check-update
 ```
 
-## 桌面应用
+## SKILL.md 格式规范
 
-基于 Flet 构建的跨平台桌面客户端，提供可视化管理体验：
+### Frontmatter（必填）
 
-```bash
-cd skills-manager-prototype/desktop
-python main.py
+```yaml
+---
+name: skill-name          # 必填：唯一标识，小写 + 连字符
+version: "1.0.0"          # 必填：语义化版本
+description: 一句话描述    # 必填：简短描述（< 200 字）
+summary: |                # 必填：2-3 句话摘要
+  详细描述这个 Skill 的功能。
+  支持多行文本。
+---
 ```
 
-功能：
+### Frontmatter（可选）
 
-- 卡片式浏览、分类筛选、关键词搜索
-- 一键导出到 5 种平台格式
-- 内置编辑器，实时预览和语法校验
-- 批量导入、批量导出
-- Profile 管理（Agent Skill 组合）
-- 场景推荐引擎
-- 版本管理（升级 / 回滚 / 历史）
-- 从 URL / GitHub 安装
-- 导出历史记录
-- 全局快捷键
+```yaml
+---
+# 语义类型
+skill_type: component     # component | interactive | workflow
+intent: 详细意图说明       # 这个 Skill 要解决什么问题
+
+# 分类
+tags: [tag1, tag2]        # 自由标签
+category: language        # 一级分类标识
+
+# 执行配置
+executor:
+  type: python            # python | node | shell | http
+  entry: handler.py       # 入口文件
+  function: translate     # 入口函数名
+
+# 安全声明
+security:
+  needs_network: true
+  needs_api_key: true
+
+# 元信息
+author: someone
+license: MIT
+---
+```
+
+### Markdown Body
+
+```markdown
+## 功能
+
+详细描述 Skill 的功能。
+
+## 参数
+
+| 参数 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| param1 | string | ✅ | 参数说明 |
+| param2 | integer | ❌ | 可选参数 |
+
+## 返回
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| result | string | 返回结果 |
+
+## 示例
+
+输入：
+```json
+{"param1": "value"}
+```
+
+输出：
+```json
+{"result": "processed"}
+```
+
+## 适用场景
+
+- 场景 1
+- 场景 2
+
+## 不适用
+
+- 不适用场景 1
+```
+
+## 支持的导出格式
+
+| 格式 | 说明 | 文件扩展名 |
+|------|------|-----------|
+| openai | OpenAI Function Calling | .json |
+| claude | Claude Tool Use | .json |
+| gemini | Gemini Function Declaration | .json |
+| mcp | MCP Server（可运行） | .py |
+| schema | JSON Schema | .json |
 
 ## 项目结构
 
 ```
 skills-manager/
-├── task-book.md                        # 项目目标、范围、路线图
-├── tech-design.md                      # 格式规范、架构、实现细节
-├── src/skills_manager/                 # 核心引擎（Python）
-│   ├── parser.py                       # SKILL.md 解析器
+├── README.md                           # 本文件
+├── LICENSE                             # MIT 许可证
+├── pyproject.toml                      # 项目配置 & PyPI 元数据
+├── src/skills_manager/                 # 核心引擎
+│   ├── __init__.py
 │   ├── ir.py                           # 中间表示（IR）
-│   ├── adapters/                       # 格式适配器
-│   ├── store.py                        # 本地存储管理
+│   ├── parser.py                       # SKILL.md 解析器
+│   ├── store.py                        # 本地存储管理（缓存+降级恢复）
 │   ├── validator.py                    # 格式验证器
-│   ├── recommend.py                    # 场景推荐引擎
-│   ├── packager.py                     # 打包/解包
-│   └── cli.py                          # CLI 入口
-├── desktop/                            # Flet 桌面应用
-│   ├── app.py                          # 主控逻辑
-│   ├── pages/                          # 页面模块
-│   ├── components.py                   # 通用组件
-│   └── dialogs.py                      # 对话框
-├── examples/                           # 示例 Skills（6 个）
-│   ├── translator/                     # 多语言翻译
-│   ├── code-reviewer/                  # 代码审查
-│   ├── code-generator/                 # 代码生成
-│   ├── json-formatter/                 # JSON 格式化
-│   ├── deploy-pipeline/                # 部署流水线
-│   └── interview-prep/                 # 面试准备
-└── tests/                              # 测试（196 个，100% 通过）
+│   ├── packager.py                     # 打包器
+│   ├── agent_config.py                 # Agent 配置生成
+│   ├── security.py                     # 安全工具（路径穿越防护）
+│   ├── logging.py                      # 结构化日志系统
+│   ├── updater.py                      # 自动更新检查
+│   ├── cli.py                          # CLI 入口（Typer）
+│   ├── claude_code_checker.py          # Claude Code 兼容性检查
+│   └── adapters/                       # 格式适配器
+│       ├── base.py                     # 适配器基类
+│       ├── openai.py                   # OpenAI Function Calling
+│       ├── claude.py                   # Claude Tool Use
+│       ├── gemini.py                   # Gemini Function Declaration
+│       ├── mcp.py                      # MCP Python Server
+│       └── json_schema.py             # JSON Schema
+├── desktop/                            # 桌面客户端（Flet 0.84）
+│   ├── __main__.py                     # 入口
+│   ├── app.py                          # 主控类（状态/导航/更新检查）
+│   ├── components.py                   # 可复用组件（卡片/列表/字体）
+│   ├── dialogs.py                      # 对话框
+│   └── pages/                          # 页面
+│       ├── browse.py                   # 浏览页（搜索/筛选）
+│       ├── detail.py                   # 详情页（参数表/导出预览）
+│       ├── export.py                   # 批量导出
+│       ├── editor.py                   # 编辑器（实时预览）
+│       ├── import_page.py              # 批量导入
+│       ├── profiles.py                 # Profile 管理
+│       ├── recommend.py                # 推荐
+│       └── settings.py                 # 设置
+├── installer/                          # 安装包
+│   └── setup.nsi                       # Windows NSIS 安装脚本
+├── pyinstaller/                        # 打包入口
+│   ├── cli_launcher.py
+│   └── desktop_launcher.py
+├── .github/workflows/                  # CI/CD
+│   └── release.yml                     # 三平台构建 + PyPI 发布
+├── examples/                           # 示例 Skills (6 个)
+├── tests/                              # 测试 (271 passed)
+└── docs/                               # 文档
 ```
 
-## 技术栈
+## 开发指南
 
-| 层面 | 选择 |
-| ---- | ---- |
-| 语言 | Python 3.11+ |
-| UI 框架 | Flet 0.84（基于 Flutter） |
-| 数据模型 | Python dataclass |
-| 存储 | JSON 文件索引 |
-| CLI | typer + rich |
-| 打包 | PyInstaller / Nuitka |
+### 运行测试
+
+```bash
+# 运行所有测试
+pytest tests/
+
+# 运行特定测试
+pytest tests/test_parser.py -v
+
+# 查看覆盖率
+pytest tests/ --cov=skills_manager --cov-report=term-missing
+```
+
+### 代码质量
+
+```bash
+# 格式化
+ruff format .
+
+# 检查
+ruff check .
+
+# 类型检查
+mypy src/
+```
+
+### 添加新适配器
+
+1. 在 `src/skills_manager/adapters/` 创建新文件
+2. 继承 `BaseAdapter` 类
+3. 实现 `name`、`file_extension`、`export` 方法
+4. 在 `__init__.py` 注册适配器
+5. 添加测试
+
+### 添加新验证规则
+
+1. 在 `src/skills_manager/validator.py` 添加规则
+2. 返回 `ValidationResult`（errors 或 warnings）
+3. 添加测试用例
 
 ## 文档
 
-- [任务书](./task-book.md) — 解决什么问题、做什么不做什么、路线图
-- [技术设计文档](./tech-design.md) — 格式规范、IR、适配器、CLI、存储、实现细节
+- [任务书](../task-book.md) — 解决什么问题、做什么不做什么、路线图
+- [技术设计文档](../tech-design.md) — 格式规范、IR、适配器、CLI、存储、实现细节
+- [改进计划](./IMPROVEMENTS.md) — 参考 Product Manager Skills 的改进方向
+- [用户指南](./docs/user-guide.md) — 详细使用说明
 
 ## 许可
 
