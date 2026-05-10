@@ -284,6 +284,10 @@ mypy src/
 2. 返回 `ValidationResult`（errors 或 warnings）
 3. 添加测试用例
 
+## 文档
+
+- [用户指南](./docs/user-guide.md) — 详细使用说明
+
 ## 许可
 
 MIT
