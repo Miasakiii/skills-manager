@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from skills_manager.ir import SkillIR
+from skills_manager.frontmatter import split_frontmatter
 from skills_manager.parser import (
     ParseError,
     _detect_enum,
@@ -13,7 +14,6 @@ from skills_manager.parser import (
     _extract_list,
     _extract_section,
     _extract_table,
-    _split_frontmatter,
     parameters_to_json_schema,
     parse_skill_content,
     parse_skill_md,
@@ -26,26 +26,26 @@ SAMPLE_SKILL = FIXTURES / "sample-skill" / "SKILL.md"
 class TestSplitFrontmatter:
     def test_valid_frontmatter(self):
         content = "---\nname: test\nversion: 1.0.0\n---\nBody here"
-        fm, body = _split_frontmatter(content)
+        fm, body = split_frontmatter(content)
         assert "name: test" in fm
         assert "Body here" in body
 
     def test_no_frontmatter(self):
         content = "No frontmatter here"
-        fm, body = _split_frontmatter(content)
+        fm, body = split_frontmatter(content)
         assert fm == ""
         assert body == content
 
     def test_bom_handling(self):
         content = "\ufeff---\nname: test\n---\nBody"
-        fm, body = _split_frontmatter(content)
+        fm, body = split_frontmatter(content)
         assert "name: test" in fm
 
     def test_incomplete_frontmatter(self):
+        from skills_manager.frontmatter import FrontmatterError
         content = "---\nname: test\nNo closing"
-        fm, body = _split_frontmatter(content)
-        assert fm == ""
-        assert body == content
+        with pytest.raises(FrontmatterError, match="未闭合"):
+            split_frontmatter(content)
 
 
 class TestExtractSection:

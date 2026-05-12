@@ -10,6 +10,7 @@ from pathlib import Path
 
 import yaml
 
+from .frontmatter import FrontmatterError, split_frontmatter
 from .ir import SkillIR
 from .logging import get_logger
 from .parser import ParseError, parse_skill_content
@@ -78,18 +79,17 @@ def validate_skill_md(content: str, dir_name: str = "") -> ValidationResult:
     result = ValidationResult(valid=True)
 
     # 分离 frontmatter
-    if not content.startswith("---"):
+    try:
+        frontmatter_yaml, _body = split_frontmatter(content)
+    except FrontmatterError as e:
+        result.valid = False
+        result.errors.append(str(e))
+        return result
+
+    if not frontmatter_yaml:
         result.valid = False
         result.errors.append("缺少 YAML frontmatter（应以 --- 开头）")
         return result
-
-    second = content.find("---", 3)
-    if second == -1:
-        result.valid = False
-        result.errors.append("frontmatter 未闭合（缺少第二个 ---）")
-        return result
-
-    frontmatter_yaml = content[3:second].strip()
 
     # 解析 YAML
     try:

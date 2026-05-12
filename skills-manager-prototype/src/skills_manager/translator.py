@@ -7,7 +7,7 @@ import re
 from urllib.request import Request, urlopen
 from urllib.parse import quote
 
-from .parser import _split_frontmatter
+from .frontmatter import split_frontmatter
 
 
 def _detect_language(text: str) -> str:
@@ -134,7 +134,7 @@ def translate_skill_md(content: str, target_lang: str | None = None) -> str:
     Returns:
         翻译后的 SKILL.md 内容。
     """
-    frontmatter, body = _split_frontmatter(content)
+    frontmatter, body = split_frontmatter(content)
     if not frontmatter:
         return content
 

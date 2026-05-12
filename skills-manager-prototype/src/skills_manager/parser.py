@@ -11,6 +11,7 @@ from pathlib import Path
 
 import yaml
 
+from .frontmatter import FrontmatterError, split_frontmatter
 from .ir import (
     Example,
     ExecutorConfig,
@@ -71,7 +72,10 @@ def parse_skill_content(content: str, name_hint: str = "") -> SkillIR:
     Returns:
         解析后的 SkillIR 对象。
     """
-    frontmatter, body = _split_frontmatter(content)
+    try:
+        frontmatter, body = split_frontmatter(content)
+    except FrontmatterError:
+        frontmatter, body = "", content
 
     # 解析 frontmatter
     fm = yaml.safe_load(frontmatter) or {}
@@ -109,26 +113,6 @@ def parse_skill_content(content: str, name_hint: str = "") -> SkillIR:
         license=fm.get("license"),
     )
 
-
-def _split_frontmatter(content: str) -> tuple[str, str]:
-    """分离 YAML frontmatter 和 Markdown body。
-
-    Returns:
-        (frontmatter_yaml, markdown_body) 元组。
-    """
-    content = content.lstrip("\ufeff")  # 去除 BOM
-
-    if not content.startswith("---"):
-        return "", content
-
-    # 找第二个 ---
-    second = content.find("---", 3)
-    if second == -1:
-        return "", content
-
-    frontmatter = content[3:second].strip()
-    body = content[second + 3:].strip()
-    return frontmatter, body
 
 
 def _extract_section(body: str, header: str) -> str:
