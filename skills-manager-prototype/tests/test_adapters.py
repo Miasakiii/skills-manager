@@ -135,6 +135,28 @@ class TestGeminiAdapter:
         props = result["function_declarations"][0]["parameters"]["properties"]
         assert props["text"]["type"] == "STRING"
 
+    def test_nested_and_default(self):
+        """验证嵌套类型和 default 字段正确转换为大写类型名。"""
+        from skills_manager.ir import SkillIR, Parameter
+
+        ir = SkillIR(
+            name="test",
+            version="1.0.0",
+            description="test",
+            parameters=[
+                Parameter(name="items", type="array", description="list", required=False, default=[]),
+                Parameter(name="config", type="object", description="obj", required=False),
+            ],
+        )
+        adapter = GeminiAdapter()
+        result = json.loads(adapter.export(ir))
+        params = result["function_declarations"][0]["parameters"]
+        assert params["type"] == "OBJECT"
+        assert params["properties"]["items"]["type"] == "ARRAY"
+        assert params["properties"]["config"]["type"] == "OBJECT"
+        assert params["properties"]["items"].get("default") == []
+        assert params.get("additionalProperties") is False
+
 
 class TestMCPAdapter:
     def test_generates_python(self, sample_ir):
