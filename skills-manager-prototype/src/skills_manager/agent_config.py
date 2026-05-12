@@ -7,6 +7,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from skills_manager.logging import get_logger
+
+logger = get_logger(__name__)
+
 
 def generate_claude_md(skills: list) -> str:
     """生成 CLAUDE.md 内容，列出所有可用 skill。
@@ -67,4 +71,5 @@ def update_agent_claude_md(agent_dir: Path, skills: list) -> bool:
         claude_md.write_text(content, encoding="utf-8")
         return True
     except Exception:
+        logger.exception("Failed to write CLAUDE.md to %s", agent_dir)
         return False

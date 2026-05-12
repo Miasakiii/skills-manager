@@ -103,7 +103,7 @@ class Store:
                     ir = parse_skill_md(target / "SKILL.md")
                     logger.info("已自动翻译 %s 的英文描述为中文", install_name)
             except Exception:
-                pass
+                logger.warning("Auto-translation failed for %s", install_name, exc_info=True)
 
         # 写入安装元数据
         meta = {

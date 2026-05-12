@@ -6,7 +6,10 @@ from pathlib import Path
 
 import flet as ft
 
+from skills_manager.logging import get_logger
 from skills_manager.store import Store
+
+logger = get_logger(__name__)
 
 
 class App:
@@ -55,7 +58,7 @@ class App:
                     if changed > 0:
                         self._refresh_skills()
                 except Exception:
-                    pass
+                    logger.exception("Background auto-classification failed")
             threading.Thread(target=_auto_classify, daemon=True).start()
 
         # 后台检查更新
@@ -328,7 +331,7 @@ class App:
             names = ", ".join(installed)
             self.show_snack(f"已自动导入 {len(installed)} 个示例 Skill: {names}")
         except Exception:
-            pass
+            logger.exception("Failed to auto-import example skills")
 
     # ── 健康检查 ──────────────────────────────────────────────
 
@@ -362,7 +365,7 @@ class App:
                         f"Skills Manager v{info.latest_version} 已发布 (当前 v{info.current_version})"
                     )
             except Exception:
-                pass
+                logger.exception("Background update check failed")
 
         threading.Thread(target=_check, daemon=True).start()
 

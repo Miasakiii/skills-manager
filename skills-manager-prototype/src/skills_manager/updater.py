@@ -8,6 +8,9 @@ from typing import Optional
 from urllib.request import Request, urlopen
 
 from . import __version__
+from .logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def _parse_version(v: str) -> tuple:
@@ -15,6 +18,7 @@ def _parse_version(v: str) -> tuple:
     try:
         return tuple(int(x) for x in v.strip().split("."))
     except Exception:
+        logger.warning("Failed to parse version %r, fallback to (0,)", v)
         return (0,)
 
 
@@ -33,6 +37,7 @@ def _fetch_json(url: str, timeout: int = 5) -> Optional[dict]:
         with urlopen(req, timeout=timeout) as resp:
             return json.loads(resp.read())
     except Exception:
+        logger.debug("Failed to fetch %s", url, exc_info=True)
         return None
 
 
