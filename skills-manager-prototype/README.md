@@ -200,7 +200,16 @@ skills-manager/
 │   ├── __init__.py
 │   ├── ir.py                           # 中间表示（IR）
 │   ├── parser.py                       # SKILL.md 解析器
-│   ├── store.py                        # 本地存储管理（缓存+降级恢复）
+│   ├── store/                          # 本地存储管理（缓存+降级恢复）
+│   │   ├── __init__.py                 # Store 门面类（组合各 mixin）
+│   │   ├── core.py                     # 索引读写、基础查询、搜索
+│   │   ├── installer.py                # 安装/卸载/升级/回滚
+│   │   ├── scanner.py                  # 目录扫描与自动发现
+│   │   ├── agent_sync.py               # Agent 目录同步
+│   │   ├── category.py                 # 自动分类
+│   │   ├── translation.py              # 翻译管理
+│   │   ├── profile.py                  # Profile 管理
+│   │   └── history.py                  # 使用/导出历史、收藏
 │   ├── validator.py                    # 格式验证器
 │   ├── packager.py                     # 打包器
 │   ├── agent_config.py                 # Agent 配置生成
