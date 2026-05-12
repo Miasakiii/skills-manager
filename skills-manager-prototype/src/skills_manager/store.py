@@ -146,7 +146,7 @@ class Store:
 
         try:
             with tarfile.open(package_path, "r:gz") as tar:
-                tar.extractall(tmp_dir)
+                tar.extractall(tmp_dir, filter="data" if hasattr(tarfile, "data_filter") else None)
 
             # 找到 SKILL.md 所在的目录
             skill_dir = self._find_skill_dir(tmp_dir)
@@ -285,7 +285,7 @@ class Store:
                 zf.extractall(extract_dir)
         else:
             with tarfile.open(archive_path) as tf:
-                tf.extractall(extract_dir)
+                tf.extractall(extract_dir, filter="data" if hasattr(tarfile, "data_filter") else None)
 
         skill_dir = self._find_skill_dir(extract_dir)
         if not skill_dir:

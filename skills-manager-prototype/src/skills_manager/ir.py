@@ -83,3 +83,29 @@ class SkillIR:
     # 元信息
     author: str | None = None
     license: str | None = None
+
+
+def parameters_to_json_schema(parameters: list[Parameter]) -> dict:
+    """将 Parameter 列表转换为 JSON Schema。"""
+    properties = {}
+    required = []
+
+    for p in parameters:
+        prop: dict = {"type": p.type, "description": p.description}
+        if p.enum:
+            prop["enum"] = p.enum
+        if p.default is not None:
+            prop["default"] = p.default
+        properties[p.name] = prop
+        if p.required:
+            required.append(p.name)
+
+    schema: dict = {
+        "type": "object",
+        "properties": properties,
+        "additionalProperties": False,
+    }
+    if required:
+        schema["required"] = required
+
+    return schema

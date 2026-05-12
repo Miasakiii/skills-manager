@@ -64,7 +64,7 @@ def unpack(package_path: Path, output_dir: Path | None = None) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with tarfile.open(package_path, "r:gz") as tar:
-        tar.extractall(output_dir)
+        tar.extractall(output_dir, filter="data" if hasattr(tarfile, "data_filter") else None)
 
     # 找到解压后的目录
     for item in output_dir.iterdir():

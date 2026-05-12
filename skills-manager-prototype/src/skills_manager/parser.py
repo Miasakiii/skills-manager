@@ -314,23 +314,5 @@ def _parse_security(data: dict | None) -> SecurityConfig | None:
     )
 
 
-def parameters_to_json_schema(parameters: list[Parameter]) -> dict:
-    """将 Parameter 列表转换为 JSON Schema。"""
-    properties = {}
-    required = []
-
-    for p in parameters:
-        prop: dict = {"type": p.type, "description": p.description}
-        if p.enum:
-            prop["enum"] = p.enum
-        if p.default is not None:
-            prop["default"] = p.default
-        properties[p.name] = prop
-        if p.required:
-            required.append(p.name)
-
-    schema: dict = {"type": "object", "properties": properties}
-    if required:
-        schema["required"] = required
-
-    return schema
+# 向后兼容：从 ir 重新导出
+from .ir import parameters_to_json_schema  # noqa: E402, F401

@@ -7,6 +7,8 @@ import re
 from urllib.request import Request, urlopen
 from urllib.parse import quote
 
+from .parser import _split_frontmatter
+
 
 def _detect_language(text: str) -> str:
     """检测文本主要语言。返回 'en'、'zh' 或 'mixed'。"""
@@ -132,15 +134,9 @@ def translate_skill_md(content: str, target_lang: str | None = None) -> str:
     Returns:
         翻译后的 SKILL.md 内容。
     """
-    if not content.startswith("---"):
+    frontmatter, body = _split_frontmatter(content)
+    if not frontmatter:
         return content
-
-    parts = content.split("---", 2)
-    if len(parts) < 3:
-        return content
-
-    frontmatter = parts[1]
-    body = parts[2]
 
     translated_lines = []
     in_multiline = False
@@ -168,21 +164,9 @@ def translate_skill_md(content: str, target_lang: str | None = None) -> str:
                 translated_lines.append(line)
                 continue
             else:
-                full_value = "\n".join(multiline_value)
-                if multiline_key in ("description", "summary"):
-                    detected = _detect_language(full_value)
-                    tl = target_lang or ("en" if detected == "zh" else "zh-CN")
-                    if tl == "en" and detected != "en":
-                        translated = translate_text(full_value, "en")
-                    elif tl == "zh-CN" and detected != "zh":
-                        translated = translate_text(full_value, "zh-CN")
-                    else:
-                        translated = full_value
-                    if translated != full_value:
-                        new_lines = translated.split("\n")
-                        translated_lines = translated_lines[:-len(multiline_value)]
-                        for nl in new_lines:
-                            translated_lines.append(f"  {nl}")
+                _flush_multiline(
+                    translated_lines, multiline_key, multiline_value, target_lang
+                )
                 in_multiline = False
                 multiline_key = None
                 multiline_value = []
@@ -212,20 +196,30 @@ def translate_skill_md(content: str, target_lang: str | None = None) -> str:
         translated_lines.append(line)
 
     if in_multiline and multiline_key:
-        full_value = "\n".join(multiline_value)
-        if multiline_key in ("description", "summary"):
-            detected = _detect_language(full_value)
-            tl = target_lang or ("en" if detected == "zh" else "zh-CN")
-            if tl == "en" and detected != "en":
-                translated = translate_text(full_value, "en")
-            elif tl == "zh-CN" and detected != "zh":
-                translated = translate_text(full_value, "zh-CN")
-            else:
-                translated = full_value
-            if translated != full_value:
-                new_lines = translated.split("\n")
-                translated_lines = translated_lines[:-len(multiline_value)]
-                for nl in new_lines:
-                    translated_lines.append(f"  {nl}")
+        _flush_multiline(
+            translated_lines, multiline_key, multiline_value, target_lang
+        )
 
-    return "---" + "\n".join(translated_lines) + "---" + body
+    return "---\n" + "\n".join(translated_lines) + "\n---\n" + body
+
+
+def _flush_multiline(
+    lines: list[str], key: str, value_lines: list[str], target_lang: str | None
+) -> None:
+    """将多行值翻译后替换到 lines 中。"""
+    full_value = "\n".join(value_lines)
+    if key not in ("description", "summary"):
+        return
+    detected = _detect_language(full_value)
+    tl = target_lang or ("en" if detected == "zh" else "zh-CN")
+    if tl == "en" and detected != "en":
+        translated = translate_text(full_value, "en")
+    elif tl == "zh-CN" and detected != "zh":
+        translated = translate_text(full_value, "zh-CN")
+    else:
+        translated = full_value
+    if translated != full_value and value_lines:
+        new_lines = translated.split("\n")
+        lines[:] = lines[: -len(value_lines)]
+        for nl in new_lines:
+            lines.append(f"  {nl}")

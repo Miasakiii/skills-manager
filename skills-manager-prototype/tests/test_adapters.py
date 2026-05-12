@@ -142,7 +142,7 @@ class TestMCPAdapter:
         result = adapter.export(sample_ir)
 
         assert result.startswith("#!/usr/bin/env python3")
-        assert 'Server("translator")' in result
+        assert "Server('translator')" in result
         assert "inputSchema" in result
         assert "from mcp.server" in result
         assert "asyncio.run(main())" in result

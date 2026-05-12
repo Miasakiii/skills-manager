@@ -83,21 +83,33 @@ class App:
     def navigate(self, page_id: str):
         self.current_page = page_id
         self.selected_skill_name = None
-        self._update_ui()
+        self._update_content()
+        self._update_sidebar_state()
 
     def show_detail(self, skill_name: str):
         self.selected_skill_name = skill_name
-        self._update_ui()
+        self._update_content()
 
     def go_back(self):
         self.selected_skill_name = None
-        self._update_ui()
+        self._update_content()
 
     def _update_ui(self):
-        # 替换 sidebar 的 content（而非 sidebar 本身），确保页面树中的旧 Container 被更新
+        """全量更新：侧边栏 + 内容区。仅在数据变化（安装/卸载/翻译）时调用。"""
         new_sidebar = self._build_sidebar()
         self.sidebar.content = new_sidebar.content
         self.content_area.content = self._build_current_page()
+        self.page.update()
+
+    def _update_content(self):
+        """仅刷新内容区，保留侧边栏。导航/详情切换时使用。"""
+        self.content_area.content = self._build_current_page()
+        self.page.update()
+
+    def _update_sidebar_state(self):
+        """仅刷新侧边栏。导航切换时使用，避免重建内容区。"""
+        new_sidebar = self._build_sidebar()
+        self.sidebar.content = new_sidebar.content
         self.page.update()
 
     # ── 页面构建（委托给各模块）──────────────────────────────
@@ -532,6 +544,10 @@ class App:
     # ── 通用工具 ──────────────────────────────────────────────
 
     def show_snack(self, text: str, error: bool = False):
+        # 清除旧的 SnackBar，避免 overlay 累积
+        stale = [c for c in self.page.overlay if isinstance(c, ft.SnackBar)]
+        for s in stale:
+            self.page.overlay.remove(s)
         snack = ft.SnackBar(
             content=ft.Text(text),
             bgcolor=ft.Colors.ERROR_CONTAINER if error else None,

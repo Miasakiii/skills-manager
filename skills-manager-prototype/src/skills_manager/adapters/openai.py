@@ -6,7 +6,7 @@ import json
 from typing import TYPE_CHECKING
 
 from .base import Adapter
-from ..parser import parameters_to_json_schema
+from ..ir import parameters_to_json_schema
 
 if TYPE_CHECKING:
     from ..ir import SkillIR

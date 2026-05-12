@@ -4,13 +4,54 @@ from __future__ import annotations
 
 import json
 import textwrap
+from string import Template
 from typing import TYPE_CHECKING
 
 from .base import Adapter
-from ..parser import parameters_to_json_schema
+from ..ir import parameters_to_json_schema
 
 if TYPE_CHECKING:
     from ..ir import SkillIR
+
+_MCP_TEMPLATE = Template('''#!/usr/bin/env python3
+"""MCP Server for ${name} - ${description}"""
+
+from mcp.server import Server
+from mcp.types import Tool
+import json
+
+server = Server(${name_repr})
+
+
+@server.list_tools()
+async def list_tools():
+    return [
+        Tool(
+            name=${name_repr},
+            description=${description_repr},
+            inputSchema=${schema_indented},
+        )
+    ]
+
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict):
+    # TODO: 实现工具调用逻辑
+    # 可以直接调用 handler.py 中的函数
+    from handler import ${function_name}
+    return ${function_name}(**arguments)
+
+
+if __name__ == "__main__":
+    import asyncio
+    from mcp.server.stdio import stdio_server
+
+    async def main():
+        async with stdio_server() as (read, write):
+            await server.run(read, write)
+
+    asyncio.run(main())
+''')
 
 
 class MCPAdapter(Adapter):
@@ -33,42 +74,11 @@ class MCPAdapter(Adapter):
         if ir.executor and ir.executor.function:
             function_name = ir.executor.function
 
-        return f'''#!/usr/bin/env python3
-"""MCP Server for {ir.name} - {ir.description}"""
-
-from mcp.server import Server
-from mcp.types import Tool
-import json
-
-server = Server("{ir.name}")
-
-
-@server.list_tools()
-async def list_tools():
-    return [
-        Tool(
-            name="{ir.name}",
-            description="{ir.description}",
-            inputSchema={schema_indented},
+        return _MCP_TEMPLATE.substitute(
+            name=ir.name,
+            name_repr=repr(ir.name),
+            description=ir.description,
+            description_repr=repr(ir.description),
+            schema_indented=schema_indented,
+            function_name=function_name,
         )
-    ]
-
-
-@server.call_tool()
-async def call_tool(name: str, arguments: dict):
-    # TODO: 实现工具调用逻辑
-    # 可以直接调用 handler.py 中的函数
-    from handler import {function_name}
-    return {function_name}(**arguments)
-
-
-if __name__ == "__main__":
-    import asyncio
-    from mcp.server.stdio import stdio_server
-
-    async def main():
-        async with stdio_server() as (read, write):
-            await server.run(read, write)
-
-    asyncio.run(main())
-'''

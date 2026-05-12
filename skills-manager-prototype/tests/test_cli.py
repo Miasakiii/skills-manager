@@ -1,6 +1,7 @@
 """测试 CLI 命令行接口。"""
 
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 from typer.testing import CliRunner
@@ -370,3 +371,62 @@ class TestCLIHistory:
         result = runner.invoke(app, ["history", "nonexistent"])
         assert result.exit_code == 0
         assert "No version history" in result.output
+
+
+# ── Translate / Reclassify / Check-Update ────────────────────
+
+
+class CLITranslate:
+    """翻译命令测试。"""
+
+    def test_translate_skill(self, store, sample_skill_dir):
+        """测试翻译单个 skill。"""
+        store.install(sample_skill_dir)
+        with patch("skills_manager.cli.translate_skill_md", return_value="已翻译"):
+            result = runner.invoke(app, ["translate", "test-skill"])
+            assert result.exit_code == 0
+
+    def test_translate_nonexistent(self, store):
+        """测试翻译不存在的 skill。"""
+        result = runner.invoke(app, ["translate", "nonexistent"])
+        assert result.exit_code == 1
+
+
+class CLIRetranslate:
+    """批量翻译命令测试。"""
+
+    def test_translate_all(self, store, sample_skill_dir):
+        """测试批量翻译。"""
+        store.install(sample_skill_dir)
+        with patch("skills_manager.cli.translate_skill_md", return_value="已翻译"):
+            result = runner.invoke(app, ["translate-all"])
+            assert result.exit_code == 0
+
+
+class CLIReclassify:
+    """重新分类命令测试。"""
+
+    def test_reclassify(self, store, sample_skill_dir):
+        """测试重新分类。"""
+        store.install(sample_skill_dir)
+        result = runner.invoke(app, ["reclassify"])
+        assert result.exit_code == 0
+
+
+class CLICheckUpdate:
+    """更新检查命令测试。"""
+
+    def test_check_update(self, store):
+        """测试检查更新。"""
+        with patch("skills_manager.cli.check_update") as mock_check:
+            from skills_manager.updater import UpdateInfo
+            mock_check.return_value = UpdateInfo(
+                latest_version="9.9.9",
+                current_version="0.1.0",
+                has_update=True,
+                release_url="https://example.com",
+                release_notes="New release",
+            )
+            result = runner.invoke(app, ["check-update"])
+            assert result.exit_code == 0
+            assert "9.9.9" in result.output
