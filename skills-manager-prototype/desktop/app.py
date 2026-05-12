@@ -36,6 +36,42 @@ class App:
         self.sidebar: ft.Container | None = None
         self.content_area: ft.Container | None = None
 
+        # ── 浏览页状态 ──
+        self.search_query: str = ""
+        self.selected_skill_type: str = ""
+        self.selected_category: str = ""
+        self.selected_tag: str = ""
+        self.sort_by: str = "name_asc"
+        self.view_mode: str = "grid"
+        self.batch_mode: bool = False
+        self.checked_skills: set[str] = set()
+        self.batch_export_skills: list[str] = []
+
+        # ── 导出页状态 ──
+        self._export_selected: dict[str, bool] = {}
+        self._batch_export_format: str = "openai"
+        self._batch_pack_format: str = ""
+        self._batch_output_dir: str = ""
+
+        # ── 导入页状态 ──
+        self._import_scan_path: str = ""
+        self._import_results: list[dict] = []
+        self._import_selected: dict[str, bool] = {}
+
+        # ── 编辑器页状态 ──
+        self._new_skill_name: str = ""
+        self._new_skill_version: str = "1.0.0"
+        self._new_skill_description: str = ""
+        self._new_skill_category: str = "misc"
+        self._new_skill_tags: str = ""
+        self._new_skill_type: str = "component"
+        self._new_skill_intent: str = ""
+        self._preview_format: str = "markdown"
+        self._generated_content: str = ""
+
+        # ── Profile 页状态 ──
+        self._editing_profile: str | None = None
+
     def build(self, page: ft.Page):
         self.page = page
         page.title = "Skills Manager"

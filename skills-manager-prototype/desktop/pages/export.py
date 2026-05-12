@@ -22,14 +22,14 @@ def build_export_page(app) -> ft.Control:
         )
 
     # 初始化选中状态
-    selected: dict[str, bool] = getattr(app, "_export_selected", {})
+    selected = app._export_selected
     if not selected:
         selected = {s.name: False for s in skills}
         app._export_selected = selected
 
-    export_format = getattr(app, "_batch_export_format", "openai")
-    pack_format = getattr(app, "_batch_pack_format", "")
-    output_dir = getattr(app, "_batch_output_dir", "")
+    export_format = app._batch_export_format
+    pack_format = app._batch_pack_format
+    output_dir = app._batch_output_dir
 
     def toggle_all(e):
         check_all = e.control.value

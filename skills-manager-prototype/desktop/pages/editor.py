@@ -16,16 +16,16 @@ CATEGORIES = ["language", "code", "data", "research", "writing", "automation", "
 
 
 def build_editor_page(app) -> ft.Control:
-    name = getattr(app, "_new_skill_name", "")
-    version = getattr(app, "_new_skill_version", "1.0.0")
-    description = getattr(app, "_new_skill_description", "")
-    category = getattr(app, "_new_skill_category", "misc")
-    tags = getattr(app, "_new_skill_tags", "")
-    skill_type = getattr(app, "_new_skill_type", "component")
-    intent = getattr(app, "_new_skill_intent", "")
+    name = app._new_skill_name
+    version = app._new_skill_version
+    description = app._new_skill_description
+    category = app._new_skill_category
+    tags = app._new_skill_tags
+    skill_type = app._new_skill_type
+    intent = app._new_skill_intent
 
-    preview_format = getattr(app, "_preview_format", "markdown")
-    generated_content = getattr(app, "_generated_content", "")
+    preview_format = app._preview_format
+    generated_content = app._generated_content
 
     # 预览区域
     preview_text = ft.Text(

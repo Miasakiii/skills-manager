@@ -11,9 +11,9 @@ from ..components import FONT_TITLE, FONT_SUBTITLE
 
 def build_import_page(app) -> ft.Control:
     """构建批量导入页面。"""
-    scan_path: str = getattr(app, "_import_scan_path", "")
-    results: list[dict] = getattr(app, "_import_results", [])
-    selected: dict[str, bool] = getattr(app, "_import_selected", {})
+    scan_path = app._import_scan_path
+    results = app._import_results
+    selected = app._import_selected
 
     # 扫描路径显示
     path_text = ft.Text(
@@ -146,7 +146,7 @@ def build_import_page(app) -> ft.Control:
 
     def scan_dir(_):
         """扫描目录。"""
-        scan_path = getattr(app, "_import_scan_path", "")
+        scan_path = app._import_scan_path
         if not scan_path:
             app.show_snack("请先选择目录", error=True)
             return
@@ -178,8 +178,8 @@ def build_import_page(app) -> ft.Control:
 
     def import_selected(_):
         """导入选中的 Skill。"""
-        results = getattr(app, "_import_results", [])
-        selected = getattr(app, "_import_selected", {})
+        results = app._import_results
+        selected = app._import_selected
 
         to_import = [
             r for r in results
@@ -216,7 +216,7 @@ def build_import_page(app) -> ft.Control:
             app.show_snack(f"导入失败: {names}", error=True)
 
         # 重新扫描以更新状态
-        scan_path = getattr(app, "_import_scan_path", "")
+        scan_path = app._import_scan_path
         if scan_path:
             results = app.store.scan_directory_with_info(Path(scan_path))
             app._import_results = results

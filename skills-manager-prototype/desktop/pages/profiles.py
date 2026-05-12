@@ -13,7 +13,7 @@ def build_profiles_page(app) -> ft.Control:
     skills = app.skills
 
     # 当前编辑的 Profile
-    editing_profile = getattr(app, "_editing_profile", None)
+    editing_profile = app._editing_profile
 
     # Profile 列表容器
     profiles_list = ft.Column(spacing=8, scroll=ft.ScrollMode.AUTO)
