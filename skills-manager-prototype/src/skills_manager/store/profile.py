@@ -32,7 +32,7 @@ class _ProfileManager:
 
         for p in profiles:
             if p["name"] == name:
-                raise StoreError(f"Profile '{name}' 已存在")
+                raise StoreError(f"Profile '{name}' already exists")
 
         now = datetime.now(timezone.utc).isoformat()
         profile = {
@@ -65,7 +65,7 @@ class _ProfileManager:
                 self._save_profiles(profiles)
                 return p
 
-        raise StoreError(f"Profile '{name}' 不存在")
+        raise StoreError(f"Profile '{name}' not found")
 
     def delete_profile(self, name: str) -> None:
         """删除 Profile。"""
@@ -79,7 +79,7 @@ class _ProfileManager:
         for p in profiles:
             if p["name"] == name:
                 return p
-        raise StoreError(f"Profile '{name}' 不存在")
+        raise StoreError(f"Profile '{name}' not found")
 
     def add_skill_to_profile(self, profile_name: str, skill_name: str) -> None:
         """向 Profile 添加 Skill。"""
@@ -91,7 +91,7 @@ class _ProfileManager:
                     p["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._save_profiles(profiles)
                 return
-        raise StoreError(f"Profile '{profile_name}' 不存在")
+        raise StoreError(f"Profile '{profile_name}' not found")
 
     def remove_skill_from_profile(self, profile_name: str, skill_name: str) -> None:
         """从 Profile 移除 Skill。"""
@@ -103,4 +103,4 @@ class _ProfileManager:
                     p["updated_at"] = datetime.now(timezone.utc).isoformat()
                     self._save_profiles(profiles)
                 return
-        raise StoreError(f"Profile '{profile_name}' 不存在")
+        raise StoreError(f"Profile '{profile_name}' not found")

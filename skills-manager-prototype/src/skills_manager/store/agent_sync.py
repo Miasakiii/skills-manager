@@ -39,7 +39,7 @@ class _AgentSync:
         """
         source = self.store_dir / name
         if not source.is_dir():
-            raise StoreError(f"Skill 源目录不存在: {source}")
+            raise StoreError(f"Skill source directory does not exist: {source}")
         results: dict[str, bool] = {}
         for agent_dir in self.get_agent_skills_dirs():
             dest = agent_dir / name

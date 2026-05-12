@@ -61,7 +61,7 @@ class TestStoreInstall:
     def test_install_no_skill_md(self, store, tmp_path):
         empty_dir = tmp_path / "empty"
         empty_dir.mkdir()
-        with pytest.raises(StoreError, match="验证失败"):
+        with pytest.raises(StoreError, match="Validation failed"):
             store.install(empty_dir)
 
     def test_install_force_overwrite(self, store, sample_skill_dir):
@@ -633,7 +633,7 @@ class TestStoreUpdate:
         index = store._load_index()
         index["skills"]["test-skill"]["source"] = ""
         store._save_index(index)
-        with pytest.raises(StoreError, match="没有来源信息"):
+        with pytest.raises(StoreError, match="has no source information"):
             store.update("test-skill")
 
     def test_update_source_not_exist(self, store, sample_skill_dir, tmp_path):
@@ -643,7 +643,7 @@ class TestStoreUpdate:
         index = store._load_index()
         index["skills"]["test-skill"]["source"] = str(tmp_path / "nonexistent")
         store._save_index(index)
-        with pytest.raises(StoreError, match="来源目录不存在"):
+        with pytest.raises(StoreError, match="Source directory does not exist"):
             store.update("test-skill")
 
     def test_can_update(self, store, sample_skill_dir):
@@ -661,7 +661,7 @@ class TestStoreUpdate:
         store._save_index(index)
         can, reason = store.can_update("test-skill")
         assert can is False
-        assert "没有来源信息" in reason
+        assert "No source information" in reason
 
     def test_can_update_nonexistent(self, store):
         """测试不存在的 skill 检查更新。"""
@@ -752,7 +752,7 @@ class TestStoreProfiles:
     def test_create_profile_duplicate(self, store):
         """测试创建重复 Profile。"""
         store.create_profile("my-profile")
-        with pytest.raises(StoreError, match="已存在"):
+        with pytest.raises(StoreError, match="already exists"):
             store.create_profile("my-profile")
 
     def test_get_profile(self, store):
@@ -763,7 +763,7 @@ class TestStoreProfiles:
 
     def test_get_profile_nonexistent(self, store):
         """测试获取不存在的 Profile。"""
-        with pytest.raises(StoreError, match="不存在"):
+        with pytest.raises(StoreError, match="not found"):
             store.get_profile("nonexistent")
 
     def test_update_profile(self, store):
@@ -812,7 +812,7 @@ class TestStoreProfiles:
 
     def test_remove_skill_from_profile_nonexistent(self, store):
         """测试从不存在的 Profile 移除 Skill。"""
-        with pytest.raises(StoreError, match="不存在"):
+        with pytest.raises(StoreError, match="not found"):
             store.remove_skill_from_profile("nonexistent", "translator")
 
 

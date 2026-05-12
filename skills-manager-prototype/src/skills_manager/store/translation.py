@@ -32,7 +32,7 @@ class _TranslationManager:
         """
         skill_md_path = self.get_skill_md_path(name)
         if not skill_md_path.exists():
-            raise StoreError(f"SKILL.md 不存在: '{name}'")
+            raise StoreError(f"SKILL.md not found: '{name}'")
 
         content = skill_md_path.read_text(encoding="utf-8")
         translated = translate_skill_md(content, target_lang=target_lang)

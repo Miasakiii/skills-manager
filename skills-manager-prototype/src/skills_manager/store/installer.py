@@ -47,7 +47,7 @@ class _SkillInstaller:
         validation = validate_skill_dir(source)
         if not validation.valid:
             logger.warning("安装验证失败: %s — %s", source, "; ".join(validation.errors))
-            raise StoreError(f"验证失败: {'; '.join(validation.errors)}")
+            raise StoreError(f"Validation failed: {'; '.join(validation.errors)}")
 
         skill_md = source / "SKILL.md"
         ir = parse_skill_md(skill_md)
@@ -58,7 +58,7 @@ class _SkillInstaller:
         install_name = sanitize_name(name or ir.name)
         target = self.store_dir / install_name
         if not validate_path_safety(target, self.store_dir):
-            raise StoreError(f"不安全的 Skill 名称: {install_name}")
+            raise StoreError(f"Unsafe skill name: {install_name}")
 
         if target.exists() and not force:
             raise StoreError(
@@ -170,7 +170,7 @@ class _SkillInstaller:
         if file_name.endswith((".tar.gz", ".tgz", ".zip")):
             return self._install_from_archive(file_path, tmp_dir)
 
-        raise StoreError(f"不支持的文件格式: {file_name}")
+        raise StoreError(f"Unsupported file format: {file_name}")
 
     def _install_from_github(self, url: str, tmp_dir: Path) -> SimpleNamespace:
         """从 GitHub 仓库安装。"""
@@ -178,7 +178,7 @@ class _SkillInstaller:
 
         parts = url.replace("https://github.com/", "").strip("/").split("/")
         if len(parts) < 2:
-            raise StoreError(f"无效的 GitHub URL: {url}")
+            raise StoreError(f"Invalid GitHub URL: {url}")
 
         user, repo = parts[0], parts[1]
         branch = "main"
@@ -204,7 +204,7 @@ class _SkillInstaller:
 
         skill_dir = self._find_skill_dir(search_dir)
         if not skill_dir:
-            raise StoreError("GitHub 仓库中未找到 SKILL.md")
+            raise StoreError("No SKILL.md found in GitHub repository")
 
         return self.install(skill_dir)
 
@@ -225,7 +225,7 @@ class _SkillInstaller:
 
         skill_dir = self._find_skill_dir(extract_dir)
         if not skill_dir:
-            raise StoreError("压缩包中未找到 SKILL.md")
+            raise StoreError("No SKILL.md found in archive")
 
         return self.install(skill_dir)
 
@@ -297,7 +297,7 @@ class _SkillInstaller:
 
         validation = validate_skill_dir(source)
         if not validation.valid:
-            raise StoreError(f"验证失败: {'; '.join(validation.errors)}")
+            raise StoreError(f"Validation failed: {'; '.join(validation.errors)}")
 
         new_ir = parse_skill_md(source / "SKILL.md")
         self._backup_current_version(name)
@@ -347,14 +347,14 @@ class _SkillInstaller:
         source = getattr(skill_info, "source", "")
 
         if not source:
-            raise StoreError(f"Skill '{name}' 没有来源信息，无法更新")
+            raise StoreError(f"Skill '{name}' has no source information, cannot update")
 
         if source.startswith(("http://", "https://", "github:")):
             return self.install_from_url(source)
 
         source_path = Path(source)
         if not source_path.exists():
-            raise StoreError(f"来源目录不存在: {source}")
+            raise StoreError(f"Source directory does not exist: {source}")
 
         return self.upgrade(name, source_path)
 
@@ -363,19 +363,19 @@ class _SkillInstaller:
         try:
             skill_info = self.get(name)
         except StoreError:
-            return False, "Skill 不存在"
+            return False, "Skill not found"
 
         source = getattr(skill_info, "source", "")
         if not source:
-            return False, "没有来源信息"
+            return False, "No source information"
 
         if source.startswith(("http://", "https://", "github:")):
-            return True, f"来源: {source}"
+            return True, f"Source: {source}"
 
         source_path = Path(source)
         if source_path.exists():
             return True, f"来源: {source_path}"
-        return False, f"来源目录不存在: {source}"
+        return False, f"Source directory does not exist: {source}"
 
     def rollback(self, name: str, version: str | None = None) -> SimpleNamespace:
         """回滚 Skill 到指定版本。"""
