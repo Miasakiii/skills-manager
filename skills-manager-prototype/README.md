@@ -1,4 +1,4 @@
-# Skills Manager v0.1.1
+# Skills Manager v0.1.2
 
 > 写一次 AI Skill 定义，一键导出为 OpenAI / Claude / Gemini / MCP 等主流平台格式。
 

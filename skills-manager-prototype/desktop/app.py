@@ -202,7 +202,7 @@ class App:
                             spacing=4,
                             controls=[
                                 ft.Text("Skills Manager", size=16, weight=ft.FontWeight.BOLD),
-                                ft.Text(f"v0.1.1  ·  {len(self.skills)} 个 Skill", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
+                                ft.Text(f"v0.1.2  ·  {len(self.skills)} 个 Skill", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
                             ],
                         ),
                     ),
@@ -253,7 +253,7 @@ class App:
                                 ft.Icon(ft.Icons.INFO, size=14, color=ft.Colors.OUTLINE),
                                 ft.Text("Skills Manager", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
                                 ft.Container(
-                                    content=ft.Text("v0.1.1", size=10, color=ft.Colors.ON_SURFACE_VARIANT),
+                                    content=ft.Text("v0.1.2", size=10, color=ft.Colors.ON_SURFACE_VARIANT),
                                     bgcolor=ft.Colors.SURFACE_CONTAINER,
                                     border_radius=4,
                                     padding=ft.Padding(6, 2, 6, 2),
