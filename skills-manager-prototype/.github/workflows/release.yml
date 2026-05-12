@@ -93,12 +93,12 @@ jobs:
       - name: Build Desktop (Windows)
         if: runner.os == 'Windows'
         run: |
-          flet pack desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop;desktop" --add-data "src/skills_manager;skills_manager" --add-data "examples;examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
+          flet pack pyinstaller/desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop;desktop" --add-data "src/skills_manager;skills_manager" --add-data "examples;examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
 
       - name: Build Desktop (macOS)
         if: runner.os == 'macOS'
         run: |
-          flet pack desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop:desktop" --add-data "src/skills_manager:skills_manager" --add-data "examples:examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
+          flet pack pyinstaller/desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop:desktop" --add-data "src/skills_manager:skills_manager" --add-data "examples:examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
           # Wrap .app in .dmg using built-in hdiutil
           if [ -d "dist/${{ matrix.desktop_name }}.app" ]; then
             mkdir -p dist/dmg
@@ -109,7 +109,7 @@ jobs:
       - name: Build Desktop (Linux)
         if: runner.os == 'Linux'
         run: |
-          flet pack desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop:desktop" --add-data "src/skills_manager:skills_manager" --add-data "examples:examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
+          flet pack pyinstaller/desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop:desktop" --add-data "src/skills_manager:skills_manager" --add-data "examples:examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
           # Create tar.gz of the output directory
           if [ -d "dist/${{ matrix.desktop_name }}" ]; then
             tar -czf "dist/${{ matrix.desktop_name }}-linux.tar.gz" -C dist "${{ matrix.desktop_name }}"
