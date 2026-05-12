@@ -6,7 +6,7 @@ Skills Manager 是一个 AI Skill 格式转换工具。用户编写一次 SKILL.
 
 - **PyPI 包名**: `skillfmt`
 - **CLI 命令**: `skillfmt`
-- **版本**: v0.1.2
+- **版本**: v0.1.3
 
 ## 技术栈
 
