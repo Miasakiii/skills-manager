@@ -119,7 +119,7 @@ class TestStoreSearch:
         assert len(results) == 1
 
     def test_search_by_description(self, store, sample_skill_dir):
-        store.install(sample_skill_dir)
+        store.install(sample_skill_dir, translate=False)
         results = store.search("testing")
         assert len(results) == 1
 
