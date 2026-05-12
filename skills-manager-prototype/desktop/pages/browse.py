@@ -526,6 +526,7 @@ class BrowsePage:
         return ft.Column(
             scroll=ft.ScrollMode.AUTO,
             spacing=16,
+            expand=True,
             controls=[
                 self._build_header(),
                 self.batch_bar_container,

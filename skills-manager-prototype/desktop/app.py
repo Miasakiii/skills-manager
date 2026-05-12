@@ -78,6 +78,8 @@ class App:
         page.title = "Skills Manager"
         page.window.width = 1100
         page.window.height = 700
+        page.window.min_width = 800
+        page.window.min_height = 500
         page.theme_mode = self.theme_mode
         page.padding = 0
         page.fonts = {"monospace": "Cascadia Code, Consolas, monospace"}
