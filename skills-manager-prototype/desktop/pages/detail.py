@@ -99,7 +99,7 @@ def build_detail_page(app) -> ft.Control:
         ext = get_adapter(app.export_format).file_extension
         path = f"{ir.name}{ext}"
         allowed = ["json", "py", "yaml", "yml"]
-        save_path = await ft.FilePicker().save_file(
+        save_path = await app.file_picker.save_file(
             file_name=path,
             allowed_extensions=allowed,
         )

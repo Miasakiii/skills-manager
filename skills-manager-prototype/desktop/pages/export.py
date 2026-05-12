@@ -48,7 +48,7 @@ def build_export_page(app) -> ft.Control:
         app._batch_pack_format = e.control.value
 
     async def pick_dir(_):
-        path = await ft.FilePicker().get_directory_path()
+        path = await app.file_picker.get_directory_path()
         if path:
             app._batch_output_dir = path
             app._update_ui()

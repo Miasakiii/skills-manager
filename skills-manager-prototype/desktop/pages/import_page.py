@@ -133,7 +133,7 @@ def build_import_page(app) -> ft.Control:
 
     async def pick_dir(_):
         """选择扫描目录。"""
-        path = await ft.FilePicker().get_directory_path()
+        path = await app.file_picker.get_directory_path()
         if path:
             app._import_scan_path = path
             path_text.value = path

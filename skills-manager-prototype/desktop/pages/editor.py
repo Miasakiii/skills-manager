@@ -203,7 +203,7 @@ def build_editor_page(app) -> ft.Control:
         if vr.errors:
             app.show_snack(f"格式有误，请先修复: {vr.errors[0]}", error=True)
             return
-        save_dir = await ft.FilePicker().get_directory_path()
+        save_dir = await app.file_picker.get_directory_path()
         if not save_dir:
             return
         try:

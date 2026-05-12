@@ -28,6 +28,9 @@ class App:
         # 对话框引用
         self._active_dialog: ft.AlertDialog | None = None
 
+        # FilePicker（页面级复用，避免重复实例化）
+        self.file_picker = ft.FilePicker()
+
         # UI 组件引用（build 后赋值）
         self.page: ft.Page | None = None
         self.sidebar: ft.Container | None = None
@@ -66,6 +69,9 @@ class App:
 
         self.sidebar = self._build_sidebar()
         self.content_area = ft.Container(expand=True, padding=24, content=self._build_current_page())
+
+        # 注册 FilePicker 到页面 overlay
+        page.overlay.append(self.file_picker)
 
         # 注册全局快捷键
         page.on_keyboard_event = self._on_keyboard

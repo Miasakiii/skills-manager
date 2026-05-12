@@ -16,7 +16,7 @@ def build_install_dialog(app) -> ft.AlertDialog:
     )
 
     async def pick_directory(_):
-        path = await ft.FilePicker().get_directory_path()
+        path = await app.file_picker.get_directory_path()
         if not path:
             return
         app._close_active_dialog()
@@ -29,7 +29,7 @@ def build_install_dialog(app) -> ft.AlertDialog:
             app.show_snack(f"安装失败: {ex}", error=True)
 
     async def pick_package(_):
-        files = await ft.FilePicker().pick_files(allowed_extensions=["skill"])
+        files = await app.file_picker.pick_files(allowed_extensions=["skill"])
         if not files:
             return
         pkg_path = Path(files[0].path)
@@ -70,7 +70,7 @@ def build_install_dialog(app) -> ft.AlertDialog:
         app._update_ui()
 
     async def scan_directory(_):
-        path = await ft.FilePicker().get_directory_path()
+        path = await app.file_picker.get_directory_path()
         if not path:
             return
         app._close_active_dialog()
