@@ -85,7 +85,9 @@ jobs:
 
       - name: Install NSIS (Windows)
         if: runner.os == 'Windows'
-        run: choco install nsis --no-progress -y
+        run: |
+          choco install nsis --no-progress -y
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Append
 
       - name: Install Python deps
         run: |
