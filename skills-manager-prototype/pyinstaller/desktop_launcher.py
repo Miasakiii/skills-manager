@@ -1,4 +1,5 @@
 """Skills Manager 桌面应用 — PyInstaller/flet pack 启动入口。"""
+
 import sys
 from pathlib import Path
 
@@ -10,7 +11,7 @@ if str(_src) not in sys.path:
 if str(_project_root) not in sys.path:
     sys.path.insert(0, str(_project_root))
 
-from desktop.__main__ import main
+from desktop.__main__ import main  # noqa: E402
 
 if __name__ == "__main__":
     main()

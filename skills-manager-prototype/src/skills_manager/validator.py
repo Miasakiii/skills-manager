@@ -116,11 +116,15 @@ def validate_skill_md(content: str, dir_name: str = "") -> ValidationResult:
     # 检查字段长度（警告）
     name = fm.get("name", "")
     if len(name) > 64:
-        result.warnings.append(f"name 长度 {len(name)} 超过 64 字符（Claude Desktop 兼容性）")
+        result.warnings.append(
+            f"name 长度 {len(name)} 超过 64 字符（Claude Desktop 兼容性）"
+        )
 
     description = fm.get("description", "")
     if len(description) > 200:
-        result.warnings.append(f"description 长度 {len(description)} 超过 200 字符（Claude Desktop 兼容性）")
+        result.warnings.append(
+            f"description 长度 {len(description)} 超过 200 字符（Claude Desktop 兼容性）"
+        )
 
     # 检查目录名与 name 是否一致（警告）
     if dir_name and name and dir_name != name:
@@ -130,12 +134,16 @@ def validate_skill_md(content: str, dir_name: str = "") -> ValidationResult:
     valid_skill_types = {"component", "interactive", "workflow", ""}
     skill_type = fm.get("skill_type", "")
     if skill_type and skill_type not in valid_skill_types:
-        result.warnings.append(f"skill_type 值 '{skill_type}' 不合法，应为 component/interactive/workflow")
+        result.warnings.append(
+            f"skill_type 值 '{skill_type}' 不合法，应为 component/interactive/workflow"
+        )
 
     return result
 
 
-def validate_and_parse(content: str, dir_name: str = "") -> tuple[ValidationResult, SkillIR | None]:
+def validate_and_parse(
+    content: str, dir_name: str = ""
+) -> tuple[ValidationResult, SkillIR | None]:
     """验证并解析 SKILL.md 内容。
 
     Args:

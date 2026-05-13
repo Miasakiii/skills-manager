@@ -5,9 +5,19 @@ from __future__ import annotations
 import flet as ft
 
 from ..components import (
-    EmptyState, FilterEmptyState, RecentUsage, SearchBar,
-    SearchEmptyState, SkillCard, SkillListItem, TagCloud,
-    FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_BODY, FONT_SMALL,
+    EmptyState,
+    FilterEmptyState,
+    RecentUsage,
+    SearchBar,
+    SearchEmptyState,
+    SkillCard,
+    SkillListItem,
+    TagCloud,
+    FONT_TITLE,
+    FONT_SUBTITLE,
+    FONT_SECTION,
+    FONT_BODY,
+    FONT_SMALL,
 )
 
 # 一级分类定义
@@ -94,7 +104,9 @@ class BrowsePage:
                 reverse=True,
             )
         if key == "category":
-            return sorted(skill_list, key=lambda s: (s.category or "misc", s.name.lower()))
+            return sorted(
+                skill_list, key=lambda s: (s.category or "misc", s.name.lower())
+            )
         return skill_list
 
     def _filter_skills(self) -> list:
@@ -107,51 +119,60 @@ class BrowsePage:
         if q:
             filtered = []
             for s in self.skills:
-                text = " ".join([
-                    s.name, s.description or "",
-                    s.summary or "", " ".join(s.tags or []),
-                ]).lower()
+                text = " ".join(
+                    [
+                        s.name,
+                        s.description or "",
+                        s.summary or "",
+                        " ".join(s.tags or []),
+                    ]
+                ).lower()
                 if q in text:
                     filtered.append(s)
         if st:
-            filtered = [
-                s for s in filtered
-                if getattr(s, "skill_type", "") == st
-            ]
+            filtered = [s for s in filtered if getattr(s, "skill_type", "") == st]
         if cat:
-            filtered = [
-                s for s in filtered
-                if (s.category or "misc") == cat
-            ]
+            filtered = [s for s in filtered if (s.category or "misc") == cat]
         if tag:
-            filtered = [
-                s for s in filtered
-                if tag in (getattr(s, "tags", None) or [])
-            ]
+            filtered = [s for s in filtered if tag in (getattr(s, "tags", None) or [])]
         return filtered
 
     # ── 视图构建 ──
 
-    def _build_list_items(self, skill_list: list, bm: bool, cm: bool, checked: set) -> list:
+    def _build_list_items(
+        self, skill_list: list, bm: bool, cm: bool, checked: set
+    ) -> list:
         """构建列表视图项。"""
         return [
             SkillListItem(
-                s, on_click=self.app.show_detail, checkbox_mode=bm,
-                checked=s.name in checked, on_check=self._on_skill_check, compact=cm,
+                s,
+                on_click=self.app.show_detail,
+                checkbox_mode=bm,
+                checked=s.name in checked,
+                on_check=self._on_skill_check,
+                compact=cm,
             )
             for s in skill_list
         ]
 
-    def _build_grid_items(self, skill_list: list, bm: bool, cm: bool, checked: set) -> ft.ResponsiveRow:
+    def _build_grid_items(
+        self, skill_list: list, bm: bool, cm: bool, checked: set
+    ) -> ft.ResponsiveRow:
         """构建网格视图项。"""
         grid = ft.ResponsiveRow(spacing=12, run_spacing=12)
         grid.controls = [
             ft.Column(
                 col={"sm": 12, "md": 6, "lg": 4},
-                controls=[SkillCard(
-                    s, on_click=self.app.show_detail, checkbox_mode=bm,
-                    checked=s.name in checked, on_check=self._on_skill_check, compact=cm,
-                )],
+                controls=[
+                    SkillCard(
+                        s,
+                        on_click=self.app.show_detail,
+                        checkbox_mode=bm,
+                        checked=s.name in checked,
+                        on_check=self._on_skill_check,
+                        compact=cm,
+                    )
+                ],
             )
             for s in skill_list
         ]
@@ -179,13 +200,18 @@ class BrowsePage:
             if use_sections:
                 self._show_grouped(filtered, vm, bm, cm, checked)
             elif vm == "list":
-                self.content_container.controls = self._build_list_items(filtered, bm, cm, checked)
+                self.content_container.controls = self._build_list_items(
+                    filtered, bm, cm, checked
+                )
             else:
-                self.content_container.controls = [self._build_grid_items(filtered, bm, cm, checked)]
+                self.content_container.controls = [
+                    self._build_grid_items(filtered, bm, cm, checked)
+                ]
         self.app.page.update()
 
     def _show_empty_state(self, q: str, st: str, cat: str, tag: str):
         """显示空状态。"""
+
         def clear_all_filters():
             self.app.search_query = ""
             self.app.selected_skill_type = ""
@@ -194,11 +220,17 @@ class BrowsePage:
             self._refresh_all()
 
         if q:
-            self.content_container.controls = [SearchEmptyState(query=q, on_clear=clear_all_filters)]
+            self.content_container.controls = [
+                SearchEmptyState(query=q, on_clear=clear_all_filters)
+            ]
         elif st or cat or tag:
-            self.content_container.controls = [FilterEmptyState(on_clear=clear_all_filters)]
+            self.content_container.controls = [
+                FilterEmptyState(on_clear=clear_all_filters)
+            ]
         else:
-            self.content_container.controls = [SearchEmptyState(query=q, on_clear=clear_all_filters)]
+            self.content_container.controls = [
+                SearchEmptyState(query=q, on_clear=clear_all_filters)
+            ]
 
     def _show_grouped(self, filtered: list, vm: str, bm: bool, cm: bool, checked: set):
         """按分类分组展示。"""
@@ -212,10 +244,17 @@ class BrowsePage:
             if cat_key not in grouped:
                 continue
             skill_list = grouped[cat_key]
-            section_title = ft.Row([
-                ft.Icon(cat_icon, size=20, color=ft.Colors.PRIMARY),
-                ft.Text(f"{cat_label}（{len(skill_list)}）", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-            ], spacing=8)
+            section_title = ft.Row(
+                [
+                    ft.Icon(cat_icon, size=20, color=ft.Colors.PRIMARY),
+                    ft.Text(
+                        f"{cat_label}（{len(skill_list)}）",
+                        size=FONT_SECTION,
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                ],
+                spacing=8,
+            )
 
             if vm == "list":
                 items = self._build_list_items(skill_list, bm, cm, checked)
@@ -232,8 +271,10 @@ class BrowsePage:
         self.category_chips_row.controls.clear()
         for value, label, icon in CATEGORIES:
             is_selected = cat == value
+
             def _make_cat_handler(v=value):
                 return lambda _e: self._on_category_select(v)
+
             chip = ft.Chip(
                 label=ft.Text(label, size=FONT_SMALL),
                 leading=ft.Icon(icon, size=16),
@@ -242,7 +283,11 @@ class BrowsePage:
             )
             if value == "":
                 badge = ft.Container(
-                    content=ft.Text(str(len(self.skills)), size=FONT_SMALL, color=ft.Colors.ON_PRIMARY),
+                    content=ft.Text(
+                        str(len(self.skills)),
+                        size=FONT_SMALL,
+                        color=ft.Colors.ON_PRIMARY,
+                    ),
                     bgcolor=ft.Colors.PRIMARY,
                     border_radius=10,
                     padding=ft.Padding(6, 1, 6, 1),
@@ -258,8 +303,10 @@ class BrowsePage:
         st = self._get_state("selected_skill_type", "")
         self.type_chips_row.controls.clear()
         for value, label, icon in _SKILL_TYPES:
+
             def _make_type_handler(v=value):
                 return lambda _e: self._on_type_select(v)
+
             self.type_chips_row.controls.append(
                 ft.Chip(
                     label=ft.Text(label, size=FONT_SMALL),
@@ -312,27 +359,40 @@ class BrowsePage:
                 content=ft.Row(
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     controls=[
-                        ft.Row([
-                            ft.Text(f"已选择 {len(checked)} 个 Skill", size=FONT_BODY),
-                            ft.TextButton("全选", on_click=lambda _: self._on_select_all()),
-                            ft.TextButton("取消全选", on_click=lambda _: self._on_deselect_all()),
-                        ], spacing=8),
-                        ft.Row([
-                            ft.FilledButton(
-                                "批量导出",
-                                icon=ft.Icons.FILE_DOWNLOAD,
-                                on_click=lambda _: self._on_batch_export(),
-                            ),
-                            ft.OutlinedButton(
-                                "批量卸载",
-                                icon=ft.Icons.DELETE,
-                                on_click=lambda _: self._on_batch_uninstall(),
-                            ),
-                            ft.TextButton(
-                                "退出批量模式",
-                                on_click=lambda _: self._on_toggle_batch_mode(),
-                            ),
-                        ], spacing=8),
+                        ft.Row(
+                            [
+                                ft.Text(
+                                    f"已选择 {len(checked)} 个 Skill", size=FONT_BODY
+                                ),
+                                ft.TextButton(
+                                    "全选", on_click=lambda _: self._on_select_all()
+                                ),
+                                ft.TextButton(
+                                    "取消全选",
+                                    on_click=lambda _: self._on_deselect_all(),
+                                ),
+                            ],
+                            spacing=8,
+                        ),
+                        ft.Row(
+                            [
+                                ft.FilledButton(
+                                    "批量导出",
+                                    icon=ft.Icons.FILE_DOWNLOAD,
+                                    on_click=lambda _: self._on_batch_export(),
+                                ),
+                                ft.OutlinedButton(
+                                    "批量卸载",
+                                    icon=ft.Icons.DELETE,
+                                    on_click=lambda _: self._on_batch_uninstall(),
+                                ),
+                                ft.TextButton(
+                                    "退出批量模式",
+                                    on_click=lambda _: self._on_toggle_batch_mode(),
+                                ),
+                            ],
+                            spacing=8,
+                        ),
                     ],
                 ),
             ),
@@ -409,6 +469,7 @@ class BrowsePage:
             self.app.show_snack("请先选择要卸载的 Skill", error=True)
             return
         from ..dialogs import build_batch_uninstall_dialog
+
         self.app._active_dialog = build_batch_uninstall_dialog(self.app, list(checked))
         self.app.page.show_dialog(self.app._active_dialog)
 
@@ -427,7 +488,9 @@ class BrowsePage:
             self._compact_btn.icon = (
                 ft.Icons.VIEW_COMPACT if self.app.compact_mode else ft.Icons.VIEW_AGENDA
             )
-            self._compact_btn.tooltip = "简洁模式" if self.app.compact_mode else "详细模式"
+            self._compact_btn.tooltip = (
+                "简洁模式" if self.app.compact_mode else "详细模式"
+            )
         self._rebuild_cards()
 
     def _update_view_buttons(self):
@@ -490,21 +553,28 @@ class BrowsePage:
             on_click=lambda _: self._on_toggle_compact(),
         )
 
-        return ft.Row([
-            ft.Text("Skill 库", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-            ft.Row([
-                ft.Text(
-                    f"{len(self.skills)} 个已安装",
-                    size=FONT_SUBTITLE,
-                    color=ft.Colors.ON_SURFACE_VARIANT,
+        return ft.Row(
+            [
+                ft.Text("Skill 库", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+                ft.Row(
+                    [
+                        ft.Text(
+                            f"{len(self.skills)} 个已安装",
+                            size=FONT_SUBTITLE,
+                            color=ft.Colors.ON_SURFACE_VARIANT,
+                        ),
+                        self._sort_dropdown,
+                        self._compact_btn,
+                        self._grid_btn,
+                        self._list_btn,
+                        self._batch_btn,
+                    ],
+                    spacing=8,
+                    alignment=ft.MainAxisAlignment.CENTER,
                 ),
-                self._sort_dropdown,
-                self._compact_btn,
-                self._grid_btn,
-                self._list_btn,
-                self._batch_btn,
-            ], spacing=8, alignment=ft.MainAxisAlignment.CENTER),
-        ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+        )
 
     def build(self) -> ft.Control:
         """构建并返回浏览页控件。"""

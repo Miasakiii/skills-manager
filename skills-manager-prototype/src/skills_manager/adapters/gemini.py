@@ -48,7 +48,9 @@ class GeminiAdapter(Adapter):
         }
         return json.dumps(result, indent=2, ensure_ascii=False)
 
-    def _to_gemini_types(self, node: dict | list | str | int | bool | None) -> dict | list | str | int | bool | None:
+    def _to_gemini_types(
+        self, node: dict | list | str | int | bool | None
+    ) -> dict | list | str | int | bool | None:
         """递归将 JSON Schema 中的类型名转换为 Gemini 大写格式。"""
         if isinstance(node, dict):
             result = {}

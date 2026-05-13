@@ -62,7 +62,12 @@ def create_app(store: Store | None = None) -> FastAPI:
                 "category": ir.category,
                 "author": ir.author,
                 "parameters": [
-                    {"name": p.name, "type": p.type, "description": p.description, "required": p.required}
+                    {
+                        "name": p.name,
+                        "type": p.type,
+                        "description": p.description,
+                        "required": p.required,
+                    }
                     for p in ir.parameters
                 ],
                 "installed_at": getattr(skill, "installed_at", ""),

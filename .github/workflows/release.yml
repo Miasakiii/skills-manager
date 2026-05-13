@@ -99,7 +99,7 @@ jobs:
       - name: Build Desktop (Windows)
         if: runner.os == 'Windows'
         run: |
-          flet pack pyinstaller/desktop_launcher.py --name "${{ matrix.desktop_name }}" --add-data "desktop;desktop" --add-data "src/skills_manager;skills_manager" --add-data "examples;examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
+          flet pack pyinstaller/desktop_launcher.py --name "${{ matrix.desktop_name }}" --distpath dist_desktop --add-data "desktop;desktop" --add-data "src/skills_manager;skills_manager" --add-data "examples;examples" --hidden-import "yaml" --hidden-import "typer" --hidden-import "rich" -y
 
       - name: Build Desktop (macOS)
         if: runner.os == 'macOS'
@@ -124,9 +124,10 @@ jobs:
       - name: Build Windows installer (NSIS)
         if: runner.os == 'Windows'
         run: |
-          # NSIS script expects specific filenames in dist/
+          # Merge CLI and Desktop outputs to dist/ for NSIS
+          mkdir -p dist
           mv dist/${{ matrix.cli_name }}.exe dist/skills-manager-cli.exe
-          mv dist/${{ matrix.desktop_name }}.exe dist/skills-manager-desktop.exe
+          mv dist_desktop/${{ matrix.desktop_name }}.exe dist/skills-manager-desktop.exe
           # Build NSIS installer
           makensis /INPUTCHARSET UTF8 installer\setup.nsi
           # Rename for clarity

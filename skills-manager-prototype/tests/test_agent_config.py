@@ -1,7 +1,5 @@
 """测试 Agent 配置生成器。"""
 
-
-
 from skills_manager.agent_config import generate_claude_md, update_agent_claude_md
 
 
@@ -24,7 +22,11 @@ class TestGenerateClaudeMd:
 
     def test_multiple_skills(self):
         skills = [
-            {"name": "translator", "skill_type": "component", "description": "翻译工具"},
+            {
+                "name": "translator",
+                "skill_type": "component",
+                "description": "翻译工具",
+            },
             {"name": "jtbd", "skill_type": "interactive", "description": "需求分析"},
         ]
         content = generate_claude_md(skills)
@@ -38,9 +40,7 @@ class TestGenerateClaudeMd:
         assert "test" in content
 
     def test_format(self):
-        skills = [
-            {"name": "a", "skill_type": "b", "description": "c"}
-        ]
+        skills = [{"name": "a", "skill_type": "b", "description": "c"}]
         content = generate_claude_md(skills)
         lines = content.strip().split("\n")
         # 检查表格格式
@@ -55,9 +55,7 @@ class TestUpdateAgentClaudeMd:
     def test_update_existing_dir(self, tmp_path):
         agent_dir = tmp_path / "agent"
         agent_dir.mkdir()
-        skills = [
-            {"name": "test", "skill_type": "component", "description": "Test"}
-        ]
+        skills = [{"name": "test", "skill_type": "component", "description": "Test"}]
         result = update_agent_claude_md(agent_dir, skills)
         assert result is True
         claude_md = agent_dir / "CLAUDE.md"

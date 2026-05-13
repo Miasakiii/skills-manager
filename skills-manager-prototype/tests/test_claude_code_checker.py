@@ -49,7 +49,10 @@ class TestSkillReport:
 
     def test_only_errors(self):
         report = SkillReport(path=Path("/test"), name="test")
-        report.issues = [SkillIssue(severity="error", message="e1"), SkillIssue(severity="error", message="e2")]
+        report.issues = [
+            SkillIssue(severity="error", message="e1"),
+            SkillIssue(severity="error", message="e2"),
+        ]
         assert report.ok is False
         assert report.error_count == 2
         assert report.warning_count == 0
@@ -402,9 +405,7 @@ class TestAutoFix:
         skill_dir = tmp_path / "my-skill"
         skill_dir.mkdir()
         md_path = skill_dir / "SKILL.md"
-        md_path.write_text(
-            "---\ndescription: desc\n---\n", encoding="utf-8"
-        )
+        md_path.write_text("---\ndescription: desc\n---\n", encoding="utf-8")
         checker = ClaudeCodeChecker(skills_dir=tmp_path)
         report = checker._check_one(skill_dir)
         # missing name + missing description (description exists so no)
@@ -448,9 +449,7 @@ class TestSummary:
 
     def test_shows_auto_fixable(self, tmp_path):
         (tmp_path / "test").mkdir()
-        (tmp_path / "test" / "SKILL.md").write_text(
-            "---\ndescription: desc\n---\n"
-        )
+        (tmp_path / "test" / "SKILL.md").write_text("---\ndescription: desc\n---\n")
         checker = ClaudeCodeChecker(skills_dir=tmp_path)
         reports = checker.scan()
         summary = checker.summary(reports)

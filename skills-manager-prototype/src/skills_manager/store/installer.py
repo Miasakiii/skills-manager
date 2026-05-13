@@ -42,7 +42,9 @@ class _SkillInstaller:
         """
         validation = validate_skill_dir(source)
         if not validation.valid:
-            logger.warning("安装验证失败: %s — %s", source, "; ".join(validation.errors))
+            logger.warning(
+                "安装验证失败: %s — %s", source, "; ".join(validation.errors)
+            )
             raise StoreError(f"Validation failed: {'; '.join(validation.errors)}")
 
         skill_md = source / "SKILL.md"
@@ -76,12 +78,14 @@ class _SkillInstaller:
         )
 
         history = self.get_version_history(install_name)
-        history.append({
-            "version": ir.version,
-            "installed_at": datetime.now(timezone.utc).isoformat(),
-            "source": str(source),
-            "description": ir.description,
-        })
+        history.append(
+            {
+                "version": ir.version,
+                "installed_at": datetime.now(timezone.utc).isoformat(),
+                "source": str(source),
+                "description": ir.description,
+            }
+        )
         self._save_version_history(install_name, history)
 
         self._update_index(install_name, ir, str(source))
@@ -102,7 +106,9 @@ class _SkillInstaller:
 
         try:
             with tarfile.open(package_path, "r:gz") as tar:
-                tar.extractall(tmp_dir, filter="data" if hasattr(tarfile, "data_filter") else None)
+                tar.extractall(
+                    tmp_dir, filter="data" if hasattr(tarfile, "data_filter") else None
+                )
 
             skill_dir = self._find_skill_dir(tmp_dir)
             if not skill_dir:
@@ -122,9 +128,7 @@ class _SkillInstaller:
     def install_from_url(self, url: str) -> SimpleNamespace:
         """从 URL 安装 Skill。"""
         if importlib.util.find_spec("httpx") is None:
-            raise StoreError(
-                "需要安装 httpx：pip install skills-manager[remote]"
-            )
+            raise StoreError("需要安装 httpx：pip install skills-manager[remote]")
 
         tmp_dir = self.base_dir / ".tmp"
         tmp_dir.mkdir(exist_ok=True)
@@ -179,6 +183,7 @@ class _SkillInstaller:
         zip_path.write_bytes(response.content)
 
         import zipfile
+
         with zipfile.ZipFile(zip_path) as zf:
             zf.extractall(tmp_dir)
 
@@ -191,7 +196,9 @@ class _SkillInstaller:
 
         return self.install(skill_dir)
 
-    def _install_from_archive(self, archive_path: Path, tmp_dir: Path) -> SimpleNamespace:
+    def _install_from_archive(
+        self, archive_path: Path, tmp_dir: Path
+    ) -> SimpleNamespace:
         """从压缩包安装。"""
         import tarfile
         import zipfile
@@ -204,7 +211,10 @@ class _SkillInstaller:
                 zf.extractall(extract_dir)
         else:
             with tarfile.open(archive_path) as tf:
-                tf.extractall(extract_dir, filter="data" if hasattr(tarfile, "data_filter") else None)
+                tf.extractall(
+                    extract_dir,
+                    filter="data" if hasattr(tarfile, "data_filter") else None,
+                )
 
         skill_dir = self._find_skill_dir(extract_dir)
         if not skill_dir:
@@ -253,7 +263,9 @@ class _SkillInstaller:
         versions_dir.mkdir(exist_ok=True)
 
         version_name = ir.version.replace(".", "_")
-        snapshot_dir = versions_dir / f"v{version_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        snapshot_dir = (
+            versions_dir / f"v{version_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        )
         snapshot_dir.mkdir(exist_ok=True)
 
         for item in skill_dir.iterdir():
@@ -265,12 +277,14 @@ class _SkillInstaller:
                 shutil.copytree(item, snapshot_dir / item.name)
 
         history = self.get_version_history(name)
-        history.append({
-            "version": ir.version,
-            "snapshot": snapshot_dir.name,
-            "installed_at": datetime.now(timezone.utc).isoformat(),
-            "description": ir.description,
-        })
+        history.append(
+            {
+                "version": ir.version,
+                "snapshot": snapshot_dir.name,
+                "installed_at": datetime.now(timezone.utc).isoformat(),
+                "description": ir.description,
+            }
+        )
         self._save_version_history(name, history)
 
     def upgrade(self, name: str, source: Path) -> SimpleNamespace:
@@ -310,12 +324,14 @@ class _SkillInstaller:
             json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8"
         )
 
-        history.append({
-            "version": new_ir.version,
-            "installed_at": datetime.now(timezone.utc).isoformat(),
-            "source": str(source),
-            "description": new_ir.description,
-        })
+        history.append(
+            {
+                "version": new_ir.version,
+                "installed_at": datetime.now(timezone.utc).isoformat(),
+                "source": str(source),
+                "description": new_ir.description,
+            }
+        )
         self._save_version_history(name, history)
 
         self._update_index(name, new_ir, str(source))

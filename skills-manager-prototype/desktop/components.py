@@ -10,24 +10,27 @@ import flet as ft
 
 # ── 字体规范 ──────────────────────────────────────────────
 # 建立 Material Design 3 风格层级，确保中英文混排清晰美观
-FONT_DISPLAY = 28     # 大标题 / 空状态主标题
-FONT_TITLE = 24       # 页面标题
-FONT_HEADLINE = 18    # 区块大标题 / 详情页名称
-FONT_SECTION = 15     # 区块标题 / 分类标题
-FONT_SUBTITLE = 14    # 副标题 / 描述 / 统计
-FONT_BODY = 13        # 正文 / 表单标签
-FONT_CARD_NAME = 15   # 卡片名称（与区块标题同级）
-FONT_CARD_DESC = 12   # 卡片描述
-FONT_TAG = 11         # 标签 / Tag
-FONT_META = 12        # 元数据（版本、分类）
-FONT_SMALL = 11       # 小字（时间、角落信息）
+FONT_DISPLAY = 28  # 大标题 / 空状态主标题
+FONT_TITLE = 24  # 页面标题
+FONT_HEADLINE = 18  # 区块大标题 / 详情页名称
+FONT_SECTION = 15  # 区块标题 / 分类标题
+FONT_SUBTITLE = 14  # 副标题 / 描述 / 统计
+FONT_BODY = 13  # 正文 / 表单标签
+FONT_CARD_NAME = 15  # 卡片名称（与区块标题同级）
+FONT_CARD_DESC = 12  # 卡片描述
+FONT_TAG = 11  # 标签 / Tag
+FONT_META = 12  # 元数据（版本、分类）
+FONT_SMALL = 11  # 小字（时间、角落信息）
 
 # 全局字体栈（Windows 优先 Segoe UI + 微软雅黑，兼顾 macOS/Linux）
-FONT_FAMILY_UI = "Segoe UI, Microsoft YaHei UI, PingFang SC, Noto Sans SC, system-ui, sans-serif"
+FONT_FAMILY_UI = (
+    "Segoe UI, Microsoft YaHei UI, PingFang SC, Noto Sans SC, system-ui, sans-serif"
+)
 FONT_FAMILY_MONO = "Cascadia Code, Consolas, monospace"
 
 
 # ── 工具函数 ──────────────────────────────────────────────
+
 
 def _relative_time(iso_str: str) -> str:
     """将 ISO 时间字符串转为相对时间描述（如 '3 天前'）。"""
@@ -60,11 +63,23 @@ def _source_info(source: str) -> dict:
         return {"label": "本地", "icon": ft.Icons.COMPUTER, "color": ft.Colors.GREY}
     lower = source.lower()
     if "github.com" in lower:
-        return {"label": "GitHub", "icon": ft.Icons.CODE, "color": ft.Colors.ON_SURFACE_VARIANT}
+        return {
+            "label": "GitHub",
+            "icon": ft.Icons.CODE,
+            "color": ft.Colors.ON_SURFACE_VARIANT,
+        }
     if "anthropic.com" in lower:
-        return {"label": "Anthropic", "icon": ft.Icons.SMART_TOY, "color": ft.Colors.BLUE}
+        return {
+            "label": "Anthropic",
+            "icon": ft.Icons.SMART_TOY,
+            "color": ft.Colors.BLUE,
+        }
     if "openai.com" in lower:
-        return {"label": "OpenAI", "icon": ft.Icons.PSYCHOLOGY, "color": ft.Colors.GREEN}
+        return {
+            "label": "OpenAI",
+            "icon": ft.Icons.PSYCHOLOGY,
+            "color": ft.Colors.GREEN,
+        }
     if "google" in lower:
         return {"label": "Google", "icon": ft.Icons.SEARCH, "color": ft.Colors.RED}
     if source.startswith(("http://", "https://")):
@@ -135,7 +150,9 @@ class SkillCard(ft.Container):
 
         # 类型图标
         skill_type = getattr(skill_info, "skill_type", "")
-        type_icon, type_label = SKILL_TYPE_ICONS.get(skill_type, (ft.Icons.EXTENSION, ""))
+        type_icon, type_label = SKILL_TYPE_ICONS.get(
+            skill_type, (ft.Icons.EXTENSION, "")
+        )
 
         # 来源标识
         source = getattr(skill_info, "source", "")
@@ -146,7 +163,9 @@ class SkillCard(ft.Container):
         if checkbox_mode:
             checkbox = ft.Checkbox(
                 value=checked,
-                on_change=lambda e: on_check(skill_info.name, e.control.value) if on_check else None,
+                on_change=lambda e: (
+                    on_check(skill_info.name, e.control.value) if on_check else None
+                ),
             )
 
         # 顶部行：复选框（可选）+ 类型图标 + 名称 + 来源标识
@@ -154,7 +173,12 @@ class SkillCard(ft.Container):
         if checkbox_mode:
             top_left.insert(0, checkbox)
         top_left.append(
-            ft.Text(skill_info.name, size=FONT_CARD_NAME, weight=ft.FontWeight.BOLD, color=tag_color),
+            ft.Text(
+                skill_info.name,
+                size=FONT_CARD_NAME,
+                weight=ft.FontWeight.BOLD,
+                color=tag_color,
+            ),
         )
 
         top_row = ft.Row(
@@ -162,7 +186,9 @@ class SkillCard(ft.Container):
             controls=[
                 ft.Row(top_left, spacing=6),
                 ft.Container(
-                    content=ft.Icon(source_info["icon"], size=16, color=source_info["color"]),
+                    content=ft.Icon(
+                        source_info["icon"], size=16, color=source_info["color"]
+                    ),
                     tooltip=source_info["label"],
                     border_radius=4,
                     padding=ft.Padding(4, 2, 4, 2),
@@ -175,8 +201,10 @@ class SkillCard(ft.Container):
         desc_max_len = 80 if compact else 120
         desc = ft.Text(
             (skill_info.summary or skill_info.description or "")[:desc_max_len],
-            size=FONT_CARD_DESC, color=ft.Colors.ON_SURFACE_VARIANT,
-            max_lines=desc_max_lines, overflow=ft.TextOverflow.ELLIPSIS,
+            size=FONT_CARD_DESC,
+            color=ft.Colors.ON_SURFACE_VARIANT,
+            max_lines=desc_max_lines,
+            overflow=ft.TextOverflow.ELLIPSIS,
         )
 
         controls = [top_row, desc]
@@ -197,7 +225,9 @@ class SkillCard(ft.Container):
             for t in visible_tags:
                 tag_controls.append(
                     ft.Container(
-                        content=ft.Text(t, size=FONT_TAG, color=ft.Colors.ON_SURFACE_VARIANT),
+                        content=ft.Text(
+                            t, size=FONT_TAG, color=ft.Colors.ON_SURFACE_VARIANT
+                        ),
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
                         border_radius=4,
                         padding=ft.Padding(6, 2, 6, 2),
@@ -205,18 +235,32 @@ class SkillCard(ft.Container):
                 )
             if overflow_count > 0:
                 tag_controls.append(
-                    ft.Text(f"+{overflow_count}", size=FONT_TAG, color=ft.Colors.OUTLINE)
+                    ft.Text(
+                        f"+{overflow_count}", size=FONT_TAG, color=ft.Colors.OUTLINE
+                    )
                 )
             controls.append(ft.Row(tag_controls, spacing=4, wrap=True))
 
             # 底部行：版本 + 分类 + 类型
             meta_items = [
-                ft.Chip(label=ft.Text(skill_info.version, size=FONT_META), bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST, padding=0),
-                ft.Chip(label=ft.Text(skill_info.category or "misc", size=FONT_META), bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST, padding=0),
+                ft.Chip(
+                    label=ft.Text(skill_info.version, size=FONT_META),
+                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                    padding=0,
+                ),
+                ft.Chip(
+                    label=ft.Text(skill_info.category or "misc", size=FONT_META),
+                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                    padding=0,
+                ),
             ]
             if type_label:
                 meta_items.append(
-                    ft.Chip(label=ft.Text(type_label, size=FONT_META), bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST, padding=0),
+                    ft.Chip(
+                        label=ft.Text(type_label, size=FONT_META),
+                        bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                        padding=0,
+                    ),
                 )
             controls.append(ft.Row(meta_items, spacing=4, wrap=True))
 
@@ -225,7 +269,9 @@ class SkillCard(ft.Container):
                 controls.append(
                     ft.Row(
                         alignment=ft.MainAxisAlignment.END,
-                        controls=[ft.Text(time_text, size=FONT_TAG, color=ft.Colors.OUTLINE)],
+                        controls=[
+                            ft.Text(time_text, size=FONT_TAG, color=ft.Colors.OUTLINE)
+                        ],
                     )
                 )
 
@@ -304,7 +350,9 @@ class SkillListItem(ft.Container):
 
         # 类型图标
         skill_type = getattr(skill_info, "skill_type", "")
-        type_icon, type_label = SKILL_TYPE_ICONS.get(skill_type, (ft.Icons.EXTENSION, ""))
+        type_icon, type_label = SKILL_TYPE_ICONS.get(
+            skill_type, (ft.Icons.EXTENSION, "")
+        )
 
         # 来源标识
         source = getattr(skill_info, "source", "")
@@ -315,32 +363,45 @@ class SkillListItem(ft.Container):
         if checkbox_mode:
             checkbox = ft.Checkbox(
                 value=checked,
-                on_change=lambda e: on_check(skill_info.name, e.control.value) if on_check else None,
+                on_change=lambda e: (
+                    on_check(skill_info.name, e.control.value) if on_check else None
+                ),
             )
 
         # 左侧：复选框（可选）+ 图标 + 名称 + 描述
         left_items = []
         if checkbox_mode:
             left_items.append(checkbox)
-        left_items.extend([
-            ft.Icon(type_icon, color=tag_color, size=20),
-            ft.Column(
-                spacing=2,
-                controls=[
-                    ft.Text(skill_info.name, size=FONT_CARD_NAME, weight=ft.FontWeight.BOLD, color=tag_color),
-                    ft.Text(
-                        (skill_info.summary or skill_info.description or "")[:80],
-                        size=FONT_CARD_DESC, color=ft.Colors.ON_SURFACE_VARIANT,
-                        max_lines=1, overflow=ft.TextOverflow.ELLIPSIS,
-                    ),
-                ],
-            ),
-        ])
+        left_items.extend(
+            [
+                ft.Icon(type_icon, color=tag_color, size=20),
+                ft.Column(
+                    spacing=2,
+                    controls=[
+                        ft.Text(
+                            skill_info.name,
+                            size=FONT_CARD_NAME,
+                            weight=ft.FontWeight.BOLD,
+                            color=tag_color,
+                        ),
+                        ft.Text(
+                            (skill_info.summary or skill_info.description or "")[:80],
+                            size=FONT_CARD_DESC,
+                            color=ft.Colors.ON_SURFACE_VARIANT,
+                            max_lines=1,
+                            overflow=ft.TextOverflow.ELLIPSIS,
+                        ),
+                    ],
+                ),
+            ]
+        )
 
         # 右侧：来源 + 详细模式下的额外信息
         right_items = [
             ft.Container(
-                content=ft.Icon(source_info["icon"], size=14, color=source_info["color"]),
+                content=ft.Icon(
+                    source_info["icon"], size=14, color=source_info["color"]
+                ),
                 tooltip=source_info["label"],
                 border_radius=4,
                 padding=ft.Padding(4, 1, 4, 1),
@@ -361,21 +422,35 @@ class SkillListItem(ft.Container):
             for t in visible_tags:
                 tag_controls.append(
                     ft.Container(
-                        content=ft.Text(t, size=FONT_TAG, color=ft.Colors.ON_SURFACE_VARIANT),
+                        content=ft.Text(
+                            t, size=FONT_TAG, color=ft.Colors.ON_SURFACE_VARIANT
+                        ),
                         bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
                         border_radius=4,
                         padding=ft.Padding(4, 1, 4, 1),
                     )
                 )
             if overflow_count > 0:
-                tag_controls.append(ft.Text(f"+{overflow_count}", size=FONT_TAG, color=ft.Colors.OUTLINE))
+                tag_controls.append(
+                    ft.Text(
+                        f"+{overflow_count}", size=FONT_TAG, color=ft.Colors.OUTLINE
+                    )
+                )
 
-            right_items = [
-                ft.Row(tag_controls, spacing=4),
-                ft.Text(skill_info.version, size=FONT_META, color=ft.Colors.OUTLINE),
-            ] + right_items + [
-                ft.Text(time_text, size=FONT_TAG, color=ft.Colors.OUTLINE) if time_text else ft.Container(),
-            ]
+            right_items = (
+                [
+                    ft.Row(tag_controls, spacing=4),
+                    ft.Text(
+                        skill_info.version, size=FONT_META, color=ft.Colors.OUTLINE
+                    ),
+                ]
+                + right_items
+                + [
+                    ft.Text(time_text, size=FONT_TAG, color=ft.Colors.OUTLINE)
+                    if time_text
+                    else ft.Container(),
+                ]
+            )
 
         self.content = ft.Row(
             alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -414,7 +489,9 @@ class SkillListItem(ft.Container):
 class SearchBar(ft.Container):
     """搜索栏组件（带防抖）。"""
 
-    def __init__(self, on_search, placeholder: str = "搜索 Skill...", debounce_ms: int = 300):
+    def __init__(
+        self, on_search, placeholder: str = "搜索 Skill...", debounce_ms: int = 300
+    ):
         super().__init__()
         self.on_search = on_search
         self.debounce_ms = debounce_ms
@@ -464,7 +541,7 @@ class TagCloud(ft.Container):
         # 统计标签频率
         tag_counts: dict[str, int] = {}
         for s in skills:
-            for tag in (getattr(s, "tags", None) or []):
+            for tag in getattr(s, "tags", None) or []:
                 tag_counts[tag] = tag_counts.get(tag, 0) + 1
 
         # 按频率降序排序，最多显示 15 个
@@ -493,10 +570,16 @@ class TagCloud(ft.Container):
                     content=ft.Text(
                         f"{tag} ({count})",
                         size=size,
-                        weight=ft.FontWeight.W_500 if is_selected else ft.FontWeight.NORMAL,
-                        color=ft.Colors.ON_PRIMARY if is_selected else ft.Colors.ON_SURFACE_VARIANT,
+                        weight=ft.FontWeight.W_500
+                        if is_selected
+                        else ft.FontWeight.NORMAL,
+                        color=ft.Colors.ON_PRIMARY
+                        if is_selected
+                        else ft.Colors.ON_SURFACE_VARIANT,
                     ),
-                    bgcolor=ft.Colors.PRIMARY if is_selected else ft.Colors.SURFACE_CONTAINER_HIGHEST,
+                    bgcolor=ft.Colors.PRIMARY
+                    if is_selected
+                    else ft.Colors.SURFACE_CONTAINER_HIGHEST,
                     border_radius=12,
                     padding=ft.Padding(8, 4, 8, 4),
                     ink=True,
@@ -561,8 +644,12 @@ class RecentUsage(ft.Container):
                             ft.IconButton(
                                 icon=ft.Icons.STAR if is_fav else ft.Icons.STAR_BORDER,
                                 icon_size=16,
-                                icon_color=ft.Colors.AMBER if is_fav else ft.Colors.OUTLINE,
-                                on_click=lambda _, name=s.name: self._handle_favorite(name),
+                                icon_color=ft.Colors.AMBER
+                                if is_fav
+                                else ft.Colors.OUTLINE,
+                                on_click=lambda _, name=s.name: self._handle_favorite(
+                                    name
+                                ),
                             ),
                         ],
                     ),
@@ -604,7 +691,9 @@ class EmptyState(ft.Container):
             spacing=20,
             controls=[
                 ft.Container(
-                    content=ft.Icon(ft.Icons.EXPLORE_OUTLINED, size=72, color=ft.Colors.INDIGO),
+                    content=ft.Icon(
+                        ft.Icons.EXPLORE_OUTLINED, size=72, color=ft.Colors.INDIGO
+                    ),
                     padding=ft.Padding(24, 24, 24, 24),
                     border_radius=24,
                     bgcolor=ft.Colors.INDIGO_50,
@@ -616,27 +705,34 @@ class EmptyState(ft.Container):
                     ),
                 ),
                 ft.Text("开始探索 Skills", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-                ft.Text("安装示例 Skill 或创建新的 Skill 来开始使用", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
-                ft.Row([
-                    ft.FilledButton(
-                        "安装 Skill",
-                        icon=ft.Icons.FILE_DOWNLOAD,
-                        on_click=lambda _: on_install(),
-                        style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=10),
-                            padding=ft.Padding(16, 12, 16, 12),
+                ft.Text(
+                    "安装示例 Skill 或创建新的 Skill 来开始使用",
+                    size=FONT_SUBTITLE,
+                    color=ft.Colors.ON_SURFACE_VARIANT,
+                ),
+                ft.Row(
+                    [
+                        ft.FilledButton(
+                            "安装 Skill",
+                            icon=ft.Icons.FILE_DOWNLOAD,
+                            on_click=lambda _: on_install(),
+                            style=ft.ButtonStyle(
+                                shape=ft.RoundedRectangleBorder(radius=10),
+                                padding=ft.Padding(16, 12, 16, 12),
+                            ),
                         ),
-                    ),
-                    ft.OutlinedButton(
-                        "新建 Skill",
-                        icon=ft.Icons.ADD,
-                        on_click=lambda _: on_create(),
-                        style=ft.ButtonStyle(
-                            shape=ft.RoundedRectangleBorder(radius=10),
-                            padding=ft.Padding(16, 12, 16, 12),
+                        ft.OutlinedButton(
+                            "新建 Skill",
+                            icon=ft.Icons.ADD,
+                            on_click=lambda _: on_create(),
+                            style=ft.ButtonStyle(
+                                shape=ft.RoundedRectangleBorder(radius=10),
+                                padding=ft.Padding(16, 12, 16, 12),
+                            ),
                         ),
-                    ),
-                ], spacing=12),
+                    ],
+                    spacing=12,
+                ),
             ],
         )
 
@@ -650,13 +746,23 @@ class SearchEmptyState(ft.Container):
         self.alignment = ft.alignment.Alignment(0, 0)
         controls = [
             ft.Container(
-                content=ft.Icon(ft.Icons.SEARCH_OFF, size=64, color=ft.Colors.INDIGO_200),
+                content=ft.Icon(
+                    ft.Icons.SEARCH_OFF, size=64, color=ft.Colors.INDIGO_200
+                ),
                 padding=ft.Padding(20, 20, 20, 20),
                 border_radius=20,
                 bgcolor=ft.Colors.INDIGO_50,
             ),
-            ft.Text(f"未找到与「{query}」匹配的 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-            ft.Text("尝试其他关键词，或清除筛选条件", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text(
+                f"未找到与「{query}」匹配的 Skill",
+                size=FONT_TITLE,
+                weight=ft.FontWeight.BOLD,
+            ),
+            ft.Text(
+                "尝试其他关键词，或清除筛选条件",
+                size=FONT_SUBTITLE,
+                color=ft.Colors.ON_SURFACE_VARIANT,
+            ),
         ]
         if on_clear:
             controls.append(
@@ -687,13 +793,21 @@ class FilterEmptyState(ft.Container):
         self.alignment = ft.alignment.Alignment(0, 0)
         controls = [
             ft.Container(
-                content=ft.Icon(ft.Icons.FILTER_LIST_OFF, size=64, color=ft.Colors.INDIGO_200),
+                content=ft.Icon(
+                    ft.Icons.FILTER_LIST_OFF, size=64, color=ft.Colors.INDIGO_200
+                ),
                 padding=ft.Padding(20, 20, 20, 20),
                 border_radius=20,
                 bgcolor=ft.Colors.INDIGO_50,
             ),
-            ft.Text("当前筛选条件下没有 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-            ft.Text("尝试调整筛选条件，或查看全部 Skill", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text(
+                "当前筛选条件下没有 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD
+            ),
+            ft.Text(
+                "尝试调整筛选条件，或查看全部 Skill",
+                size=FONT_SUBTITLE,
+                color=ft.Colors.ON_SURFACE_VARIANT,
+            ),
         ]
         if on_clear:
             controls.append(

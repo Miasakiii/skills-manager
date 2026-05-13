@@ -40,6 +40,7 @@ class TestSplitFrontmatter:
 
     def test_incomplete_frontmatter(self):
         from skills_manager.frontmatter import FrontmatterError
+
         content = "---\nname: test\nNo closing"
         with pytest.raises(FrontmatterError, match="未闭合"):
             split_frontmatter(content)
@@ -251,7 +252,9 @@ class TestParametersToJsonSchema:
         from skills_manager.ir import Parameter
 
         params = [
-            Parameter(name="text", type="string", description="Input text", required=True),
+            Parameter(
+                name="text", type="string", description="Input text", required=True
+            ),
             Parameter(name="count", type="integer", description="Count"),
         ]
         schema = parameters_to_json_schema(params)

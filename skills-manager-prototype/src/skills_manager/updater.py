@@ -64,7 +64,9 @@ def check_pypi(package: str = "skillfmt") -> Optional[UpdateInfo]:
     )
 
 
-def check_github(owner: str = "Miasakiii", repo: str = "skills-manager") -> Optional[UpdateInfo]:
+def check_github(
+    owner: str = "Miasakiii", repo: str = "skills-manager"
+) -> Optional[UpdateInfo]:
     """检查 GitHub Releases 上的最新版本。"""
     data = _fetch_json(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
     if not data:
@@ -102,6 +104,4 @@ def check_update(
 
 def format_update_message(info: UpdateInfo) -> str:
     """格式化更新提示。"""
-    return (
-        f"新版本可用: v{info.latest_version} (当前 v{info.current_version})"
-    )
+    return f"新版本可用: v{info.latest_version} (当前 v{info.current_version})"

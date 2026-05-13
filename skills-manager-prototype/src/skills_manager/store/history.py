@@ -21,11 +21,13 @@ class _HistoryTracker:
     def add_usage(self, skill_name: str, action: str = "view") -> None:
         """添加使用记录。"""
         history = self.get_usage_history()
-        history.append({
-            "skill_name": skill_name,
-            "action": action,
-            "used_at": datetime.now(timezone.utc).isoformat(),
-        })
+        history.append(
+            {
+                "skill_name": skill_name,
+                "action": action,
+                "used_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
         if len(history) > 200:
             history = history[-200:]
         self._write_json(self.base_dir / "usage_history.json", history)
@@ -84,12 +86,14 @@ class _HistoryTracker:
     ) -> None:
         """添加导出历史记录。"""
         history = self.get_export_history()
-        history.append({
-            "skill_name": skill_name,
-            "format": format_name,
-            "output_path": output_path,
-            "exported_at": datetime.now(timezone.utc).isoformat(),
-        })
+        history.append(
+            {
+                "skill_name": skill_name,
+                "format": format_name,
+                "output_path": output_path,
+                "exported_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
         if len(history) > 100:
             history = history[-100:]
         self._write_json(self.base_dir / "export_history.json", history)

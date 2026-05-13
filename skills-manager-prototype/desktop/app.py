@@ -10,7 +10,7 @@ from skills_manager import __version__
 from skills_manager.logging import get_logger
 from skills_manager.store import Store
 
-from .components import FONT_TITLE, FONT_HEADLINE, FONT_SECTION, FONT_BODY, FONT_SMALL
+from .components import FONT_SECTION, FONT_BODY, FONT_SMALL
 
 logger = get_logger(__name__)
 
@@ -146,6 +146,7 @@ class App:
         uncategorized = sum(1 for s in self.skills if not getattr(s, "category", None))
         if uncategorized > 0:
             import threading
+
             def _auto_classify():
                 try:
                     changed = self.store.reclassify_all()
@@ -153,18 +154,26 @@ class App:
                         self._refresh_skills()
                 except Exception:
                     logger.exception("Background auto-classification failed")
+
             threading.Thread(target=_auto_classify, daemon=True).start()
 
         # 后台检查更新
         self._check_for_updates()
 
         self.sidebar = self._build_sidebar()
-        self.content_area = ft.Container(expand=True, padding=24, content=self._build_current_page())
+        self.content_area = ft.Container(
+            expand=True, padding=24, content=self._build_current_page()
+        )
 
         # 注册全局快捷键
         page.on_keyboard_event = self._on_keyboard
 
-        page.add(ft.Row([self.sidebar, ft.VerticalDivider(width=1), self.content_area], expand=True))
+        page.add(
+            ft.Row(
+                [self.sidebar, ft.VerticalDivider(width=1), self.content_area],
+                expand=True,
+            )
+        )
 
     # ── 数据 ──────────────────────────────────────────────────
 
@@ -251,38 +260,51 @@ class App:
         nav_buttons = []
         for page_id, icon, label in nav_items:
             is_active = self.current_page == page_id
-            nav_buttons.append(ft.Container(
-                content=ft.Row([
-                    ft.Container(
-                        content=ft.Icon(
-                            icon,
-                            size=18,
-                            color=ft.Colors.WHITE if is_active else ft.Colors.ON_SURFACE_VARIANT,
-                        ),
-                        bgcolor=ft.Colors.INDIGO if is_active else ft.Colors.TRANSPARENT,
-                        border_radius=6,
-                        padding=ft.Padding(4, 4, 4, 4),
+            nav_buttons.append(
+                ft.Container(
+                    content=ft.Row(
+                        [
+                            ft.Container(
+                                content=ft.Icon(
+                                    icon,
+                                    size=18,
+                                    color=ft.Colors.WHITE
+                                    if is_active
+                                    else ft.Colors.ON_SURFACE_VARIANT,
+                                ),
+                                bgcolor=ft.Colors.INDIGO
+                                if is_active
+                                else ft.Colors.TRANSPARENT,
+                                border_radius=6,
+                                padding=ft.Padding(4, 4, 4, 4),
+                            ),
+                            ft.Text(
+                                label,
+                                size=FONT_BODY,
+                                weight=ft.FontWeight.BOLD
+                                if is_active
+                                else ft.FontWeight.W_500,
+                                color=ft.Colors.INDIGO
+                                if is_active
+                                else ft.Colors.ON_SURFACE,
+                            ),
+                        ],
+                        spacing=10,
                     ),
-                    ft.Text(
-                        label,
-                        size=FONT_BODY,
-                        weight=ft.FontWeight.BOLD if is_active else ft.FontWeight.W_500,
-                        color=ft.Colors.INDIGO if is_active else ft.Colors.ON_SURFACE,
+                    bgcolor=ft.Colors.INDIGO_50 if is_active else ft.Colors.TRANSPARENT,
+                    border_radius=10,
+                    padding=ft.Padding(10, 8, 12, 8),
+                    border=ft.Border(
+                        left=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                        top=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                        right=ft.BorderSide(0, ft.Colors.TRANSPARENT),
+                        bottom=ft.BorderSide(0, ft.Colors.TRANSPARENT),
                     ),
-                ], spacing=10),
-                bgcolor=ft.Colors.INDIGO_50 if is_active else ft.Colors.TRANSPARENT,
-                border_radius=10,
-                padding=ft.Padding(10, 8, 12, 8),
-                border=ft.Border(
-                    left=ft.BorderSide(0, ft.Colors.TRANSPARENT),
-                    top=ft.BorderSide(0, ft.Colors.TRANSPARENT),
-                    right=ft.BorderSide(0, ft.Colors.TRANSPARENT),
-                    bottom=ft.BorderSide(0, ft.Colors.TRANSPARENT),
-                ),
-                animate=ft.Animation(200, ft.AnimationCurve.EASE_IN_OUT),
-                ink=True,
-                on_click=lambda _, pid=page_id: self.navigate(pid),
-            ))
+                    animate=ft.Animation(200, ft.AnimationCurve.EASE_IN_OUT),
+                    ink=True,
+                    on_click=lambda _, pid=page_id: self.navigate(pid),
+                )
+            )
 
         return ft.Container(
             width=180,
@@ -302,22 +324,36 @@ class App:
                                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                     controls=[
                                         ft.Container(
-                                            content=ft.Icon(ft.Icons.MEMORY, color=ft.Colors.WHITE, size=22),
+                                            content=ft.Icon(
+                                                ft.Icons.MEMORY,
+                                                color=ft.Colors.WHITE,
+                                                size=22,
+                                            ),
                                             bgcolor=ft.Colors.INDIGO,
                                             border_radius=10,
                                             padding=ft.Padding(8, 8, 8, 8),
                                             shadow=ft.BoxShadow(
                                                 spread_radius=0,
                                                 blur_radius=8,
-                                                color=ft.Colors.with_opacity(0.3, ft.Colors.INDIGO),
+                                                color=ft.Colors.with_opacity(
+                                                    0.3, ft.Colors.INDIGO
+                                                ),
                                                 offset=ft.Offset(0, 2),
                                             ),
                                         ),
                                         ft.Column(
                                             spacing=2,
                                             controls=[
-                                                ft.Text("Skills Manager", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-                                                ft.Text(f"v{__version__}", size=FONT_SMALL, color=ft.Colors.ON_SURFACE_VARIANT),
+                                                ft.Text(
+                                                    "Skills Manager",
+                                                    size=FONT_SECTION,
+                                                    weight=ft.FontWeight.BOLD,
+                                                ),
+                                                ft.Text(
+                                                    f"v{__version__}",
+                                                    size=FONT_SMALL,
+                                                    color=ft.Colors.ON_SURFACE_VARIANT,
+                                                ),
                                             ],
                                         ),
                                     ],
@@ -328,10 +364,16 @@ class App:
                                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                                         controls=[
                                             ft.Container(
-                                                width=6, height=6, bgcolor=ft.Colors.GREEN,
+                                                width=6,
+                                                height=6,
+                                                bgcolor=ft.Colors.GREEN,
                                                 border_radius=3,
                                             ),
-                                            ft.Text(f"{len(self.skills)} 个 Skill 已就绪", size=FONT_SMALL, color=ft.Colors.ON_SURFACE_VARIANT),
+                                            ft.Text(
+                                                f"{len(self.skills)} 个 Skill 已就绪",
+                                                size=FONT_SMALL,
+                                                color=ft.Colors.ON_SURFACE_VARIANT,
+                                            ),
                                         ],
                                     ),
                                     padding=ft.Padding(8, 4, 8, 4),
@@ -346,17 +388,30 @@ class App:
                     ft.Container(
                         padding=ft.Padding(8, 8, 8, 4),
                         content=ft.FilledButton(
-                            content=ft.Row([
-                                ft.Icon(ft.Icons.ADD_CIRCLE_OUTLINE, size=18, color=ft.Colors.WHITE),
-                                ft.Text("安装 Skill", size=FONT_BODY, color=ft.Colors.WHITE),
-                            ], spacing=10),
+                            content=ft.Row(
+                                [
+                                    ft.Icon(
+                                        ft.Icons.ADD_CIRCLE_OUTLINE,
+                                        size=18,
+                                        color=ft.Colors.WHITE,
+                                    ),
+                                    ft.Text(
+                                        "安装 Skill",
+                                        size=FONT_BODY,
+                                        color=ft.Colors.WHITE,
+                                    ),
+                                ],
+                                spacing=10,
+                            ),
                             on_click=lambda _: self._show_install_dialog(),
                             style=ft.ButtonStyle(
                                 bgcolor=ft.Colors.INDIGO,
                                 shape=ft.RoundedRectangleBorder(radius=10),
                                 padding=ft.Padding(14, 10, 14, 10),
                                 elevation=2,
-                                shadow_color=ft.Colors.with_opacity(0.2, ft.Colors.INDIGO),
+                                shadow_color=ft.Colors.with_opacity(
+                                    0.2, ft.Colors.INDIGO
+                                ),
                             ),
                         ),
                     ),
@@ -375,10 +430,19 @@ class App:
                         padding=ft.Padding(8, 0, 8, 4),
                         content=ft.Container(
                             content=ft.TextButton(
-                                content=ft.Row([
-                                    ft.Icon(ft.Icons.HEALTH_AND_SAFETY, size=16, color=self._health_status_color()),
-                                    ft.Text(self._health_status_text(), size=FONT_SMALL),
-                                ], spacing=8),
+                                content=ft.Row(
+                                    [
+                                        ft.Icon(
+                                            ft.Icons.HEALTH_AND_SAFETY,
+                                            size=16,
+                                            color=self._health_status_color(),
+                                        ),
+                                        ft.Text(
+                                            self._health_status_text(), size=FONT_SMALL
+                                        ),
+                                    ],
+                                    spacing=8,
+                                ),
                                 on_click=lambda _: self._show_health_dialog(),
                             ),
                             border_radius=8,
@@ -399,10 +463,23 @@ class App:
                             spacing=8,
                             vertical_alignment=ft.CrossAxisAlignment.CENTER,
                             controls=[
-                                ft.Icon(ft.Icons.ROCKET_LAUNCH_OUTLINED, size=14, color=ft.Colors.INDIGO),
-                                ft.Text("Skills Manager", size=FONT_SMALL, color=ft.Colors.ON_SURFACE_VARIANT),
+                                ft.Icon(
+                                    ft.Icons.ROCKET_LAUNCH_OUTLINED,
+                                    size=14,
+                                    color=ft.Colors.INDIGO,
+                                ),
+                                ft.Text(
+                                    "Skills Manager",
+                                    size=FONT_SMALL,
+                                    color=ft.Colors.ON_SURFACE_VARIANT,
+                                ),
                                 ft.Container(
-                                    content=ft.Text(f"v{__version__}", size=FONT_SMALL, color=ft.Colors.INDIGO, weight=ft.FontWeight.W_500),
+                                    content=ft.Text(
+                                        f"v{__version__}",
+                                        size=FONT_SMALL,
+                                        color=ft.Colors.INDIGO,
+                                        weight=ft.FontWeight.W_500,
+                                    ),
                                     bgcolor=ft.Colors.INDIGO_50,
                                     border_radius=6,
                                     padding=ft.Padding(6, 3, 6, 3),
@@ -489,6 +566,7 @@ class App:
         if self._health_cache is not None:
             return self._health_cache
         from skills_manager.claude_code_checker import ClaudeCodeChecker
+
         checker = ClaudeCodeChecker()
         reports = checker.scan()
         errors = sum(r.error_count for r in reports)
@@ -508,6 +586,7 @@ class App:
         def _check():
             try:
                 from skills_manager.updater import check_update
+
                 info = check_update()
                 if info and info.has_update:
                     self.show_snack(
@@ -528,6 +607,7 @@ class App:
         def _check_and_show():
             try:
                 from skills_manager.updater import check_update
+
                 info = check_update()
                 if info is None:
                     summary = "无法检查更新，请检查网络连接"
@@ -545,12 +625,20 @@ class App:
                 color = ft.Colors.ERROR
 
             dialog = ft.AlertDialog(
-                title=ft.Row([
-                    ft.Icon(ft.Icons.SYSTEM_UPDATE, color=color),
-                    ft.Text("检查更新", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-                ]),
+                title=ft.Row(
+                    [
+                        ft.Icon(ft.Icons.SYSTEM_UPDATE, color=color),
+                        ft.Text(
+                            "检查更新", size=FONT_SECTION, weight=ft.FontWeight.BOLD
+                        ),
+                    ]
+                ),
                 content=ft.Text(summary, size=FONT_BODY),
-                actions=[ft.TextButton("关闭", on_click=lambda e: self._close_active_dialog())],
+                actions=[
+                    ft.TextButton(
+                        "关闭", on_click=lambda e: self._close_active_dialog()
+                    )
+                ],
             )
             self._active_dialog = dialog
             self.page.show_dialog(dialog)
@@ -599,14 +687,26 @@ class App:
             if not r.issues:
                 continue
             for issue in r.issues:
-                icon = ft.Icons.ERROR if issue.severity == "error" else ft.Icons.WARNING_AMBER
-                color = ft.Colors.ERROR if issue.severity == "error" else ft.Colors.AMBER
+                icon = (
+                    ft.Icons.ERROR
+                    if issue.severity == "error"
+                    else ft.Icons.WARNING_AMBER
+                )
+                color = (
+                    ft.Colors.ERROR if issue.severity == "error" else ft.Colors.AMBER
+                )
                 fixable_note = "  [可自动修复]" if issue.auto_fixable else ""
                 issue_rows.append(
-                    ft.Row([
-                        ft.Icon(icon, size=14, color=color),
-                        ft.Text(f"{r.name}: {issue.message}{fixable_note}", size=FONT_SMALL),
-                    ], spacing=6)
+                    ft.Row(
+                        [
+                            ft.Icon(icon, size=14, color=color),
+                            ft.Text(
+                                f"{r.name}: {issue.message}{fixable_note}",
+                                size=FONT_SMALL,
+                            ),
+                        ],
+                        spacing=6,
+                    )
                 )
 
         has_fixable = any(i.auto_fixable for r in reports for i in r.issues)
@@ -620,24 +720,45 @@ class App:
             # 刷新并重新打开
             self._show_health_dialog()
 
-        actions = [ft.TextButton("关闭", on_click=lambda e: self._close_active_dialog())]
+        actions = [
+            ft.TextButton("关闭", on_click=lambda e: self._close_active_dialog())
+        ]
         if has_fixable:
-            actions.insert(0, ft.FilledButton("一键修复", icon=ft.Icons.AUTO_FIX_HIGH, on_click=do_fix))
+            actions.insert(
+                0,
+                ft.FilledButton(
+                    "一键修复", icon=ft.Icons.AUTO_FIX_HIGH, on_click=do_fix
+                ),
+            )
 
         dialog = ft.AlertDialog(
-            title=ft.Row([
-                ft.Icon(ft.Icons.HEALTH_AND_SAFETY, color=summary_color),
-                ft.Text("健康检查", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-            ]),
+            title=ft.Row(
+                [
+                    ft.Icon(ft.Icons.HEALTH_AND_SAFETY, color=summary_color),
+                    ft.Text("健康检查", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
+                ]
+            ),
             content=ft.Container(
                 content=ft.Column(
                     spacing=8,
                     controls=[
-                        ft.Text(summary_text, size=FONT_BODY, color=summary_color, weight=ft.FontWeight.BOLD),
+                        ft.Text(
+                            summary_text,
+                            size=FONT_BODY,
+                            color=summary_color,
+                            weight=ft.FontWeight.BOLD,
+                        ),
                         ft.Divider(),
                         ft.Column(
                             spacing=4,
-                            controls=issue_rows or [ft.Text("没有发现问题", size=FONT_SMALL, color=ft.Colors.ON_SURFACE_VARIANT)],
+                            controls=issue_rows
+                            or [
+                                ft.Text(
+                                    "没有发现问题",
+                                    size=FONT_SMALL,
+                                    color=ft.Colors.ON_SURFACE_VARIANT,
+                                )
+                            ],
                             scroll=ft.ScrollMode.AUTO,
                             height=min(len(issue_rows) * 30, 300),
                         ),
@@ -652,6 +773,7 @@ class App:
 
     def _show_install_dialog(self):
         from .dialogs import build_install_dialog
+
         self._active_dialog = build_install_dialog(self)
         self.page.show_dialog(self._active_dialog)
 
@@ -721,7 +843,9 @@ class App:
                 width=500,
                 height=300,
             ),
-            actions=[ft.TextButton("关闭", on_click=lambda e: self._close_active_dialog())],
+            actions=[
+                ft.TextButton("关闭", on_click=lambda e: self._close_active_dialog())
+            ],
         )
         self._active_dialog = dialog
         self.page.show_dialog(dialog)

@@ -16,7 +16,8 @@ from .security import sanitize_name
 @dataclass
 class SkillIssue:
     """一个兼容性问题。"""
-    severity: str       # "error" | "warning"
+
+    severity: str  # "error" | "warning"
     message: str
     auto_fixable: bool = False
 
@@ -24,6 +25,7 @@ class SkillIssue:
 @dataclass
 class SkillReport:
     """单个 skill 的检查报告。"""
+
     path: Path
     name: str = ""
     issues: list[SkillIssue] = field(default_factory=list)
@@ -71,19 +73,23 @@ class ClaudeCodeChecker:
         md_path = skill_dir / "SKILL.md"
 
         if not md_path.exists():
-            report.issues.append(SkillIssue(
-                severity="error",
-                message="缺少 SKILL.md 文件",
-            ))
+            report.issues.append(
+                SkillIssue(
+                    severity="error",
+                    message="缺少 SKILL.md 文件",
+                )
+            )
             return report
 
         try:
             content = md_path.read_text(encoding="utf-8")
         except OSError as e:
-            report.issues.append(SkillIssue(
-                severity="error",
-                message=f"无法读取 SKILL.md: {e}",
-            ))
+            report.issues.append(
+                SkillIssue(
+                    severity="error",
+                    message=f"无法读取 SKILL.md: {e}",
+                )
+            )
             return report
 
         fm = self._parse_frontmatter(content)
@@ -91,28 +97,34 @@ class ClaudeCodeChecker:
         # 检查必需的 frontmatter 字段
         for required_field in self.REQUIRED_FIELDS:
             if not fm.get(required_field):
-                report.issues.append(SkillIssue(
-                    severity="error",
-                    message=f"frontmatter 缺少 {required_field} 字段",
-                    auto_fixable=True if field == "name" else False,
-                ))
+                report.issues.append(
+                    SkillIssue(
+                        severity="error",
+                        message=f"frontmatter 缺少 {required_field} 字段",
+                        auto_fixable=True if required_field == "name" else False,
+                    )
+                )
 
         # 检查 name 是否匹配目录名
         fm_name = fm.get("name", "")
         if fm_name and fm_name != skill_dir.name:
-            report.issues.append(SkillIssue(
-                severity="warning",
-                message=f"name '{fm_name}' 与目录名 '{skill_dir.name}' 不匹配",
-                auto_fixable=True,
-            ))
+            report.issues.append(
+                SkillIssue(
+                    severity="warning",
+                    message=f"name '{fm_name}' 与目录名 '{skill_dir.name}' 不匹配",
+                    auto_fixable=True,
+                )
+            )
 
         # 检查 description 是否为空
         desc = fm.get("description", "")
         if desc and desc.strip() in ("", '""', "''"):
-            report.issues.append(SkillIssue(
-                severity="warning",
-                message="description 为空",
-            ))
+            report.issues.append(
+                SkillIssue(
+                    severity="warning",
+                    message="description 为空",
+                )
+            )
 
         return report
 
@@ -165,11 +177,11 @@ class ClaudeCodeChecker:
         fixed = False
 
         if has_frontmatter:
-            fm_match = re.match(r'^(---\s*\n)(.*?)(\n---)', content, re.DOTALL)
+            fm_match = re.match(r"^(---\s*\n)(.*?)(\n---)", content, re.DOTALL)
             if fm_match:
                 prefix = fm_match.group(1)
                 fm_body = fm_match.group(2)
-                suffix = fm_match.group(3) + content[fm_match.end():]
+                suffix = fm_match.group(3) + content[fm_match.end() :]
                 fm = self._parse_frontmatter(content)
                 fm_name = fm.get("name", "")
 

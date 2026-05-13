@@ -78,7 +78,10 @@ def build_install_dialog(app) -> ft.AlertDialog:
         app._close_active_dialog()
         discovered = app.store.scan_directory(Path(path))
         if not discovered:
-            app.show_snack(f"未在 {path} 中发现任何 Skill（需要包含 SKILL.md 的子目录）", error=True)
+            app.show_snack(
+                f"未在 {path} 中发现任何 Skill（需要包含 SKILL.md 的子目录）",
+                error=True,
+            )
             return
         installed, failed = app.store.scan_and_install(Path(path))
         app._refresh_skills()
@@ -95,16 +98,28 @@ def build_install_dialog(app) -> ft.AlertDialog:
             tight=True,
             controls=[
                 ft.Text("从本地安装", size=FONT_SECTION),
-                ft.FilledButton("从目录安装", icon=ft.Icons.FOLDER_OPEN, on_click=pick_directory),
-                ft.OutlinedButton("从 .skill 包安装", icon=ft.Icons.ARCHIVE, on_click=pick_package),
+                ft.FilledButton(
+                    "从目录安装", icon=ft.Icons.FOLDER_OPEN, on_click=pick_directory
+                ),
+                ft.OutlinedButton(
+                    "从 .skill 包安装", icon=ft.Icons.ARCHIVE, on_click=pick_package
+                ),
                 ft.Divider(height=4),
                 ft.Text("从 URL 安装", size=FONT_SECTION),
                 url_input,
-                ft.FilledButton("从 URL 安装", icon=ft.Icons.LANGUAGE, on_click=install_from_url),
+                ft.FilledButton(
+                    "从 URL 安装", icon=ft.Icons.LANGUAGE, on_click=install_from_url
+                ),
                 ft.Divider(height=4),
                 ft.Text("批量导入", size=FONT_SECTION),
-                ft.FilledButton("自动扫描导入", icon=ft.Icons.FOLDER_SPECIAL, on_click=auto_scan),
-                ft.OutlinedButton("手动选择目录扫描", icon=ft.Icons.FOLDER_OPEN, on_click=scan_directory),
+                ft.FilledButton(
+                    "自动扫描导入", icon=ft.Icons.FOLDER_SPECIAL, on_click=auto_scan
+                ),
+                ft.OutlinedButton(
+                    "手动选择目录扫描",
+                    icon=ft.Icons.FOLDER_OPEN,
+                    on_click=scan_directory,
+                ),
             ],
         ),
         actions=[
@@ -130,8 +145,11 @@ def build_uninstall_dialog(app, skill_name: str) -> ft.AlertDialog:
         content=ft.Text(f"确定要卸载 Skill「{skill_name}」吗？此操作不可撤销。"),
         actions=[
             ft.TextButton("取消", on_click=lambda _: app._close_active_dialog()),
-            ft.TextButton("卸载", on_click=do_uninstall,
-                          style=ft.ButtonStyle(color=ft.Colors.ERROR)),
+            ft.TextButton(
+                "卸载",
+                on_click=do_uninstall,
+                style=ft.ButtonStyle(color=ft.Colors.ERROR),
+            ),
         ],
     )
 
@@ -173,7 +191,10 @@ def build_batch_uninstall_dialog(app, skill_names: list[str]) -> ft.AlertDialog:
         ),
         actions=[
             ft.TextButton("取消", on_click=lambda _: app._close_active_dialog()),
-            ft.TextButton("卸载", on_click=do_batch_uninstall,
-                          style=ft.ButtonStyle(color=ft.Colors.ERROR)),
+            ft.TextButton(
+                "卸载",
+                on_click=do_batch_uninstall,
+                style=ft.ButtonStyle(color=ft.Colors.ERROR),
+            ),
         ],
     )

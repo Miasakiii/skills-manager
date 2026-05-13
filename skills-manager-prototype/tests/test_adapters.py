@@ -143,8 +143,16 @@ class TestGeminiAdapter:
             version="1.0.0",
             description="test",
             parameters=[
-                Parameter(name="items", type="array", description="list", required=False, default=[]),
-                Parameter(name="config", type="object", description="obj", required=False),
+                Parameter(
+                    name="items",
+                    type="array",
+                    description="list",
+                    required=False,
+                    default=[],
+                ),
+                Parameter(
+                    name="config", type="object", description="obj", required=False
+                ),
             ],
         )
         adapter = GeminiAdapter()
@@ -178,7 +186,9 @@ class TestMCPAdapter:
         # 由于 executor 是 dict 而非 ExecutorConfig，需要调整
         from skills_manager.ir import ExecutorConfig
 
-        ir.executor = ExecutorConfig(type="python", entry="handler.py", function="do_test")
+        ir.executor = ExecutorConfig(
+            type="python", entry="handler.py", function="do_test"
+        )
         adapter = MCPAdapter()
         result = adapter.export(ir)
         assert "from handler import do_test" in result

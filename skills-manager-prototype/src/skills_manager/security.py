@@ -74,6 +74,8 @@ def validate_path_safety(target: Path, parent: Path) -> bool:
         # 使用 os.path.commonpath 判断是否在父目录内
         target_str = str(target_resolved)
         parent_str = str(resolved)
-        return target_str.startswith(parent_str + str(Path("/" if target_str != parent_str else "")))
+        return target_str.startswith(
+            parent_str + str(Path("/" if target_str != parent_str else ""))
+        )
     except (OSError, ValueError):
         return False

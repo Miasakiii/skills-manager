@@ -88,7 +88,9 @@ def export(
             console.print(f"[green]OK[/green] {skill.name} -> {out_path}")
     else:
         if not name:
-            console.print("[red]Error:[/red] Please specify a skill name or use --current-dir")
+            console.print(
+                "[red]Error:[/red] Please specify a skill name or use --current-dir"
+            )
             raise typer.Exit(1)
         try:
             ir = store.get_skill_ir(name)
@@ -177,7 +179,9 @@ def list_skills(
     skills = store.list_all()
 
     if not skills:
-        console.print("[yellow]No installed skills. Use 'skills install' to add.[/yellow]")
+        console.print(
+            "[yellow]No installed skills. Use 'skills install' to add.[/yellow]"
+        )
         return
 
     table = Table(title=f"Installed Skills ({len(skills)})")
@@ -402,7 +406,9 @@ def check_update() -> None:
         return
 
     if info.has_update:
-        console.print(f"[yellow]更新可用:[/yellow] v{info.latest_version} (当前 v{info.current_version})")
+        console.print(
+            f"[yellow]更新可用:[/yellow] v{info.latest_version} (当前 v{info.current_version})"
+        )
         if info.release_url:
             console.print(f"  下载: [cyan]{info.release_url}[/cyan]")
     else:

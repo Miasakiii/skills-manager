@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import flet as ft
+from pathlib import Path
 
 from skills_manager.adapters import list_formats
 
@@ -16,24 +17,24 @@ def build_settings_page(app) -> ft.Control:
         controls=[
             ft.Text("设置", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
             ft.Divider(),
-
             ft.Text("主题", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-            ft.Row([
-                ft.Chip(
-                    label=ft.Text("浅色"),
-                    leading=ft.Icon(ft.Icons.LIGHT_MODE),
-                    selected=app.theme_mode == ft.ThemeMode.LIGHT,
-                    on_click=lambda _: _toggle_theme(app, ft.ThemeMode.LIGHT),
-                ),
-                ft.Chip(
-                    label=ft.Text("深色"),
-                    leading=ft.Icon(ft.Icons.DARK_MODE),
-                    selected=app.theme_mode == ft.ThemeMode.DARK,
-                    on_click=lambda _: _toggle_theme(app, ft.ThemeMode.DARK),
-                ),
-            ]),
+            ft.Row(
+                [
+                    ft.Chip(
+                        label=ft.Text("浅色"),
+                        leading=ft.Icon(ft.Icons.LIGHT_MODE),
+                        selected=app.theme_mode == ft.ThemeMode.LIGHT,
+                        on_click=lambda _: _toggle_theme(app, ft.ThemeMode.LIGHT),
+                    ),
+                    ft.Chip(
+                        label=ft.Text("深色"),
+                        leading=ft.Icon(ft.Icons.DARK_MODE),
+                        selected=app.theme_mode == ft.ThemeMode.DARK,
+                        on_click=lambda _: _toggle_theme(app, ft.ThemeMode.DARK),
+                    ),
+                ]
+            ),
             ft.Divider(),
-
             ft.Text("默认导出格式", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Dropdown(
                 options=[ft.DropdownOption(f) for f in list_formats()],
@@ -42,27 +43,43 @@ def build_settings_page(app) -> ft.Control:
                 on_select=lambda e: setattr(app, "export_format", e.control.value),
             ),
             ft.Divider(),
-
             ft.Text("存储信息", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Text(f"存储路径: {app.store.base_dir}", size=FONT_SMALL),
             ft.Text(f"已安装 Skill: {len(app.skills)} 个", size=FONT_SMALL),
             ft.Text(f"支持格式: {', '.join(list_formats())}", size=FONT_SMALL),
             ft.Divider(),
-
-            ft.Row([
-                ft.OutlinedButton("安装示例 Skills", icon=ft.Icons.DOWNLOAD, on_click=lambda _: _install_examples(app)),
-            ]),
+            ft.Row(
+                [
+                    ft.OutlinedButton(
+                        "安装示例 Skills",
+                        icon=ft.Icons.DOWNLOAD,
+                        on_click=lambda _: _install_examples(app),
+                    ),
+                ]
+            ),
             ft.Divider(),
-
             ft.Text("同步到 Agent", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-            ft.Text("安装时自动用 symlink 同步到各工具目录，Agent 立即可用", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
-            ft.Row([
-                ft.FilledButton("重新同步全部", icon=ft.Icons.SYNC, on_click=lambda _: _resync_all(app)),
-            ]),
+            ft.Text(
+                "安装时自动用 symlink 同步到各工具目录，Agent 立即可用",
+                size=FONT_SUBTITLE,
+                color=ft.Colors.ON_SURFACE_VARIANT,
+            ),
+            ft.Row(
+                [
+                    ft.FilledButton(
+                        "重新同步全部",
+                        icon=ft.Icons.SYNC,
+                        on_click=lambda _: _resync_all(app),
+                    ),
+                ]
+            ),
             ft.Divider(),
-
             ft.Text("监视路径", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-            ft.Text("自动扫描时会检查以下路径中的 Skill", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text(
+                "自动扫描时会检查以下路径中的 Skill",
+                size=FONT_SUBTITLE,
+                color=ft.Colors.ON_SURFACE_VARIANT,
+            ),
             *_build_watch_paths_section(app),
         ],
     )
@@ -76,26 +93,42 @@ def _build_watch_paths_section(app) -> list[ft.Control]:
     # 显示当前监视路径
     if paths:
         for p in list(paths):
-            controls.append(ft.Row([
-                ft.Text(p, size=FONT_SMALL, expand=True),
-                ft.IconButton(
-                    icon=ft.Icons.DELETE,
-                    tooltip="移除此路径",
-                    data=p,
-                    on_click=lambda e, app=app: _remove_watch_path(app, e.control.data),
-                ),
-            ]))
+            controls.append(
+                ft.Row(
+                    [
+                        ft.Text(p, size=FONT_SMALL, expand=True),
+                        ft.IconButton(
+                            icon=ft.Icons.DELETE,
+                            tooltip="移除此路径",
+                            data=p,
+                            on_click=lambda e, app=app: _remove_watch_path(
+                                app, e.control.data
+                            ),
+                        ),
+                    ]
+                )
+            )
     else:
-        controls.append(ft.Text("暂无自定义监视路径", size=FONT_SMALL, italic=True, color=ft.Colors.ON_SURFACE_VARIANT))
+        controls.append(
+            ft.Text(
+                "暂无自定义监视路径",
+                size=FONT_SMALL,
+                italic=True,
+                color=ft.Colors.ON_SURFACE_VARIANT,
+            )
+        )
 
     # 添加新路径
-    path_input = ft.TextField(label="输入路径", expand=True, dense=True, text_size=FONT_BODY)
+    path_input = ft.TextField(
+        label="输入路径", expand=True, dense=True, text_size=FONT_BODY
+    )
 
     def add_path(_):
         p = path_input.value.strip()
         if not p:
             return
         from pathlib import Path as P
+
         if not P(p).is_dir():
             app.show_snack(f"路径不存在: {p}", error=True)
             return
@@ -103,10 +136,16 @@ def _build_watch_paths_section(app) -> list[ft.Control]:
         path_input.value = ""
         app._update_ui()
 
-    controls.append(ft.Row([
-        path_input,
-        ft.IconButton(icon=ft.Icons.ADD, tooltip="添加监视路径", on_click=add_path),
-    ]))
+    controls.append(
+        ft.Row(
+            [
+                path_input,
+                ft.IconButton(
+                    icon=ft.Icons.ADD, tooltip="添加监视路径", on_click=add_path
+                ),
+            ]
+        )
+    )
 
     return controls
 

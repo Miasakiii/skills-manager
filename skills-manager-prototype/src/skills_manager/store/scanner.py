@@ -69,19 +69,23 @@ class _Scanner:
             skill_md = skill_dir / "SKILL.md"
             try:
                 ir = parse_skill_md(skill_md)
-                results.append({
-                    "path": skill_dir,
-                    "name": ir.name,
-                    "version": ir.version,
-                    "description": ir.description,
-                    "installed": self.exists(ir.name),
-                })
+                results.append(
+                    {
+                        "path": skill_dir,
+                        "name": ir.name,
+                        "version": ir.version,
+                        "description": ir.description,
+                        "installed": self.exists(ir.name),
+                    }
+                )
             except Exception:
-                results.append({
-                    "path": skill_dir,
-                    "name": skill_dir.name,
-                    "version": "",
-                    "description": "解析失败",
-                    "installed": False,
-                })
+                results.append(
+                    {
+                        "path": skill_dir,
+                        "name": skill_dir.name,
+                        "version": "",
+                        "description": "解析失败",
+                        "installed": False,
+                    }
+                )
         return results

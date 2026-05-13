@@ -114,7 +114,6 @@ def parse_skill_content(content: str, name_hint: str = "") -> SkillIR:
     )
 
 
-
 def _extract_section(body: str, header: str) -> str:
     """提取 Markdown 中指定标题下的内容（直到下一个同级标题）。"""
     pattern = rf"^##\s+{re.escape(header)}\s*\n(.*?)(?=\n##\s|\Z)"
@@ -188,13 +187,15 @@ def _parse_parameters(param_rows: list[dict[str, str]]) -> list[Parameter]:
 
         required = req_str in ("✅", "是", "yes", "true", "Y", "✓")
 
-        parameters.append(Parameter(
-            name=name,
-            type=json_type,
-            description=desc,
-            required=required,
-            enum=enum_values,
-        ))
+        parameters.append(
+            Parameter(
+                name=name,
+                type=json_type,
+                description=desc,
+                required=required,
+                enum=enum_values,
+            )
+        )
 
     return parameters
 
@@ -208,12 +209,12 @@ def _detect_enum(text: str) -> list[str] | None:
     - zh,en,ja,ko
     """
     # 模式1: X / Y / Z（前面有冒号）
-    match = re.search(r'[：:]\s*([\w_-]+(?:\s*/\s*[\w_-]+)+)', text)
+    match = re.search(r"[：:]\s*([\w_-]+(?:\s*/\s*[\w_-]+)+)", text)
     if match:
         return [v.strip() for v in match.group(1).split("/")]
 
     # 模式2: X,Y,Z（前面有冒号）
-    match = re.search(r'[：:]\s*([\w_-]+(?:\s*,\s*[\w_-]+)+)', text)
+    match = re.search(r"[：:]\s*([\w_-]+(?:\s*,\s*[\w_-]+)+)", text)
     if match:
         return [v.strip() for v in match.group(1).split(",")]
 
@@ -229,7 +230,7 @@ def _extract_examples(body: str) -> list[Example]:
     examples = []
 
     # 查找 JSON 代码块
-    json_blocks = re.findall(r'```(?:json)?\s*\n(.*?)```', section, re.DOTALL)
+    json_blocks = re.findall(r"```(?:json)?\s*\n(.*?)```", section, re.DOTALL)
 
     # 尝试配对：奇数位为 input，偶数位为 output
     i = 0
@@ -270,7 +271,7 @@ def _extract_list(body: str, header: str) -> list[str]:
     for line in section.split("\n"):
         line = line.strip()
         # 匹配 - item 或 * item
-        match = re.match(r'^[-*]\s+(.+)', line)
+        match = re.match(r"^[-*]\s+(.+)", line)
         if match:
             items.append(match.group(1).strip())
 

@@ -41,7 +41,9 @@ Test function.
 """,
         encoding="utf-8",
     )
-    (skill_dir / "handler.py").write_text("def run(input): return input", encoding="utf-8")
+    (skill_dir / "handler.py").write_text(
+        "def run(input): return input", encoding="utf-8"
+    )
     return skill_dir
 
 
@@ -118,7 +120,7 @@ class TestStoreSearch:
         assert len(results) == 1
 
     def test_search_by_description(self, store, sample_skill_dir):
-        store.install(sample_skill_dir, translate=False)
+        store.install(sample_skill_dir)
         results = store.search("testing")
         assert len(results) == 1
 
@@ -198,6 +200,7 @@ class TestStoreDiscover:
 
         # 复制 skill 到扫描目录
         import shutil
+
         dest = scan_dir / "my-skill"
         shutil.copytree(sample_skill_dir, dest)
 
@@ -215,6 +218,7 @@ class TestStoreDiscover:
         scan_dir = tmp_path / "scan"
         scan_dir.mkdir()
         import shutil
+
         dest = scan_dir / "test-skill"
         shutil.copytree(sample_skill_dir, dest)
 
@@ -320,6 +324,7 @@ class TestStoreScanWithInfo:
         scan_dir = tmp_path / "scan"
         scan_dir.mkdir()
         import shutil
+
         dest = scan_dir / "test-skill"
         shutil.copytree(sample_skill_dir, dest)
 
@@ -460,7 +465,9 @@ Updated test function.
 """,
             encoding="utf-8",
         )
-        (new_version_dir / "handler.py").write_text("def run(input): return input", encoding="utf-8")
+        (new_version_dir / "handler.py").write_text(
+            "def run(input): return input", encoding="utf-8"
+        )
 
         # 升级
         store.upgrade("test-skill", new_version_dir)
@@ -505,7 +512,9 @@ Updated test function.
 """,
             encoding="utf-8",
         )
-        (new_version_dir / "handler.py").write_text("def run(input): return input", encoding="utf-8")
+        (new_version_dir / "handler.py").write_text(
+            "def run(input): return input", encoding="utf-8"
+        )
 
         # 升级
         result = store.upgrade("test-skill", new_version_dir)
@@ -718,6 +727,7 @@ class TestStoreInstallFromUrl:
         """测试 httpx 未安装时的错误处理。"""
         # 模拟 httpx 未安装
         import sys
+
         monkeypatch.setitem(sys.modules, "httpx", None)
 
         with pytest.raises(StoreError, match="需要安装 httpx"):
@@ -765,6 +775,7 @@ class TestIndexRecovery:
         name = result.name  # 使用安装后返回的实际名称（来自 frontmatter）
         assert name == "test-skill"
         import shutil
+
         shutil.rmtree(store.store_dir / name)
         skills = store.list_all()
         assert all(s.name != name for s in skills)

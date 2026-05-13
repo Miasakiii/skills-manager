@@ -6,13 +6,21 @@ from pathlib import Path
 
 import flet as ft
 
-from skills_manager.adapters import get_adapter, list_formats
-from skills_manager.parser import parse_skill_md
+from skills_manager.adapters import get_adapter
 from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_BODY, FONT_SMALL
 from skills_manager.ir import SkillIR
 from skills_manager.validator import validate_skill_md
 
-CATEGORIES = ["language", "code", "data", "research", "writing", "automation", "agent", "misc"]
+CATEGORIES = [
+    "language",
+    "code",
+    "data",
+    "research",
+    "writing",
+    "automation",
+    "agent",
+    "misc",
+]
 
 
 def build_editor_page(app) -> ft.Control:
@@ -104,39 +112,41 @@ def build_editor_page(app) -> ft.Control:
             lines.append(skill_type_line)
         if intent_line:
             lines.append(intent_line)
-        lines.extend([
-            f'tags: [{", ".join(tag_list)}]',
-            f"category: {category}",
-            "---",
-            "",
-            "## 功能",
-            "",
-            description.strip() or n,
-            "",
-            "## 参数",
-            "",
-            "| 参数 | 类型 | 必需 | 说明 |",
-            "| ---- | ---- | ---- | ---- |",
-            "| input | string | ✅ | 输入内容 |",
-            "",
-            "## 返回",
-            "",
-            "| 字段 | 类型 | 说明 |",
-            "| ---- | ---- | ---- |",
-            "| result | string | 处理结果 |",
-            "",
-            "## 示例",
-            "",
-            "输入：",
-            '```json',
-            '{"input": "example"}',
-            "```",
-            "",
-            "输出：",
-            '```json',
-            '{"result": "output"}',
-            "```",
-        ])
+        lines.extend(
+            [
+                f"tags: [{', '.join(tag_list)}]",
+                f"category: {category}",
+                "---",
+                "",
+                "## 功能",
+                "",
+                description.strip() or n,
+                "",
+                "## 参数",
+                "",
+                "| 参数 | 类型 | 必需 | 说明 |",
+                "| ---- | ---- | ---- | ---- |",
+                "| input | string | ✅ | 输入内容 |",
+                "",
+                "## 返回",
+                "",
+                "| 字段 | 类型 | 说明 |",
+                "| ---- | ---- | ---- |",
+                "| result | string | 处理结果 |",
+                "",
+                "## 示例",
+                "",
+                "输入：",
+                "```json",
+                '{"input": "example"}',
+                "```",
+                "",
+                "输出：",
+                "```json",
+                '{"result": "output"}',
+                "```",
+            ]
+        )
         return "\n".join(lines)
 
     def update_preview():
@@ -166,25 +176,48 @@ def build_editor_page(app) -> ft.Control:
             if vr.errors:
                 for err in vr.errors:
                     validation_column.controls.append(
-                        ft.Row([
-                            ft.Icon(ft.Icons.ERROR_OUTLINE, size=14, color=ft.Colors.ERROR),
-                            ft.Text(err, size=FONT_SMALL, color=ft.Colors.ERROR),
-                        ], spacing=4)
+                        ft.Row(
+                            [
+                                ft.Icon(
+                                    ft.Icons.ERROR_OUTLINE,
+                                    size=14,
+                                    color=ft.Colors.ERROR,
+                                ),
+                                ft.Text(err, size=FONT_SMALL, color=ft.Colors.ERROR),
+                            ],
+                            spacing=4,
+                        )
                     )
             if vr.warnings:
                 for warn in vr.warnings:
                     validation_column.controls.append(
-                        ft.Row([
-                            ft.Icon(ft.Icons.WARNING_AMBER, size=14, color=ft.Colors.ORANGE),
-                            ft.Text(warn, size=FONT_SMALL, color=ft.Colors.ORANGE),
-                        ], spacing=4)
+                        ft.Row(
+                            [
+                                ft.Icon(
+                                    ft.Icons.WARNING_AMBER,
+                                    size=14,
+                                    color=ft.Colors.ORANGE,
+                                ),
+                                ft.Text(warn, size=FONT_SMALL, color=ft.Colors.ORANGE),
+                            ],
+                            spacing=4,
+                        )
                     )
             if not vr.errors and not vr.warnings:
                 validation_column.controls.append(
-                    ft.Row([
-                        ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=14, color=ft.Colors.GREEN),
-                        ft.Text("格式校验通过", size=FONT_SMALL, color=ft.Colors.GREEN),
-                    ], spacing=4)
+                    ft.Row(
+                        [
+                            ft.Icon(
+                                ft.Icons.CHECK_CIRCLE_OUTLINE,
+                                size=14,
+                                color=ft.Colors.GREEN,
+                            ),
+                            ft.Text(
+                                "格式校验通过", size=FONT_SMALL, color=ft.Colors.GREEN
+                            ),
+                        ],
+                        spacing=4,
+                    )
                 )
 
         app.page.update()
@@ -237,6 +270,7 @@ def build_editor_page(app) -> ft.Control:
 
     def save_skill_wrapper():
         import asyncio
+
         asyncio.ensure_future(save_skill())
 
     # 初始预览
@@ -254,34 +288,55 @@ def build_editor_page(app) -> ft.Control:
                     scroll=ft.ScrollMode.AUTO,
                     spacing=12,
                     controls=[
-                        ft.Row([
-                            ft.Container(
-                                content=ft.Icon(ft.Icons.EDIT_NOTE, color=ft.Colors.WHITE, size=18),
-                                bgcolor=ft.Colors.INDIGO,
-                                border_radius=8,
-                                padding=ft.Padding(6, 6, 6, 6),
-                            ),
-                            ft.Text("新建 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-                        ], spacing=10),
-                        ft.Text("填写基本信息，自动生成 SKILL.md", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
+                        ft.Row(
+                            [
+                                ft.Container(
+                                    content=ft.Icon(
+                                        ft.Icons.EDIT_NOTE,
+                                        color=ft.Colors.WHITE,
+                                        size=18,
+                                    ),
+                                    bgcolor=ft.Colors.INDIGO,
+                                    border_radius=8,
+                                    padding=ft.Padding(6, 6, 6, 6),
+                                ),
+                                ft.Text(
+                                    "新建 Skill",
+                                    size=FONT_TITLE,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
+                            ],
+                            spacing=10,
+                        ),
+                        ft.Text(
+                            "填写基本信息，自动生成 SKILL.md",
+                            size=FONT_SUBTITLE,
+                            color=ft.Colors.ON_SURFACE_VARIANT,
+                        ),
                         ft.Divider(),
                         ft.TextField(
                             label="名称",
                             hint_text="my-skill",
                             value=name,
-                            on_change=lambda e: on_field_change("name", e.control.value),
+                            on_change=lambda e: on_field_change(
+                                "name", e.control.value
+                            ),
                         ),
                         ft.TextField(
                             label="版本",
                             hint_text="1.0.0",
                             value=version,
-                            on_change=lambda e: on_field_change("version", e.control.value),
+                            on_change=lambda e: on_field_change(
+                                "version", e.control.value
+                            ),
                         ),
                         ft.TextField(
                             label="描述",
                             hint_text="简要描述此 Skill 的功能",
                             value=description,
-                            on_change=lambda e: on_field_change("description", e.control.value),
+                            on_change=lambda e: on_field_change(
+                                "description", e.control.value
+                            ),
                             multiline=True,
                             min_lines=2,
                         ),
@@ -293,41 +348,55 @@ def build_editor_page(app) -> ft.Control:
                                 ft.DropdownOption("workflow", text="端到端流程"),
                             ],
                             value=skill_type,
-                            on_select=lambda e: on_field_change("skill_type", e.control.value),
+                            on_select=lambda e: on_field_change(
+                                "skill_type", e.control.value
+                            ),
                         ),
                         ft.TextField(
                             label="意图说明",
                             hint_text="这个 Skill 要解决什么问题",
                             value=intent,
-                            on_change=lambda e: on_field_change("intent", e.control.value),
+                            on_change=lambda e: on_field_change(
+                                "intent", e.control.value
+                            ),
                         ),
                         ft.Dropdown(
                             label="分类",
                             options=[ft.DropdownOption(c) for c in CATEGORIES],
                             value=category,
-                            on_select=lambda e: on_field_change("category", e.control.value),
+                            on_select=lambda e: on_field_change(
+                                "category", e.control.value
+                            ),
                         ),
                         ft.TextField(
                             label="标签",
                             hint_text="translation, i18n（逗号分隔）",
                             value=tags,
-                            on_change=lambda e: on_field_change("tags", e.control.value),
+                            on_change=lambda e: on_field_change(
+                                "tags", e.control.value
+                            ),
                         ),
                         ft.Divider(),
-                        ft.Row([
-                            ft.FilledButton(
-                                "生成骨架",
-                                icon=ft.Icons.AUTO_AWESOME,
-                                on_click=on_generate,
-                                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
-                            ),
-                            ft.FilledButton(
-                                "保存 Skill",
-                                icon=ft.Icons.SAVE,
-                                on_click=lambda _: save_skill_wrapper(),
-                                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
-                            ),
-                        ]),
+                        ft.Row(
+                            [
+                                ft.FilledButton(
+                                    "生成骨架",
+                                    icon=ft.Icons.AUTO_AWESOME,
+                                    on_click=on_generate,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.RoundedRectangleBorder(radius=10)
+                                    ),
+                                ),
+                                ft.FilledButton(
+                                    "保存 Skill",
+                                    icon=ft.Icons.SAVE,
+                                    on_click=lambda _: save_skill_wrapper(),
+                                    style=ft.ButtonStyle(
+                                        shape=ft.RoundedRectangleBorder(radius=10)
+                                    ),
+                                ),
+                            ]
+                        ),
                     ],
                 ),
             ),
@@ -337,12 +406,18 @@ def build_editor_page(app) -> ft.Control:
                 content=ft.Column(
                     spacing=8,
                     controls=[
-                        ft.Row([
-                            ft.Text("预览", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-                            format_dropdown,
-                        ]),
+                        ft.Row(
+                            [
+                                ft.Text(
+                                    "预览", size=FONT_SECTION, weight=ft.FontWeight.BOLD
+                                ),
+                                format_dropdown,
+                            ]
+                        ),
                         preview_container,
-                        ft.Text("格式校验", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
+                        ft.Text(
+                            "格式校验", size=FONT_SECTION, weight=ft.FontWeight.BOLD
+                        ),
                         validation_container,
                     ],
                 ),
@@ -357,38 +432,40 @@ def parse_skill_md_string(content: str) -> SkillIR:
     import yaml
 
     # 提取 frontmatter
-    match = re.match(r'^---\s*\n(.*?)\n---\s*\n', content, re.DOTALL)
+    match = re.match(r"^---\s*\n(.*?)\n---\s*\n", content, re.DOTALL)
     if not match:
         raise ValueError("No frontmatter found")
 
     fm = yaml.safe_load(match.group(1))
-    body = content[match.end():]
+    body = content[match.end() :]
 
     # 解析参数表格
     params = []
-    param_match = re.search(r'## 参数\s*\n(.*?)(?=\n## |\Z)', body, re.DOTALL)
+    param_match = re.search(r"## 参数\s*\n(.*?)(?=\n## |\Z)", body, re.DOTALL)
     if param_match:
         table_text = param_match.group(1)
-        for line in table_text.strip().split('\n'):
-            if '|' in line and '---' not in line and '参数' not in line:
-                parts = [p.strip() for p in line.split('|') if p.strip()]
+        for line in table_text.strip().split("\n"):
+            if "|" in line and "---" not in line and "参数" not in line:
+                parts = [p.strip() for p in line.split("|") if p.strip()]
                 if len(parts) >= 4:
-                    params.append({
-                        'name': parts[0],
-                        'type': parts[1],
-                        'required': parts[2] in ('✅', '是', 'yes', 'true'),
-                        'description': parts[3],
-                    })
+                    params.append(
+                        {
+                            "name": parts[0],
+                            "type": parts[1],
+                            "required": parts[2] in ("✅", "是", "yes", "true"),
+                            "description": parts[3],
+                        }
+                    )
 
     return SkillIR(
-        name=fm.get('name', ''),
-        version=str(fm.get('version', '1.0.0')),
-        description=fm.get('description', ''),
-        summary=fm.get('summary', ''),
-        type=fm.get('type', ''),
-        skill_type=fm.get('skill_type', ''),
-        intent=fm.get('intent', ''),
-        tags=fm.get('tags', []),
-        category=fm.get('category', ''),
+        name=fm.get("name", ""),
+        version=str(fm.get("version", "1.0.0")),
+        description=fm.get("description", ""),
+        summary=fm.get("summary", ""),
+        type=fm.get("type", ""),
+        skill_type=fm.get("skill_type", ""),
+        intent=fm.get("intent", ""),
+        tags=fm.get("tags", []),
+        category=fm.get("category", ""),
         parameters=params,
     )

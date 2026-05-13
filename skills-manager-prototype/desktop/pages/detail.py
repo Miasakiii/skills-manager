@@ -17,28 +17,43 @@ def build_detail_page(app) -> ft.Control:
         app.selected_skill_name = None
         app.show_snack(f"加载 Skill 失败: {e}", error=True)
         from .browse import build_browse_page
+
         return build_browse_page(app)
 
     # 参数表（斑马条纹）
     param_rows = []
     for i, p in enumerate(ir.parameters):
-        row_color = ft.Colors.SURFACE_CONTAINER_HIGHEST if i % 2 == 0 else ft.Colors.SURFACE
+        row_color = (
+            ft.Colors.SURFACE_CONTAINER_HIGHEST if i % 2 == 0 else ft.Colors.SURFACE
+        )
         req_icon = ft.Icons.CHECK_CIRCLE if p.required else ft.Icons.CIRCLE_OUTLINED
         req_color = ft.Colors.GREEN if p.required else ft.Colors.GREY
-        param_rows.append(ft.DataRow(
-            cells=[
-                ft.DataCell(ft.Text(p.name, weight=ft.FontWeight.BOLD, size=FONT_BODY)),
-                ft.DataCell(ft.Container(
-                    content=ft.Text(p.type, size=FONT_SMALL),
-                    bgcolor=ft.Colors.INDIGO_50,
-                    border_radius=4,
-                    padding=ft.Padding(4, 2, 4, 2),
-                )),
-                ft.DataCell(ft.Icon(req_icon, size=16, color=req_color)),
-                ft.DataCell(ft.Text(p.description, size=FONT_SMALL, color=ft.Colors.ON_SURFACE_VARIANT)),
-            ],
-            color=row_color,
-        ))
+        param_rows.append(
+            ft.DataRow(
+                cells=[
+                    ft.DataCell(
+                        ft.Text(p.name, weight=ft.FontWeight.BOLD, size=FONT_BODY)
+                    ),
+                    ft.DataCell(
+                        ft.Container(
+                            content=ft.Text(p.type, size=FONT_SMALL),
+                            bgcolor=ft.Colors.INDIGO_50,
+                            border_radius=4,
+                            padding=ft.Padding(4, 2, 4, 2),
+                        )
+                    ),
+                    ft.DataCell(ft.Icon(req_icon, size=16, color=req_color)),
+                    ft.DataCell(
+                        ft.Text(
+                            p.description,
+                            size=FONT_SMALL,
+                            color=ft.Colors.ON_SURFACE_VARIANT,
+                        )
+                    ),
+                ],
+                color=row_color,
+            )
+        )
 
     param_table = ft.DataTable(
         columns=[
@@ -73,6 +88,7 @@ def build_detail_page(app) -> ft.Control:
 
     def _show_uninstall():
         from ..dialogs import build_uninstall_dialog
+
         app._active_dialog = build_uninstall_dialog(app, ir.name)
         app.page.show_dialog(app._active_dialog)
 
@@ -103,6 +119,7 @@ def build_detail_page(app) -> ft.Control:
         if save_path:
             try:
                 from pathlib import Path
+
                 Path(save_path).write_text(content, encoding="utf-8")
                 app.show_snack(f"已保存到 {save_path}")
             except Exception as ex:
@@ -112,48 +129,90 @@ def build_detail_page(app) -> ft.Control:
         scroll=ft.ScrollMode.AUTO,
         spacing=16,
         controls=[
-            ft.Row([
-                ft.TextButton("返回", icon=ft.Icons.ARROW_BACK, on_click=lambda _: app.go_back()),
-                ft.Row([
+            ft.Row(
+                [
                     ft.TextButton(
-                        "更新",
-                        icon=ft.Icons.UPDATE,
-                        on_click=do_update,
-                        tooltip=update_reason,
-                        disabled=not can_update,
+                        "返回",
+                        icon=ft.Icons.ARROW_BACK,
+                        on_click=lambda _: app.go_back(),
                     ),
-                    ft.TextButton("卸载", icon=ft.Icons.DELETE, on_click=lambda _: _show_uninstall()),
-                ]),
-            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-            ft.Container(
-                content=ft.Row([
-                    ft.Column(spacing=6, expand=True, controls=[
-                        ft.Row([
-                            ft.Container(
-                                content=ft.Icon(ft.Icons.MEMORY, color=ft.Colors.WHITE, size=18),
-                                bgcolor=ft.Colors.INDIGO,
-                                border_radius=8,
-                                padding=ft.Padding(6, 6, 6, 6),
+                    ft.Row(
+                        [
+                            ft.TextButton(
+                                "更新",
+                                icon=ft.Icons.UPDATE,
+                                on_click=do_update,
+                                tooltip=update_reason,
+                                disabled=not can_update,
                             ),
-                            ft.Text(ir.name, size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-                        ], spacing=10),
-                        ft.Text(f"v{ir.version}  ·  {ir.category or '未分类'}", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
-                    ]),
-                    ft.Row([
-                        ft.FilledButton(
-                            "复制导出",
-                            icon=ft.Icons.CONTENT_COPY,
-                            on_click=copy_export,
-                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                            ft.TextButton(
+                                "卸载",
+                                icon=ft.Icons.DELETE,
+                                on_click=lambda _: _show_uninstall(),
+                            ),
+                        ]
+                    ),
+                ],
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            ),
+            ft.Container(
+                content=ft.Row(
+                    [
+                        ft.Column(
+                            spacing=6,
+                            expand=True,
+                            controls=[
+                                ft.Row(
+                                    [
+                                        ft.Container(
+                                            content=ft.Icon(
+                                                ft.Icons.MEMORY,
+                                                color=ft.Colors.WHITE,
+                                                size=18,
+                                            ),
+                                            bgcolor=ft.Colors.INDIGO,
+                                            border_radius=8,
+                                            padding=ft.Padding(6, 6, 6, 6),
+                                        ),
+                                        ft.Text(
+                                            ir.name,
+                                            size=FONT_TITLE,
+                                            weight=ft.FontWeight.BOLD,
+                                        ),
+                                    ],
+                                    spacing=10,
+                                ),
+                                ft.Text(
+                                    f"v{ir.version}  ·  {ir.category or '未分类'}",
+                                    size=FONT_SUBTITLE,
+                                    color=ft.Colors.ON_SURFACE_VARIANT,
+                                ),
+                            ],
                         ),
-                        ft.OutlinedButton(
-                            "保存文件",
-                            icon=ft.Icons.SAVE,
-                            on_click=save_to_file,
-                            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                        ft.Row(
+                            [
+                                ft.FilledButton(
+                                    "复制导出",
+                                    icon=ft.Icons.CONTENT_COPY,
+                                    on_click=copy_export,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.RoundedRectangleBorder(radius=10)
+                                    ),
+                                ),
+                                ft.OutlinedButton(
+                                    "保存文件",
+                                    icon=ft.Icons.SAVE,
+                                    on_click=save_to_file,
+                                    style=ft.ButtonStyle(
+                                        shape=ft.RoundedRectangleBorder(radius=10)
+                                    ),
+                                ),
+                            ],
+                            spacing=8,
                         ),
-                    ], spacing=8),
-                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                    ],
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                ),
                 bgcolor=ft.Colors.SURFACE_CONTAINER,
                 border_radius=16,
                 padding=20,
@@ -164,10 +223,14 @@ def build_detail_page(app) -> ft.Control:
                     bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
                 ),
             ),
-            ft.Text(ir.description, size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text(
+                ir.description, size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT
+            ),
             ft.Divider(),
-            ft.Text(f"参数定义", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
-            param_table if ir.parameters else ft.Text("无参数", color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text("参数定义", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
+            param_table
+            if ir.parameters
+            else ft.Text("无参数", color=ft.Colors.ON_SURFACE_VARIANT),
             ft.Divider(),
             ft.Text("导出预览", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Dropdown(

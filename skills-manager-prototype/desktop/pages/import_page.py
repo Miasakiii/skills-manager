@@ -52,9 +52,7 @@ def build_import_page(app) -> ft.Control:
 
         # 全选复选框
         non_installed = [r for r in results if not r["installed"]]
-        all_selected = all(
-            selected.get(r["name"], False) for r in non_installed
-        )
+        all_selected = all(selected.get(r["name"], False) for r in non_installed)
 
         def toggle_all(e):
             for r in results:
@@ -123,8 +121,7 @@ def build_import_page(app) -> ft.Control:
     def update_status():
         """更新状态栏。"""
         count = sum(
-            1 for r in results
-            if selected.get(r["name"], False) and not r["installed"]
+            1 for r in results if selected.get(r["name"], False) and not r["installed"]
         )
         if results:
             status_text.value = f"共 {len(results)} 个 Skill，已选 {count} 个"
@@ -182,8 +179,7 @@ def build_import_page(app) -> ft.Control:
         selected = app._import_selected
 
         to_import = [
-            r for r in results
-            if selected.get(r["name"], False) and not r["installed"]
+            r for r in results if selected.get(r["name"], False) and not r["installed"]
         ]
 
         if not to_import:

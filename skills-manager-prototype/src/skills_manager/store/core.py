@@ -102,12 +102,14 @@ class _StoreCore:
                 continue
             if skill_type and getattr(skill, "skill_type", "") != skill_type:
                 continue
-            searchable = " ".join([
-                skill.name,
-                skill.description or "",
-                skill.summary or "",
-                " ".join(skill.tags or []),
-            ]).lower()
+            searchable = " ".join(
+                [
+                    skill.name,
+                    skill.description or "",
+                    skill.summary or "",
+                    " ".join(skill.tags or []),
+                ]
+            ).lower()
             if query_lower in searchable:
                 results.append(skill)
 

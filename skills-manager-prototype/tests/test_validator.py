@@ -1,7 +1,5 @@
 """测试 Skill 格式验证器。"""
 
-
-
 from skills_manager.validator import (
     validate_and_parse,
     validate_skill_dir,

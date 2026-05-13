@@ -46,11 +46,13 @@ def generate_claude_md(skills: list) -> str:
             description = getattr(s, "description", "")
         lines.append(f"| {name} | {skill_type} | {description} |")
 
-    lines.extend([
-        "",
-        "使用方式：在对话中引用 skill 名称即可。",
-        "",
-    ])
+    lines.extend(
+        [
+            "",
+            "使用方式：在对话中引用 skill 名称即可。",
+            "",
+        ]
+    )
 
     return "\n".join(lines)
 

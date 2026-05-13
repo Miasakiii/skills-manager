@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import flet as ft
 
-from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_CARD_NAME, FONT_CARD_DESC
+from ..components import (
+    FONT_TITLE,
+    FONT_SUBTITLE,
+    FONT_SECTION,
+    FONT_CARD_NAME,
+    FONT_CARD_DESC,
+)
 
 
 def build_recommend_page(app) -> ft.Control:
@@ -13,6 +19,7 @@ def build_recommend_page(app) -> ft.Control:
 
     if not skills:
         from ..components import EmptyState
+
         return EmptyState(
             on_install=lambda: app._show_install_dialog(),
             on_create=lambda: app.navigate("editor"),
@@ -33,7 +40,11 @@ def build_recommend_page(app) -> ft.Control:
                 recent_controls.append(
                     ft.ListTile(
                         leading=ft.Icon(ft.Icons.HISTORY, size=20),
-                        title=ft.Text(skill_info.name, size=FONT_CARD_NAME, weight=ft.FontWeight.BOLD),
+                        title=ft.Text(
+                            skill_info.name,
+                            size=FONT_CARD_NAME,
+                            weight=ft.FontWeight.BOLD,
+                        ),
                         subtitle=ft.Text(
                             skill_info.description or skill_info.summary or "",
                             size=FONT_CARD_DESC,
@@ -46,7 +57,9 @@ def build_recommend_page(app) -> ft.Control:
                 )
     else:
         recent_controls.append(
-            ft.Text("暂无使用记录", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT)
+            ft.Text(
+                "暂无使用记录", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT
+            )
         )
 
     export_controls: list[ft.Control] = []
@@ -66,7 +79,9 @@ def build_recommend_page(app) -> ft.Control:
             )
     else:
         export_controls.append(
-            ft.Text("暂无导出记录", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT)
+            ft.Text(
+                "暂无导出记录", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT
+            )
         )
 
     return ft.Column(

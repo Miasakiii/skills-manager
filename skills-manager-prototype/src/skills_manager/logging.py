@@ -39,10 +39,10 @@ class _ColorFormatter(logging.Formatter):
     """带颜色的控制台格式化器。"""
 
     COLORS = {
-        "DEBUG": "\033[36m",     # cyan
-        "INFO": "\033[32m",      # green
-        "WARNING": "\033[33m",   # yellow
-        "ERROR": "\033[31m",     # red
+        "DEBUG": "\033[36m",  # cyan
+        "INFO": "\033[32m",  # green
+        "WARNING": "\033[33m",  # yellow
+        "ERROR": "\033[31m",  # red
         "CRITICAL": "\033[35m",  # magenta
     }
     RESET = "\033[0m"
@@ -112,7 +112,7 @@ def get_logger(name: str) -> logging.Logger:
 
     short = name
     if short.startswith("skills_manager."):
-        short = short[len("skills_manager."):]
+        short = short[len("skills_manager.") :]
     elif short == "skills_manager":
         short = "root"
     return logging.getLogger(f"skills_manager.{short}")

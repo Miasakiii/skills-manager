@@ -104,6 +104,7 @@ class TestSetup:
         """多次调用 setup 不应添加重复 handler。"""
         # 重置全局状态
         import skills_manager.logging as log_mod
+
         log_mod._initialized = False
 
         with patch.object(Path, "mkdir"):
@@ -119,9 +120,11 @@ class TestSetup:
 
     def test_creates_log_dir(self):
         import skills_manager.logging as log_mod
+
         log_mod._initialized = False
 
         import tempfile
+
         tmpdir = Path(tempfile.mkdtemp())
         log_dir = tmpdir / "logs"
         setup(log_dir=log_dir, json_file=True)
@@ -131,6 +134,7 @@ class TestSetup:
         # 释放句柄
         log_mod.shutdown()
         import shutil
+
         shutil.rmtree(tmpdir, ignore_errors=True)
 
         # 清理全局状态
@@ -144,6 +148,7 @@ class TestSetup:
 class TestGetLogger:
     def test_auto_initializes(self):
         import skills_manager.logging as log_mod
+
         log_mod._initialized = False
 
         logger = get_logger("skills_manager.test")

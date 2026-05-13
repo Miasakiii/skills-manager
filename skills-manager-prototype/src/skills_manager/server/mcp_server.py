@@ -75,8 +75,14 @@ class SkillfmtMCPServer:
                         "type": "object",
                         "properties": {
                             "query": {"type": "string", "description": "搜索关键词"},
-                            "category": {"type": "string", "description": "按分类筛选（可选）"},
-                            "tag": {"type": "string", "description": "按标签筛选（可选）"},
+                            "category": {
+                                "type": "string",
+                                "description": "按分类筛选（可选）",
+                            },
+                            "tag": {
+                                "type": "string",
+                                "description": "按标签筛选（可选）",
+                            },
                         },
                         "required": ["query"],
                     },
@@ -87,9 +93,18 @@ class SkillfmtMCPServer:
                     inputSchema={
                         "type": "object",
                         "properties": {
-                            "source": {"type": "string", "description": "本地路径、URL 或 GitHub 仓库地址"},
-                            "name": {"type": "string", "description": "自定义安装名（可选）"},
-                            "force": {"type": "boolean", "description": "是否覆盖已有同名 skill"},
+                            "source": {
+                                "type": "string",
+                                "description": "本地路径、URL 或 GitHub 仓库地址",
+                            },
+                            "name": {
+                                "type": "string",
+                                "description": "自定义安装名（可选）",
+                            },
+                            "force": {
+                                "type": "boolean",
+                                "description": "是否覆盖已有同名 skill",
+                            },
                         },
                         "required": ["source"],
                     },
@@ -112,8 +127,14 @@ class SkillfmtMCPServer:
                         "type": "object",
                         "properties": {
                             "name": {"type": "string", "description": "Skill 名称"},
-                            "format": {"type": "string", "description": "目标格式：openai, claude, gemini, mcp, schema"},
-                            "output": {"type": "string", "description": "输出文件路径（可选，默认返回内容）"},
+                            "format": {
+                                "type": "string",
+                                "description": "目标格式：openai, claude, gemini, mcp, schema",
+                            },
+                            "output": {
+                                "type": "string",
+                                "description": "输出文件路径（可选，默认返回内容）",
+                            },
                         },
                         "required": ["name", "format"],
                     },
@@ -125,7 +146,10 @@ class SkillfmtMCPServer:
                         "type": "object",
                         "properties": {
                             "name": {"type": "string", "description": "Skill 名称"},
-                            "source": {"type": "string", "description": "新版本的本地目录路径"},
+                            "source": {
+                                "type": "string",
+                                "description": "新版本的本地目录路径",
+                            },
                         },
                         "required": ["name", "source"],
                     },
@@ -137,7 +161,10 @@ class SkillfmtMCPServer:
                         "type": "object",
                         "properties": {
                             "name": {"type": "string", "description": "Skill 名称"},
-                            "version": {"type": "string", "description": "目标版本号（可选，默认上一个版本）"},
+                            "version": {
+                                "type": "string",
+                                "description": "目标版本号（可选，默认上一个版本）",
+                            },
                         },
                         "required": ["name"],
                     },
@@ -148,8 +175,14 @@ class SkillfmtMCPServer:
                     inputSchema={
                         "type": "object",
                         "properties": {
-                            "directory": {"type": "string", "description": "Skill 目录路径"},
-                            "output": {"type": "string", "description": "输出目录（可选）"},
+                            "directory": {
+                                "type": "string",
+                                "description": "Skill 目录路径",
+                            },
+                            "output": {
+                                "type": "string",
+                                "description": "输出目录（可选）",
+                            },
                         },
                         "required": ["directory"],
                     },
@@ -181,7 +214,11 @@ class SkillfmtMCPServer:
                     }
                     for s in skills
                 ]
-                return [TextContent(type="text", text=json.dumps(data, ensure_ascii=False, indent=2))]
+                return [
+                    TextContent(
+                        type="text", text=json.dumps(data, ensure_ascii=False, indent=2)
+                    )
+                ]
 
             if name == "get_skill_info":
                 skill_name = arguments["name"]
@@ -200,13 +237,22 @@ class SkillfmtMCPServer:
                     "author": ir.author,
                     "license": ir.license,
                     "parameters": [
-                        {"name": p.name, "type": p.type, "description": p.description, "required": p.required}
+                        {
+                            "name": p.name,
+                            "type": p.type,
+                            "description": p.description,
+                            "required": p.required,
+                        }
                         for p in ir.parameters
                     ],
                     "installed_at": getattr(skill, "installed_at", ""),
                     "source": getattr(skill, "source", ""),
                 }
-                return [TextContent(type="text", text=json.dumps(data, ensure_ascii=False, indent=2))]
+                return [
+                    TextContent(
+                        type="text", text=json.dumps(data, ensure_ascii=False, indent=2)
+                    )
+                ]
 
             if name == "search_skills":
                 results = self.store.search(
@@ -223,7 +269,11 @@ class SkillfmtMCPServer:
                     }
                     for s in results
                 ]
-                return [TextContent(type="text", text=json.dumps(data, ensure_ascii=False, indent=2))]
+                return [
+                    TextContent(
+                        type="text", text=json.dumps(data, ensure_ascii=False, indent=2)
+                    )
+                ]
 
             if name == "install_skill":
                 source = arguments["source"]
@@ -236,7 +286,9 @@ class SkillfmtMCPServer:
                 elif source_path.suffix == ".skill":
                     result = self.store.install_from_package(source_path)
                 else:
-                    result = self.store.install(source_path, name=custom_name, force=force)
+                    result = self.store.install(
+                        source_path, name=custom_name, force=force
+                    )
 
                 msg = f"已安装 {result.name} v{result.version}"
                 return [TextContent(type="text", text=msg)]
@@ -266,12 +318,24 @@ class SkillfmtMCPServer:
                 return [TextContent(type="text", text=msg)]
 
             if name == "upgrade_skill":
-                result = self.store.upgrade(arguments["name"], Path(arguments["source"]))
-                return [TextContent(type="text", text=f"已升级 {result.name} 到 v{result.version}")]
+                result = self.store.upgrade(
+                    arguments["name"], Path(arguments["source"])
+                )
+                return [
+                    TextContent(
+                        type="text", text=f"已升级 {result.name} 到 v{result.version}"
+                    )
+                ]
 
             if name == "rollback_skill":
-                result = self.store.rollback(arguments["name"], arguments.get("version"))
-                return [TextContent(type="text", text=f"已回滚 {result.name} 到 v{result.version}")]
+                result = self.store.rollback(
+                    arguments["name"], arguments.get("version")
+                )
+                return [
+                    TextContent(
+                        type="text", text=f"已回滚 {result.name} 到 v{result.version}"
+                    )
+                ]
 
             if name == "pack_skill":
                 out = arguments.get("output")
@@ -290,7 +354,11 @@ class SkillfmtMCPServer:
                     "installed_skills": len(skills),
                     "supported_formats": formats,
                 }
-                return [TextContent(type="text", text=json.dumps(data, ensure_ascii=False, indent=2))]
+                return [
+                    TextContent(
+                        type="text", text=json.dumps(data, ensure_ascii=False, indent=2)
+                    )
+                ]
 
             return [TextContent(type="text", text=f"Unknown tool: {name}")]
 

@@ -47,7 +47,9 @@ Test function.
 """,
         encoding="utf-8",
     )
-    (skill_dir / "handler.py").write_text("def run(input): return input", encoding="utf-8")
+    (skill_dir / "handler.py").write_text(
+        "def run(input): return input", encoding="utf-8"
+    )
     return skill_dir
 
 
@@ -79,7 +81,9 @@ class TestCLIInstall:
 
     def test_install_with_custom_name(self, store, sample_skill_dir):
         """测试自定义名称安装。"""
-        result = runner.invoke(app, ["install", str(sample_skill_dir), "--name", "custom"])
+        result = runner.invoke(
+            app, ["install", str(sample_skill_dir), "--name", "custom"]
+        )
         assert result.exit_code == 0
         assert store.exists("custom")
 
@@ -212,11 +216,17 @@ class TestCLIExport:
         """测试导出到文件。"""
         store.install(sample_skill_dir)
         output = tmp_path / "output.json"
-        result = runner.invoke(app, [
-            "export", "test-skill",
-            "--format", "openai",
-            "--output", str(output),
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "export",
+                "test-skill",
+                "--format",
+                "openai",
+                "--output",
+                str(output),
+            ],
+        )
         assert result.exit_code == 0
         assert output.exists()
 
@@ -256,7 +266,9 @@ class TestCLIPack:
     def test_pack(self, store, sample_skill_dir, tmp_path):
         """测试打包。"""
         output = tmp_path / "output"
-        result = runner.invoke(app, ["pack", str(sample_skill_dir), "--output", str(output)])
+        result = runner.invoke(
+            app, ["pack", str(sample_skill_dir), "--output", str(output)]
+        )
         assert result.exit_code == 0
         assert "Packed" in result.output
 
@@ -309,7 +321,9 @@ Updated test function.
 """,
             encoding="utf-8",
         )
-        (new_version_dir / "handler.py").write_text("def run(input): return input", encoding="utf-8")
+        (new_version_dir / "handler.py").write_text(
+            "def run(input): return input", encoding="utf-8"
+        )
 
         result = runner.invoke(app, ["upgrade", "test-skill", str(new_version_dir)])
         assert result.exit_code == 0
@@ -420,6 +434,7 @@ class CLICheckUpdate:
         """测试检查更新。"""
         with patch("skills_manager.cli.check_update") as mock_check:
             from skills_manager.updater import UpdateInfo
+
             mock_check.return_value = UpdateInfo(
                 latest_version="9.9.9",
                 current_version="0.1.0",
