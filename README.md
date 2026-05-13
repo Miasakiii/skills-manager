@@ -8,11 +8,24 @@
 
 ## 快速安装
 
+### PyPI（推荐）
+
 ```bash
 pip install skillfmt
 ```
 
-CLI 命令 `skillfmt` 安装后即可使用。桌面应用请从 [Releases](https://github.com/Miasakiii/skills-manager/releases) 下载。
+### 桌面应用 / 独立可执行文件
+
+从 [Releases](https://github.com/Miasakiii/skills-manager/releases/latest) 下载对应平台安装包：
+
+| 平台 | 安装包 | 说明 |
+|------|--------|------|
+| Windows | `skills-manager-setup-windows.exe` | 安装向导（推荐） |
+| Windows | `skills-manager-desktop.exe` | 绿色版桌面应用 |
+| Windows | `skills-manager-cli.exe` | 绿色版 CLI |
+| macOS | `skills-manager-desktop.dmg` | 桌面应用 |
+
+> Linux 桌面版暂未提供预编译包，请使用 `pip install skillfmt` 或从源码运行。
 
 ## 快速开始
 
@@ -81,13 +94,25 @@ skillfmt export hello --format mcp --output hello_mcp.py
 
 ### 3. 桌面应用
 
-从 [Releases](https://github.com/Miasakiii/skills-manager/releases) 下载安装包，或从源码运行：
+从 [Releases](https://github.com/Miasakiii/skills-manager/releases/latest) 下载安装包，或从源码运行：
 
 ```bash
+cd skills-manager-prototype
 python -m desktop
 ```
 
-### 4. 检查更新
+### 4. 启动 Server（MCP / HTTP API）
+
+```bash
+# MCP 模式（stdio，供 Claude Desktop 等调用）
+pip install skillfmt[server]
+skillfmt serve --mode mcp
+
+# HTTP API 模式
+skillfmt serve --mode api --port 8000
+```
+
+### 5. 检查更新
 
 ```bash
 skillfmt check-update
@@ -218,6 +243,8 @@ skills-manager/
 ### 运行测试
 
 ```bash
+cd skills-manager-prototype
+
 # 运行所有测试
 pytest tests/
 
@@ -231,6 +258,8 @@ pytest tests/ --cov=skills_manager --cov-report=term-missing
 ### 代码质量
 
 ```bash
+cd skills-manager-prototype
+
 # 格式化
 ruff format .
 
@@ -257,7 +286,8 @@ mypy src/
 
 ## 文档
 
-- [用户指南](./docs/user-guide.md) — 详细使用说明
+- [用户指南](skills-manager-prototype/docs/user-guide.md)：详细使用说明
+- [CHANGELOG](CHANGELOG.md)：版本变更记录
 
 ## 许可
 
