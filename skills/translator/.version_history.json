@@ -1,0 +1,8 @@
+[
+  {
+    "version": "1.0.0",
+    "installed_at": "2026-05-10T10:57:05.956658+00:00",
+    "source": "examples\\translator",
+    "description": "多语言翻译，支持 7 种语言"
+  }
+]
