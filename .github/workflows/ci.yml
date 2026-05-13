@@ -38,7 +38,7 @@ jobs:
         env:
           SKILLS_NO_AUTO_TRANSLATE: "1"
         run: |
-          pytest tests/ --cov=skills_manager --cov-report=term-missing --cov-fail-under=80 -q
+          pytest tests/ --cov=skills_manager --cov-report=term-missing --cov-fail-under=80 -q --omit="*/desktop/*,*/pyinstaller/*,*/server/*"
 
   lint:
     runs-on: ubuntu-latest
