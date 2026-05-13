@@ -10,12 +10,12 @@ Skills Manager 是一个 AI Skill 格式转换工具。用户编写一次 SKILL.
 
 ## 技术栈
 
-- **Python 3.12+** — 核心引擎
-- **Flet 0.84** — 桌面 GUI
-- **Typer** — CLI 框架
-- **pytest** — 测试
-- **ruff** — 代码格式与检查
-- **GitHub Actions** — CI/CD（三平台构建 + PyPI 发布）
+- **Python 3.12+**：核心引擎
+- **Flet 0.84**：桌面 GUI
+- **Typer**：CLI 框架
+- **pytest**：测试
+- **ruff**：代码格式与检查
+- **GitHub Actions**：CI/CD（三平台构建 + PyPI 发布）
 
 ## 目录结构
 

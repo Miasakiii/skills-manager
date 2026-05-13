@@ -337,7 +337,7 @@ mypy src/
 
 ## 文档
 
-- [用户指南](./docs/user-guide.md) — 详细使用说明
+- [用户指南](./docs/user-guide.md)：详细使用说明
 
 ## 许可
 

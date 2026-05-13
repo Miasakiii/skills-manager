@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "skillfmt"
 version = "0.1.4"
-description = "AI Skill 格式转换与管理工具 — 写一次定义，导出到所有主流 AI 平台"
+description = "AI Skill 格式转换与管理工具：写一次定义，导出到所有主流 AI 平台"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [

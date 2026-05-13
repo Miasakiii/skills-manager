@@ -19,12 +19,26 @@
 
 ### 安装 Skills Manager
 
+**从 PyPI 安装（推荐）**
+
 ```bash
-# 从源码安装
-git clone <repo-url>
-cd skills-manager-prototype
+pip install skillfmt
+```
+
+**从源码安装**
+
+```bash
+git clone https://github.com/Miasakiii/skills-manager.git
+cd skills-manager/skills-manager-prototype
 pip install -e ".[dev]"
 ```
+
+**桌面应用**
+
+从 [Releases](https://github.com/Miasakiii/skills-manager/releases/latest) 下载对应平台安装包：
+
+- Windows: `skills-manager-setup-windows.exe`（安装向导）或 `skills-manager-desktop.exe`（绿色版）
+- macOS: `skills-manager-desktop.dmg`
 
 ### 创建你的第一个 Skill
 
@@ -86,8 +100,8 @@ skills-manager export hello-world --format openai
 
 一个完整的 SKILL.md 包含两部分：
 
-1. **Frontmatter**（YAML 格式）— 机器可读的元数据
-2. **Markdown Body** — 人类可读的文档
+1. **Frontmatter**（YAML 格式）：机器可读的元数据
+2. **Markdown Body**：人类可读的文档
 
 ### Frontmatter 字段
 
@@ -162,16 +176,16 @@ security:
 ````
 
 **类型支持**：
-- `string` — 字符串
-- `integer` / `int` — 整数
-- `number` / `float` — 浮点数
-- `boolean` / `bool` — 布尔值
-- `array` — 数组
-- `object` — 对象
+- `string`：字符串
+- `integer` / `int`：整数
+- `number` / `float`：浮点数
+- `boolean` / `bool`：布尔值
+- `array`：数组
+- `object`：对象
 
 **必需标记**：
-- `✅` / `是` / `yes` / `true` — 必填
-- `❌` / `否` / `no` / `false` — 可选
+- `✅` / `是` / `yes` / `true`：必填
+- `❌` / `否` / `no` / `false`：可选
 
 **枚举值检测**：
 在说明中使用 `X / Y / Z` 格式，会自动提取为枚举值。
@@ -548,9 +562,9 @@ skills-manager pack ~/.skills-manager/store/my-skill
 
 参考 `examples/` 目录：
 
-- `translator/` — 翻译工具（component 类型）
-- `json-formatter/` — JSON 格式化（component 类型）
-- `code-reviewer` — 代码审查（component 类型）
+- `translator/`：翻译工具（component 类型）
+- `json-formatter/`：JSON 格式化（component 类型）
+- `code-reviewer`：代码审查（component 类型）
 
 ---
 
