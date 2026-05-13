@@ -8,11 +8,26 @@
 
 ## 快速安装
 
+### PyPI（推荐）
+
 ```bash
 pip install skillfmt
 ```
 
-CLI 命令 `skillfmt` 安装后即可使用。桌面应用请从 [Releases](https://github.com/Miasakiii/skills-manager/releases) 下载。
+CLI 命令 `skillfmt` 安装后即可使用。
+
+### 桌面应用 / 独立可执行文件
+
+从 [Releases](https://github.com/Miasakiii/skills-manager/releases/latest) 下载对应平台安装包：
+
+| 平台 | 安装包 | 说明 |
+|------|--------|------|
+| Windows | `skills-manager-setup-windows.exe` | 安装向导（推荐） |
+| Windows | `skills-manager-desktop.exe` | 绿色版桌面应用 |
+| Windows | `skills-manager-cli.exe` | 绿色版 CLI |
+| macOS | `skills-manager-desktop.dmg` | 桌面应用 |
+
+> Linux 桌面版暂未提供预编译包，请使用 `pip install skillfmt` 或从源码运行 `python -m desktop`。
 
 ## 快速开始
 
