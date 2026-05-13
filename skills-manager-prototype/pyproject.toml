@@ -49,5 +49,12 @@ server = ["mcp>=1.0.0", "fastapi>=0.100.0", "uvicorn>=0.23.0"]
 skillfmt = "skills_manager.cli:app"
 skills = "skills_manager.cli:app"
 
+[tool.coverage.run]
+omit = [
+    "*/desktop/*",
+    "*/pyinstaller/*",
+    "*/server/*",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/skills_manager"]
