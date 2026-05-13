@@ -9,6 +9,9 @@ jobs:
   # ── 构建 Python 包 (sdist + wheel) ────────────────────────
   build-pypi:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skills-manager-prototype
     outputs:
       whl_name: ${{ steps.build.outputs.whl_name }}
     steps:
@@ -24,7 +27,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: python-packages
-          path: dist/
+          path: skills-manager-prototype/dist/
 
   # ── 发布到 PyPI ──────────────────────────────────────────
   publish-pypi:
@@ -64,6 +67,9 @@ jobs:
             cli_name: skillfmt
             desktop_name: skills-manager-desktop
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: skills-manager-prototype
     steps:
       - uses: actions/checkout@v4
 
@@ -130,7 +136,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}-builds
-          path: dist/
+          path: skills-manager-prototype/dist/
 
   # ── 创建 GitHub Release ──────────────────────────────────
   create-release:
