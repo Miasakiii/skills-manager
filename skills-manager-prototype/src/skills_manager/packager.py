@@ -6,12 +6,10 @@
 
 from __future__ import annotations
 
-import json
 import tarfile
 import zipfile
 from pathlib import Path
 
-from .ir import SkillIR
 from .parser import parse_skill_md
 
 

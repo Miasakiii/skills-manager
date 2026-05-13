@@ -1,8 +1,6 @@
 """测试 Agent 配置生成器。"""
 
-from pathlib import Path
 
-import pytest
 
 from skills_manager.agent_config import generate_claude_md, update_agent_claude_md
 

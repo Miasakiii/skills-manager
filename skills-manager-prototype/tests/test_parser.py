@@ -1,14 +1,11 @@
 """测试 SKILL.md 解析器。"""
 
-import json
 from pathlib import Path
 
 import pytest
 
-from skills_manager.ir import SkillIR
 from skills_manager.frontmatter import split_frontmatter
 from skills_manager.parser import (
-    ParseError,
     _detect_enum,
     _extract_examples,
     _extract_list,

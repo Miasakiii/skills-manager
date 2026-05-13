@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import typer
@@ -11,7 +10,6 @@ from rich.table import Table
 
 from . import __version__
 from .adapters import get_adapter, list_formats
-from .ir import SkillIR
 from .packager import pack as pack_skill
 from .parser import parse_skill_md
 from .store import Store, StoreError
@@ -396,7 +394,7 @@ def doctor() -> None:
 @app.command()
 def check_update() -> None:
     """检查是否有新版本可用。"""
-    from .updater import check_update as do_check, format_update_message
+    from .updater import check_update as do_check
 
     info = do_check()
     if info is None:

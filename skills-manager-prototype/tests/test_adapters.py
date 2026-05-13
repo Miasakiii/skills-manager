@@ -1,7 +1,6 @@
 """测试所有适配器。"""
 
 import json
-from pathlib import Path
 
 import pytest
 
@@ -137,7 +136,7 @@ class TestGeminiAdapter:
 
     def test_nested_and_default(self):
         """验证嵌套类型和 default 字段正确转换为大写类型名。"""
-        from skills_manager.ir import SkillIR, Parameter
+        from skills_manager.ir import SkillIR
 
         ir = SkillIR(
             name="test",

@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from types import SimpleNamespace
 
 from ..parser import parse_skill_md
-from .core import StoreError
 
 
 class _Scanner:

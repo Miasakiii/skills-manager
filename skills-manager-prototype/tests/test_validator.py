@@ -1,11 +1,8 @@
 """测试 Skill 格式验证器。"""
 
-from pathlib import Path
 
-import pytest
 
 from skills_manager.validator import (
-    ValidationResult,
     validate_and_parse,
     validate_skill_dir,
     validate_skill_md,

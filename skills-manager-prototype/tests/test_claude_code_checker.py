@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 
 from skills_manager.claude_code_checker import (
     ClaudeCodeChecker,

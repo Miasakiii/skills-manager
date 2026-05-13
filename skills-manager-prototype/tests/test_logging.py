@@ -3,10 +3,9 @@
 import json
 import logging
 import sys
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from pathlib import Path
 
-import pytest
 
 from skills_manager.logging import (
     _JsonFormatter,

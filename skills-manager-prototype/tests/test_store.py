@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from skills_manager.parser import parse_skill_md
 from skills_manager.store import Store, StoreError
 
 
@@ -232,7 +231,6 @@ class TestStoreDiscover:
 class TestStoreScan:
     def test_scan_directory(self, store, tmp_path):
         """测试扫描目录功能。"""
-        import shutil
         # 创建独立的扫描目录
         scan_dir = tmp_path / "scan"
         scan_dir.mkdir()

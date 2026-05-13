@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from ..ir import SkillIR
 from ..logging import get_logger
-from .core import StoreError
 
 logger = get_logger(__name__)
 

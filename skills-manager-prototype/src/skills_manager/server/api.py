@@ -14,7 +14,7 @@ logger = get_logger(__name__)
 
 try:
     from fastapi import FastAPI, HTTPException
-    from fastapi.responses import JSONResponse, PlainTextResponse
+    from fastapi.responses import PlainTextResponse
 
     _FASTAPI_AVAILABLE = True
 except ImportError:
@@ -27,7 +27,6 @@ def create_app(store: Store | None = None) -> FastAPI:
         raise RuntimeError("需要安装 fastapi：pip install skillfmt[server]")
 
     from ..adapters import get_adapter, list_formats
-    from ..packager import pack
 
     app = FastAPI(
         title="Skillfmt API",

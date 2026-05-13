@@ -4,7 +4,6 @@ import json
 from unittest.mock import patch, MagicMock
 from urllib.error import URLError
 
-import pytest
 
 from skills_manager import __version__
 from skills_manager.updater import (

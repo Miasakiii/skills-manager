@@ -5,13 +5,13 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
-from ..ir import SkillIR
 from ..logging import get_logger
 from ..parser import parse_skill_md
 from ..security import sanitize_name, validate_path_safety
@@ -121,9 +121,7 @@ class _SkillInstaller:
 
     def install_from_url(self, url: str) -> SimpleNamespace:
         """从 URL 安装 Skill。"""
-        try:
-            import httpx
-        except ImportError:
+        if importlib.util.find_spec("httpx") is None:
             raise StoreError(
                 "需要安装 httpx：pip install skills-manager[remote]"
             )

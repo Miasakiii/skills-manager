@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from ..logging import get_logger
-from .core import StoreError
 
 logger = get_logger(__name__)
 

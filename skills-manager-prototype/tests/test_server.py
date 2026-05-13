@@ -5,27 +5,17 @@
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
 
 from skills_manager.store import Store
 
 # ── MCP Server ──────────────────────────────────────────────
 
-_mcp_available = False
-try:
-    import mcp
+_mcp_available = importlib.util.find_spec("mcp") is not None
 
-    _mcp_available = True
-except ImportError:
-    pass
-
-_fastapi_available = False
-try:
-    import fastapi
-
-    _fastapi_available = True
-except ImportError:
-    pass
+_fastapi_available = importlib.util.find_spec("fastapi") is not None
 
 
 @pytest.mark.skipif(not _mcp_available, reason="mcp not installed")

@@ -89,11 +89,11 @@ class ClaudeCodeChecker:
         fm = self._parse_frontmatter(content)
 
         # 检查必需的 frontmatter 字段
-        for field in self.REQUIRED_FIELDS:
-            if not fm.get(field):
+        for required_field in self.REQUIRED_FIELDS:
+            if not fm.get(required_field):
                 report.issues.append(SkillIssue(
                     severity="error",
-                    message=f"frontmatter 缺少 {field} 字段",
+                    message=f"frontmatter 缺少 {required_field} 字段",
                     auto_fixable=True if field == "name" else False,
                 ))
 
