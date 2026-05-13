@@ -33,7 +33,7 @@ pip install skillfmt
 
 创建目录 `my-skill/`，在其中创建 `SKILL.md`：
 
-```markdown
+```text
 ---
 name: hello
 version: "1.0.0"
@@ -164,7 +164,7 @@ license: MIT
 
 ### Markdown Body
 
-```markdown
+```text
 ## 功能
 
 详细描述 Skill 的功能。
