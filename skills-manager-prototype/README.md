@@ -237,14 +237,19 @@ skills-manager/
 ├── src/skills_manager/        # 核心引擎
 │   ├── cli.py                 # CLI 入口
 │   ├── parser.py              # SKILL.md 解析器
+│   ├── ir.py                  # 中间表示（IR）
+│   ├── validator.py           # 格式验证
 │   ├── store/                 # 本地存储（安装/索引/搜索/同步）
 │   ├── adapters/              # 格式适配器（OpenAI / Claude / Gemini / MCP）
 │   ├── server/                # MCP Server + HTTP API
-│   └── desktop/               # 桌面应用（Flet）
-├── desktop/                   # 桌面客户端源码
+│   └── ...
+├── desktop/                   # 桌面客户端（Flet）
 ├── examples/                  # 示例 Skills
 ├── tests/                     # 测试
-└── docs/                      # 文档
+├── docs/                      # 文档
+├── .github/workflows/         # CI/CD
+├── pyproject.toml             # 项目配置
+└── README.md                  # 本文件
 ```
 
 ## 开发指南
