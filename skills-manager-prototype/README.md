@@ -234,63 +234,17 @@ license: MIT
 
 ```
 skills-manager/
-├── README.md                           # 本文件
-├── LICENSE                             # MIT 许可证
-├── pyproject.toml                      # 项目配置 & PyPI 元数据
-├── src/skills_manager/                 # 核心引擎
-│   ├── __init__.py
-│   ├── ir.py                           # 中间表示（IR）
-│   ├── parser.py                       # SKILL.md 解析器
-│   ├── store/                          # 本地存储管理（缓存+降级恢复）
-│   │   ├── __init__.py                 # Store 门面类（组合各 mixin）
-│   │   ├── core.py                     # 索引读写、基础查询、搜索
-│   │   ├── installer.py                # 安装/卸载/升级/回滚
-│   │   ├── scanner.py                  # 目录扫描与自动发现
-│   │   ├── agent_sync.py               # Agent 目录同步
-│   │   ├── category.py                 # 自动分类
-│   │   ├── history.py                  # 使用/导出历史、收藏
-│   ├── validator.py                    # 格式验证器
-│   ├── packager.py                     # 打包器
-│   ├── agent_config.py                 # Agent 配置生成
-│   ├── security.py                     # 安全工具（路径穿越防护）
-│   ├── logging.py                      # 结构化日志系统
-│   ├── updater.py                      # 自动更新检查
-│   ├── cli.py                          # CLI 入口（Typer）
-│   ├── claude_code_checker.py          # Claude Code 兼容性检查
-│   ├── server/                         # MCP Server + HTTP API
-│   │   ├── __init__.py                 # 门面
-│   │   ├── mcp_server.py               # MCP Server（stdio 模式）
-│   │   └── api.py                      # FastAPI HTTP API
-│   └── adapters/                       # 格式适配器
-│       ├── base.py                     # 适配器基类
-│       ├── openai.py                   # OpenAI Function Calling
-│       ├── claude.py                   # Claude Tool Use
-│       ├── gemini.py                   # Gemini Function Declaration
-│       ├── mcp.py                      # MCP Python Server
-│       └── json_schema.py             # JSON Schema
-├── desktop/                            # 桌面客户端（Flet 0.84）
-│   ├── __main__.py                     # 入口
-│   ├── app.py                          # 主控类（状态/导航/更新检查）
-│   ├── components.py                   # 可复用组件（卡片/列表/字体）
-│   ├── dialogs.py                      # 对话框
-│   └── pages/                          # 页面
-│       ├── browse.py                   # 浏览页（搜索/筛选）
-│       ├── detail.py                   # 详情页（参数表/导出预览）
-│       ├── export.py                   # 批量导出
-│       ├── editor.py                   # 编辑器（实时预览）
-│       ├── import_page.py              # 批量导入
-│       └── settings.py                 # 设置
-├── installer/                          # 安装包
-│   └── setup.nsi                       # Windows NSIS 安装脚本
-├── pyinstaller/                        # 打包入口
-│   ├── cli_launcher.py
-│   └── desktop_launcher.py
-├── .github/workflows/                  # CI/CD
-│   ├── ci.yml                          # 测试 + lint
-│   └── release.yml                     # 三平台构建 + PyPI 发布
-├── examples/                           # 示例 Skills
-├── tests/                              # 测试 (285 passed)
-└── docs/                               # 文档
+├── src/skills_manager/        # 核心引擎
+│   ├── cli.py                 # CLI 入口
+│   ├── parser.py              # SKILL.md 解析器
+│   ├── store/                 # 本地存储（安装/索引/搜索/同步）
+│   ├── adapters/              # 格式适配器（OpenAI / Claude / Gemini / MCP）
+│   ├── server/                # MCP Server + HTTP API
+│   └── desktop/               # 桌面应用（Flet）
+├── desktop/                   # 桌面客户端源码
+├── examples/                  # 示例 Skills
+├── tests/                     # 测试
+└── docs/                      # 文档
 ```
 
 ## 开发指南
