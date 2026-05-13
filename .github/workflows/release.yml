@@ -125,7 +125,6 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           # Merge CLI and Desktop outputs to dist/ for NSIS
-          mkdir -p dist
           mv dist/${{ matrix.cli_name }}.exe dist/skills-manager-cli.exe
           mv dist_desktop/${{ matrix.desktop_name }}.exe dist/skills-manager-desktop.exe
           # Build NSIS installer
