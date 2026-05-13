@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,7 +15,6 @@ from ..ir import SkillIR
 from ..logging import get_logger
 from ..parser import parse_skill_md
 from ..security import sanitize_name, validate_path_safety
-from ..translator import translate_skill_md
 from ..validator import validate_skill_dir
 from .core import StoreError
 
@@ -31,7 +29,6 @@ class _SkillInstaller:
         source: Path,
         name: str | None = None,
         force: bool = False,
-        translate: bool = True,
     ) -> SimpleNamespace:
         """安装 Skill 到本地存储。
 
@@ -39,7 +36,6 @@ class _SkillInstaller:
             source: Skill 目录路径（必须包含 SKILL.md）。
             name: 自定义安装名，默认使用 IR 中的 name。
             force: 是否覆盖已有的同名 Skill。
-            translate: 是否自动翻译英文描述为中文。
 
         Returns:
             安装后的 Skill 信息。
@@ -70,17 +66,6 @@ class _SkillInstaller:
                 self._backup_current_version(install_name)
             shutil.rmtree(target)
         shutil.copytree(source, target)
-
-        if translate and not os.environ.get("SKILLS_NO_AUTO_TRANSLATE") and self._should_translate(ir):
-            try:
-                skill_md_content = (target / "SKILL.md").read_text(encoding="utf-8")
-                translated = translate_skill_md(skill_md_content)
-                if translated != skill_md_content:
-                    (target / "SKILL.md").write_text(translated, encoding="utf-8")
-                    ir = parse_skill_md(target / "SKILL.md")
-                    logger.info("已自动翻译 %s 的英文描述为中文", install_name)
-            except Exception:
-                logger.warning("Auto-translation failed for %s", install_name, exc_info=True)
 
         meta = {
             "installed_at": datetime.now(timezone.utc).isoformat(),

@@ -181,11 +181,30 @@ def build_export_page(app) -> ft.Control:
         scroll=ft.ScrollMode.AUTO,
         spacing=16,
         controls=[
-            ft.Text("批量导出", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-            ft.Text("选择要导出的 Skills 和目标格式", size=FONT_SUBTITLE),
+            ft.Row([
+                ft.Container(
+                    content=ft.Icon(ft.Icons.FILE_DOWNLOAD, color=ft.Colors.WHITE, size=18),
+                    bgcolor=ft.Colors.INDIGO,
+                    border_radius=8,
+                    padding=ft.Padding(6, 6, 6, 6),
+                ),
+                ft.Text("批量导出", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+            ], spacing=10),
+            ft.Text("选择要导出的 Skills 和目标格式", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
             ft.Divider(),
             ft.Row([ft.Text("选择 Skills", size=FONT_SECTION, weight=ft.FontWeight.BOLD), select_all]),
-            ft.Column(controls=checkboxes, spacing=2),
+            ft.Container(
+                content=ft.Column(controls=checkboxes, spacing=4),
+                bgcolor=ft.Colors.SURFACE_CONTAINER,
+                border_radius=12,
+                padding=16,
+                border=ft.Border(
+                    top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                    left=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                    right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                    bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                ),
+            ),
             ft.Divider(),
             ft.Text("导出格式", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Dropdown(options=[ft.DropdownOption(f) for f in list_formats()], value=export_format, width=200, on_select=on_format_change),
@@ -209,8 +228,18 @@ def build_export_page(app) -> ft.Control:
                 ft.Text(output_dir or "未选择目录", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT, italic=True),
             ], spacing=8),
             ft.Row([
-                ft.FilledButton("导出选中", icon=ft.Icons.FILE_DOWNLOAD, on_click=do_export),
-                ft.FilledButton("打包选中", icon=ft.Icons.ARCHIVE, on_click=do_pack),
+                ft.FilledButton(
+                    "导出选中",
+                    icon=ft.Icons.FILE_DOWNLOAD,
+                    on_click=do_export,
+                    style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                ),
+                ft.FilledButton(
+                    "打包选中",
+                    icon=ft.Icons.ARCHIVE,
+                    on_click=do_pack,
+                    style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                ),
             ], spacing=8),
             ft.Divider(),
             ft.Row([

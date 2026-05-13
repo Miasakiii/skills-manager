@@ -8,9 +8,7 @@ from .category import _CategoryManager
 from .core import StoreError, _StoreCore
 from .history import _HistoryTracker
 from .installer import _SkillInstaller
-from .profile import _ProfileManager
 from .scanner import _Scanner
-from .translation import _TranslationManager
 
 __all__ = ["Store", "StoreError"]
 
@@ -21,8 +19,6 @@ class Store(
     _Scanner,
     _AgentSync,
     _CategoryManager,
-    _TranslationManager,
-    _ProfileManager,
     _HistoryTracker,
 ):
     """本地 Skill 存储管理器。"""

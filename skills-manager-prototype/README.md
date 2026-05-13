@@ -1,9 +1,9 @@
-# Skills Manager v0.1.3
+# Skills Manager v0.1.4
 
 > 写一次 AI Skill 定义，一键导出为 OpenAI / Claude / Gemini / MCP 等主流平台格式。
 
 [![PyPI](https://img.shields.io/pypi/v/skillfmt)](https://pypi.org/project/skillfmt/)
-[![Test](https://img.shields.io/badge/tests-271%20passed-green)](https://github.com/Miasakiii/skills-manager)
+[![Test](https://img.shields.io/badge/tests-285%20passed-green)](https://github.com/Miasakiii/skills-manager)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ## 快速安装
@@ -91,6 +91,32 @@ python -m desktop
 
 ```bash
 skillfmt check-update
+```
+
+### 5. 启动 Server（MCP / HTTP API）
+
+让 AI Agent 通过自然语言管理你的 Skills：
+
+```bash
+# MCP 模式（stdio，供 Claude Desktop 等调用）
+pip install skillfmt[server]
+skillfmt serve --mode mcp
+
+# HTTP API 模式
+skillfmt serve --mode api --port 8000
+```
+
+配置 Claude Desktop 的 `claude_desktop_config.json`：
+
+```json
+{
+  "mcpServers": {
+    "skillfmt": {
+      "command": "skillfmt",
+      "args": ["serve", "--mode", "mcp"]
+    }
+  }
+}
 ```
 
 ## SKILL.md 格式规范
@@ -207,9 +233,7 @@ skills-manager/
 │   │   ├── scanner.py                  # 目录扫描与自动发现
 │   │   ├── agent_sync.py               # Agent 目录同步
 │   │   ├── category.py                 # 自动分类
-│   │   ├── translation.py              # 翻译管理
-│   │   ├── profile.py                  # Profile 管理
-│   │   └── history.py                  # 使用/导出历史、收藏
+│   │   ├── history.py                  # 使用/导出历史、收藏
 │   ├── validator.py                    # 格式验证器
 │   ├── packager.py                     # 打包器
 │   ├── agent_config.py                 # Agent 配置生成
@@ -218,6 +242,10 @@ skills-manager/
 │   ├── updater.py                      # 自动更新检查
 │   ├── cli.py                          # CLI 入口（Typer）
 │   ├── claude_code_checker.py          # Claude Code 兼容性检查
+│   ├── server/                         # MCP Server + HTTP API
+│   │   ├── __init__.py                 # 门面
+│   │   ├── mcp_server.py               # MCP Server（stdio 模式）
+│   │   └── api.py                      # FastAPI HTTP API
 │   └── adapters/                       # 格式适配器
 │       ├── base.py                     # 适配器基类
 │       ├── openai.py                   # OpenAI Function Calling
@@ -236,8 +264,6 @@ skills-manager/
 │       ├── export.py                   # 批量导出
 │       ├── editor.py                   # 编辑器（实时预览）
 │       ├── import_page.py              # 批量导入
-│       ├── profiles.py                 # Profile 管理
-│       ├── recommend.py                # 推荐
 │       └── settings.py                 # 设置
 ├── installer/                          # 安装包
 │   └── setup.nsi                       # Windows NSIS 安装脚本
@@ -245,9 +271,10 @@ skills-manager/
 │   ├── cli_launcher.py
 │   └── desktop_launcher.py
 ├── .github/workflows/                  # CI/CD
+│   ├── ci.yml                          # 测试 + lint
 │   └── release.yml                     # 三平台构建 + PyPI 发布
-├── examples/                           # 示例 Skills (6 个)
-├── tests/                              # 测试 (271 passed)
+├── examples/                           # 示例 Skills
+├── tests/                              # 测试 (285 passed)
 └── docs/                               # 文档
 ```
 

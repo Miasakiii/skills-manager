@@ -8,7 +8,7 @@ import flet as ft
 
 from skills_manager.adapters import get_adapter, list_formats
 from skills_manager.parser import parse_skill_md
-from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION
+from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_BODY, FONT_SMALL
 from skills_manager.ir import SkillIR
 from skills_manager.validator import validate_skill_md
 
@@ -31,15 +31,27 @@ def build_editor_page(app) -> ft.Control:
     preview_text = ft.Text(
         generated_content or "填写表单后，预览会自动更新",
         font_family="monospace",
-        size=12,
+        size=FONT_BODY,
         selectable=True,
     )
     preview_container = ft.Container(
         content=preview_text,
         bgcolor=ft.Colors.SURFACE_CONTAINER,
-        border_radius=8,
-        padding=16,
+        border_radius=12,
+        padding=20,
         expand=True,
+        border=ft.Border(
+            top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            left=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+        ),
+        shadow=ft.BoxShadow(
+            spread_radius=0,
+            blur_radius=4,
+            color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
+            offset=ft.Offset(0, 1),
+        ),
     )
 
     # 校验结果区域
@@ -47,8 +59,14 @@ def build_editor_page(app) -> ft.Control:
     validation_container = ft.Container(
         content=validation_column,
         bgcolor=ft.Colors.SURFACE_CONTAINER,
-        border_radius=8,
-        padding=12,
+        border_radius=12,
+        padding=16,
+        border=ft.Border(
+            top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            left=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+        ),
     )
 
     # 格式选择
@@ -150,7 +168,7 @@ def build_editor_page(app) -> ft.Control:
                     validation_column.controls.append(
                         ft.Row([
                             ft.Icon(ft.Icons.ERROR_OUTLINE, size=14, color=ft.Colors.ERROR),
-                            ft.Text(err, size=12, color=ft.Colors.ERROR),
+                            ft.Text(err, size=FONT_SMALL, color=ft.Colors.ERROR),
                         ], spacing=4)
                     )
             if vr.warnings:
@@ -158,14 +176,14 @@ def build_editor_page(app) -> ft.Control:
                     validation_column.controls.append(
                         ft.Row([
                             ft.Icon(ft.Icons.WARNING_AMBER, size=14, color=ft.Colors.ORANGE),
-                            ft.Text(warn, size=12, color=ft.Colors.ORANGE),
+                            ft.Text(warn, size=FONT_SMALL, color=ft.Colors.ORANGE),
                         ], spacing=4)
                     )
             if not vr.errors and not vr.warnings:
                 validation_column.controls.append(
                     ft.Row([
                         ft.Icon(ft.Icons.CHECK_CIRCLE_OUTLINE, size=14, color=ft.Colors.GREEN),
-                        ft.Text("格式校验通过", size=12, color=ft.Colors.GREEN),
+                        ft.Text("格式校验通过", size=FONT_SMALL, color=ft.Colors.GREEN),
                     ], spacing=4)
                 )
 
@@ -236,8 +254,16 @@ def build_editor_page(app) -> ft.Control:
                     scroll=ft.ScrollMode.AUTO,
                     spacing=12,
                     controls=[
-                        ft.Text("新建 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
-                        ft.Text("填写基本信息，自动生成 SKILL.md", size=FONT_SUBTITLE),
+                        ft.Row([
+                            ft.Container(
+                                content=ft.Icon(ft.Icons.EDIT_NOTE, color=ft.Colors.WHITE, size=18),
+                                bgcolor=ft.Colors.INDIGO,
+                                border_radius=8,
+                                padding=ft.Padding(6, 6, 6, 6),
+                            ),
+                            ft.Text("新建 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+                        ], spacing=10),
+                        ft.Text("填写基本信息，自动生成 SKILL.md", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
                         ft.Divider(),
                         ft.TextField(
                             label="名称",
@@ -289,8 +315,18 @@ def build_editor_page(app) -> ft.Control:
                         ),
                         ft.Divider(),
                         ft.Row([
-                            ft.FilledButton("生成骨架", icon=ft.Icons.AUTO_AWESOME, on_click=on_generate),
-                            ft.FilledButton("保存 Skill", icon=ft.Icons.SAVE, on_click=lambda _: save_skill_wrapper()),
+                            ft.FilledButton(
+                                "生成骨架",
+                                icon=ft.Icons.AUTO_AWESOME,
+                                on_click=on_generate,
+                                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                            ),
+                            ft.FilledButton(
+                                "保存 Skill",
+                                icon=ft.Icons.SAVE,
+                                on_click=lambda _: save_skill_wrapper(),
+                                style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+                            ),
                         ]),
                     ],
                 ),

@@ -9,13 +9,22 @@ import flet as ft
 
 
 # ── 字体规范 ──────────────────────────────────────────────
-FONT_TITLE = 22       # 页面标题
-FONT_SUBTITLE = 13    # 副标题/统计
-FONT_CARD_NAME = 14   # 卡片名称
-FONT_CARD_DESC = 11   # 卡片描述
-FONT_TAG = 10         # 标签
-FONT_META = 11        # 元数据
-FONT_SECTION = 13     # 区块标题
+# 建立 Material Design 3 风格层级，确保中英文混排清晰美观
+FONT_DISPLAY = 28     # 大标题 / 空状态主标题
+FONT_TITLE = 24       # 页面标题
+FONT_HEADLINE = 18    # 区块大标题 / 详情页名称
+FONT_SECTION = 15     # 区块标题 / 分类标题
+FONT_SUBTITLE = 14    # 副标题 / 描述 / 统计
+FONT_BODY = 13        # 正文 / 表单标签
+FONT_CARD_NAME = 15   # 卡片名称（与区块标题同级）
+FONT_CARD_DESC = 12   # 卡片描述
+FONT_TAG = 11         # 标签 / Tag
+FONT_META = 12        # 元数据（版本、分类）
+FONT_SMALL = 11       # 小字（时间、角落信息）
+
+# 全局字体栈（Windows 优先 Segoe UI + 微软雅黑，兼顾 macOS/Linux）
+FONT_FAMILY_UI = "Segoe UI, Microsoft YaHei UI, PingFang SC, Noto Sans SC, system-ui, sans-serif"
+FONT_FAMILY_MONO = "Cascadia Code, Consolas, monospace"
 
 
 # ── 工具函数 ──────────────────────────────────────────────
@@ -103,7 +112,7 @@ class SkillCard(ft.Container):
         tag_color = CATEGORY_COLORS.get(skill_info.category, ft.Colors.GREY)
 
         self.bgcolor = ft.Colors.SURFACE_CONTAINER
-        self.border_radius = 12
+        self.border_radius = 16
         self.padding = 16
         self.ink = True
         self.border = ft.Border(
@@ -113,7 +122,16 @@ class SkillCard(ft.Container):
             bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
         )
         self.elevation = 2
+        self.shadow = ft.BoxShadow(
+            spread_radius=0,
+            blur_radius=6,
+            color=ft.Colors.with_opacity(0.06, ft.Colors.BLACK),
+            offset=ft.Offset(0, 2),
+        )
+        self.animate = ft.Animation(180, ft.AnimationCurve.EASE_IN_OUT)
         self.on_click = lambda _: on_click(skill_info.name)
+        self.on_hover = self._on_hover
+        self._tag_color = tag_color
 
         # 类型图标
         skill_type = getattr(skill_info, "skill_type", "")
@@ -213,6 +231,38 @@ class SkillCard(ft.Container):
 
         self.content = ft.Column(spacing=8, controls=controls)
 
+    def _on_hover(self, e):
+        """悬浮时提升阴影和边框。"""
+        if e.data == "true":
+            self.shadow = ft.BoxShadow(
+                spread_radius=0,
+                blur_radius=12,
+                color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK),
+                offset=ft.Offset(0, 4),
+            )
+            self.border = ft.Border(
+                left=ft.BorderSide(3, self._tag_color),
+                top=ft.BorderSide(1, ft.Colors.with_opacity(0.4, self._tag_color)),
+                right=ft.BorderSide(1, ft.Colors.with_opacity(0.4, self._tag_color)),
+                bottom=ft.BorderSide(1, ft.Colors.with_opacity(0.4, self._tag_color)),
+            )
+            self.elevation = 4
+        else:
+            self.shadow = ft.BoxShadow(
+                spread_radius=0,
+                blur_radius=6,
+                color=ft.Colors.with_opacity(0.06, ft.Colors.BLACK),
+                offset=ft.Offset(0, 2),
+            )
+            self.border = ft.Border(
+                left=ft.BorderSide(3, self._tag_color),
+                top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            )
+            self.elevation = 2
+        self.update()
+
 
 class SkillListItem(ft.Container):
     """Skill 列表项组件（紧凑行布局）。"""
@@ -231,7 +281,7 @@ class SkillListItem(ft.Container):
         tag_color = CATEGORY_COLORS.get(skill_info.category, ft.Colors.GREY)
 
         self.bgcolor = ft.Colors.SURFACE_CONTAINER
-        self.border_radius = 8
+        self.border_radius = 12
         self.padding = ft.Padding(12, 8, 12, 8)
         self.ink = True
         self.border = ft.Border(
@@ -240,7 +290,17 @@ class SkillListItem(ft.Container):
             right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
             bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
         )
+        self.elevation = 1
+        self.shadow = ft.BoxShadow(
+            spread_radius=0,
+            blur_radius=4,
+            color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
+            offset=ft.Offset(0, 1),
+        )
+        self.animate = ft.Animation(150, ft.AnimationCurve.EASE_IN_OUT)
         self.on_click = lambda _: on_click(skill_info.name)
+        self.on_hover = self._on_hover
+        self._tag_color = tag_color
 
         # 类型图标
         skill_type = getattr(skill_info, "skill_type", "")
@@ -329,6 +389,26 @@ class SkillListItem(ft.Container):
                 ),
             ],
         )
+
+    def _on_hover(self, e):
+        """悬浮时提升阴影。"""
+        if e.data == "true":
+            self.shadow = ft.BoxShadow(
+                spread_radius=0,
+                blur_radius=8,
+                color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
+                offset=ft.Offset(0, 2),
+            )
+            self.elevation = 2
+        else:
+            self.shadow = ft.BoxShadow(
+                spread_radius=0,
+                blur_radius=4,
+                color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
+                offset=ft.Offset(0, 1),
+            )
+            self.elevation = 1
+        self.update()
 
 
 class SearchBar(ft.Container):
@@ -473,7 +553,7 @@ class RecentUsage(ft.Container):
                             ft.Icon(ft.Icons.EXTENSION, color=tag_color, size=16),
                             ft.Text(
                                 s.name,
-                                size=12,
+                                size=FONT_CARD_NAME,
                                 weight=ft.FontWeight.W_500,
                                 color=tag_color,
                                 expand=True,
@@ -521,14 +601,41 @@ class EmptyState(ft.Container):
         self.content = ft.Column(
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=16,
+            spacing=20,
             controls=[
-                ft.Icon(ft.Icons.INBOX_OUTLINED, size=64, color=ft.Colors.OUTLINE),
-                ft.Text("还没有安装任何 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
+                ft.Container(
+                    content=ft.Icon(ft.Icons.EXPLORE_OUTLINED, size=72, color=ft.Colors.INDIGO),
+                    padding=ft.Padding(24, 24, 24, 24),
+                    border_radius=24,
+                    bgcolor=ft.Colors.INDIGO_50,
+                    shadow=ft.BoxShadow(
+                        spread_radius=0,
+                        blur_radius=16,
+                        color=ft.Colors.with_opacity(0.1, ft.Colors.INDIGO),
+                        offset=ft.Offset(0, 4),
+                    ),
+                ),
+                ft.Text("开始探索 Skills", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
                 ft.Text("安装示例 Skill 或创建新的 Skill 来开始使用", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
                 ft.Row([
-                    ft.FilledButton("安装 Skill", icon=ft.Icons.FILE_DOWNLOAD, on_click=lambda _: on_install()),
-                    ft.OutlinedButton("新建 Skill", icon=ft.Icons.ADD, on_click=lambda _: on_create()),
+                    ft.FilledButton(
+                        "安装 Skill",
+                        icon=ft.Icons.FILE_DOWNLOAD,
+                        on_click=lambda _: on_install(),
+                        style=ft.ButtonStyle(
+                            shape=ft.RoundedRectangleBorder(radius=10),
+                            padding=ft.Padding(16, 12, 16, 12),
+                        ),
+                    ),
+                    ft.OutlinedButton(
+                        "新建 Skill",
+                        icon=ft.Icons.ADD,
+                        on_click=lambda _: on_create(),
+                        style=ft.ButtonStyle(
+                            shape=ft.RoundedRectangleBorder(radius=10),
+                            padding=ft.Padding(16, 12, 16, 12),
+                        ),
+                    ),
                 ], spacing=12),
             ],
         )
@@ -542,18 +649,31 @@ class SearchEmptyState(ft.Container):
         self.expand = True
         self.alignment = ft.alignment.Alignment(0, 0)
         controls = [
-            ft.Icon(ft.Icons.SEARCH_OFF, size=64, color=ft.Colors.OUTLINE),
+            ft.Container(
+                content=ft.Icon(ft.Icons.SEARCH_OFF, size=64, color=ft.Colors.INDIGO_200),
+                padding=ft.Padding(20, 20, 20, 20),
+                border_radius=20,
+                bgcolor=ft.Colors.INDIGO_50,
+            ),
             ft.Text(f"未找到与「{query}」匹配的 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
             ft.Text("尝试其他关键词，或清除筛选条件", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
         ]
         if on_clear:
             controls.append(
-                ft.OutlinedButton("清除筛选", icon=ft.Icons.CLEAR_ALL, on_click=lambda _: on_clear()),
+                ft.OutlinedButton(
+                    "清除筛选",
+                    icon=ft.Icons.CLEAR_ALL,
+                    on_click=lambda _: on_clear(),
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(14, 10, 14, 10),
+                    ),
+                ),
             )
         self.content = ft.Column(
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=16,
+            spacing=20,
             controls=controls,
         )
 
@@ -566,17 +686,30 @@ class FilterEmptyState(ft.Container):
         self.expand = True
         self.alignment = ft.alignment.Alignment(0, 0)
         controls = [
-            ft.Icon(ft.Icons.FILTER_LIST_OFF, size=64, color=ft.Colors.OUTLINE),
+            ft.Container(
+                content=ft.Icon(ft.Icons.FILTER_LIST_OFF, size=64, color=ft.Colors.INDIGO_200),
+                padding=ft.Padding(20, 20, 20, 20),
+                border_radius=20,
+                bgcolor=ft.Colors.INDIGO_50,
+            ),
             ft.Text("当前筛选条件下没有 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
             ft.Text("尝试调整筛选条件，或查看全部 Skill", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
         ]
         if on_clear:
             controls.append(
-                ft.OutlinedButton("清除所有筛选", icon=ft.Icons.CLEAR_ALL, on_click=lambda _: on_clear()),
+                ft.OutlinedButton(
+                    "清除所有筛选",
+                    icon=ft.Icons.CLEAR_ALL,
+                    on_click=lambda _: on_clear(),
+                    style=ft.ButtonStyle(
+                        shape=ft.RoundedRectangleBorder(radius=10),
+                        padding=ft.Padding(14, 10, 14, 10),
+                    ),
+                ),
             )
         self.content = ft.Column(
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-            spacing=16,
+            spacing=20,
             controls=controls,
         )

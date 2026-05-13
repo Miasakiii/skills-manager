@@ -6,6 +6,8 @@ from pathlib import Path
 
 import flet as ft
 
+from ..components import FONT_SECTION, FONT_SMALL
+
 
 def build_install_dialog(app) -> ft.AlertDialog:
     # URL 输入框
@@ -92,15 +94,15 @@ def build_install_dialog(app) -> ft.AlertDialog:
             spacing=12,
             tight=True,
             controls=[
-                ft.Text("从本地安装", size=13),
+                ft.Text("从本地安装", size=FONT_SECTION),
                 ft.FilledButton("从目录安装", icon=ft.Icons.FOLDER_OPEN, on_click=pick_directory),
                 ft.OutlinedButton("从 .skill 包安装", icon=ft.Icons.ARCHIVE, on_click=pick_package),
                 ft.Divider(height=4),
-                ft.Text("从 URL 安装", size=13),
+                ft.Text("从 URL 安装", size=FONT_SECTION),
                 url_input,
                 ft.FilledButton("从 URL 安装", icon=ft.Icons.LANGUAGE, on_click=install_from_url),
                 ft.Divider(height=4),
-                ft.Text("批量导入", size=13),
+                ft.Text("批量导入", size=FONT_SECTION),
                 ft.FilledButton("自动扫描导入", icon=ft.Icons.FOLDER_SPECIAL, on_click=auto_scan),
                 ft.OutlinedButton("手动选择目录扫描", icon=ft.Icons.FOLDER_OPEN, on_click=scan_directory),
             ],
@@ -163,7 +165,7 @@ def build_batch_uninstall_dialog(app, skill_names: list[str]) -> ft.AlertDialog:
                 ft.Text(f"确定要卸载以下 {len(skill_names)} 个 Skill 吗？"),
                 ft.Text(
                     "、".join(skill_names),
-                    size=12,
+                    size=FONT_SMALL,
                     color=ft.Colors.ON_SURFACE_VARIANT,
                 ),
                 ft.Text("此操作不可撤销。", color=ft.Colors.ERROR),

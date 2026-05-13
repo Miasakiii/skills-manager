@@ -7,7 +7,7 @@ import flet as ft
 from ..components import (
     EmptyState, FilterEmptyState, RecentUsage, SearchBar,
     SearchEmptyState, SkillCard, SkillListItem, TagCloud,
-    FONT_TITLE, FONT_SUBTITLE, FONT_SECTION,
+    FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_BODY, FONT_SMALL,
 )
 
 # 一级分类定义
@@ -214,7 +214,7 @@ class BrowsePage:
             skill_list = grouped[cat_key]
             section_title = ft.Row([
                 ft.Icon(cat_icon, size=20, color=ft.Colors.PRIMARY),
-                ft.Text(f"{cat_label}（{len(skill_list)}）", size=15, weight=ft.FontWeight.BOLD),
+                ft.Text(f"{cat_label}（{len(skill_list)}）", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ], spacing=8)
 
             if vm == "list":
@@ -235,14 +235,14 @@ class BrowsePage:
             def _make_cat_handler(v=value):
                 return lambda _e: self._on_category_select(v)
             chip = ft.Chip(
-                label=ft.Text(label, size=12),
+                label=ft.Text(label, size=FONT_SMALL),
                 leading=ft.Icon(icon, size=16),
                 selected=is_selected,
                 on_click=_make_cat_handler(),
             )
             if value == "":
                 badge = ft.Container(
-                    content=ft.Text(str(len(self.skills)), size=10, color=ft.Colors.ON_PRIMARY),
+                    content=ft.Text(str(len(self.skills)), size=FONT_SMALL, color=ft.Colors.ON_PRIMARY),
                     bgcolor=ft.Colors.PRIMARY,
                     border_radius=10,
                     padding=ft.Padding(6, 1, 6, 1),
@@ -262,7 +262,7 @@ class BrowsePage:
                 return lambda _e: self._on_type_select(v)
             self.type_chips_row.controls.append(
                 ft.Chip(
-                    label=ft.Text(label, size=12),
+                    label=ft.Text(label, size=FONT_SMALL),
                     leading=ft.Icon(icon, size=16),
                     selected=st == value,
                     on_click=_make_type_handler(),
@@ -313,7 +313,7 @@ class BrowsePage:
                     alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     controls=[
                         ft.Row([
-                            ft.Text(f"已选择 {len(checked)} 个 Skill", size=13),
+                            ft.Text(f"已选择 {len(checked)} 个 Skill", size=FONT_BODY),
                             ft.TextButton("全选", on_click=lambda _: self._on_select_all()),
                             ft.TextButton("取消全选", on_click=lambda _: self._on_deselect_all()),
                         ], spacing=8),
@@ -457,7 +457,7 @@ class BrowsePage:
             options=[ft.dropdown.Option(key=k, text=v) for k, v in SORT_OPTIONS],
             on_select=self._on_sort_change,
             width=140,
-            text_size=12,
+            text_size=FONT_BODY,
             border_radius=8,
             content_padding=ft.Padding(8, 4, 8, 4),
         )

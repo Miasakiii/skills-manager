@@ -6,7 +6,7 @@ from pathlib import Path
 
 import flet as ft
 
-from ..components import FONT_TITLE, FONT_SUBTITLE
+from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_BODY, FONT_SMALL
 
 
 def build_import_page(app) -> ft.Control:
@@ -30,7 +30,7 @@ def build_import_page(app) -> ft.Control:
     )
 
     # 状态栏
-    status_text = ft.Text("", size=12)
+    status_text = ft.Text("", size=FONT_BODY)
 
     def update_results_list():
         """更新结果列表显示。"""
@@ -107,7 +107,7 @@ def build_import_page(app) -> ft.Control:
                         ft.Container(
                             content=ft.Text(
                                 "[已安装]",
-                                size=11,
+                                size=FONT_SMALL,
                                 color=ft.Colors.PRIMARY,
                             ),
                             alignment=ft.alignment.Alignment(1, 0),

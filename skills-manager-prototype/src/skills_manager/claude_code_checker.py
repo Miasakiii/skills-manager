@@ -119,11 +119,16 @@ class ClaudeCodeChecker:
     @staticmethod
     def _parse_frontmatter(content: str) -> dict[str, str]:
         """解析 YAML frontmatter，返回字段字典。"""
-        match = re.match(r'^---\s*\n(.*?)\n---', content, re.DOTALL)
-        if not match:
+        from .frontmatter import split_frontmatter
+
+        try:
+            frontmatter, _ = split_frontmatter(content)
+        except Exception:
+            return {}
+        if not frontmatter:
             return {}
         result: dict[str, str] = {}
-        for line in match.group(1).split("\n"):
+        for line in frontmatter.split("\n"):
             line = line.strip()
             if ":" in line:
                 key, _, value = line.partition(":")

@@ -411,58 +411,6 @@ def check_update() -> None:
         console.print(f"[green]已是最新版本 v{info.current_version}[/green]")
 
 
-# ── 翻译 ──────────────────────────────────────────────────
-
-
-@app.command()
-def translate(
-    name: str = typer.Argument(..., help="Skill 名称"),
-    to_english: bool = typer.Option(False, "--to-en", "-e", help="翻译为英文（默认翻译为中文）"),
-) -> None:
-    """将 Skill 的描述翻译为中文或英文。"""
-    store = Store()
-    target = "en" if to_english else "zh-CN"
-    try:
-        changed = store.translate_skill(name, target_lang=target)
-        direction = "英文" if to_english else "中文"
-        if changed:
-            console.print(f"[green]OK[/green] 已将 {name} 的描述翻译为{direction}")
-        else:
-            console.print(f"[yellow]跳过[/yellow] {name} 已经是{direction}或翻译服务不可用")
-    except StoreError as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
-
-
-@app.command()
-def translate_all(
-    to_english: bool = typer.Option(False, "--to-en", "-e", help="翻译为英文（默认翻译为中文）"),
-) -> None:
-    """批量翻译所有已安装 Skill 的描述。"""
-    store = Store()
-    skills = store.list_all()
-    if not skills:
-        console.print("[yellow]没有已安装的 Skill[/yellow]")
-        return
-
-    target = "en" if to_english else "zh-CN"
-    direction = "英文" if to_english else "中文"
-    translated = 0
-    skipped = 0
-    for s in skills:
-        try:
-            if store.translate_skill(s.name, target_lang=target):
-                console.print(f"  [green]OK[/green] {s.name}")
-                translated += 1
-            else:
-                skipped += 1
-        except Exception as e:
-            console.print(f"  [red]Error[/red] {s.name}: {e}")
-
-    console.print()
-    console.print(f"翻译完成: {translated} 个已翻译为{direction}, {skipped} 个跳过")
-
-
 # ── 重分类 ──────────────────────────────────────────────────
 
 
@@ -502,3 +450,36 @@ def check(
             console.print(f"\n[green]已修复 {fixed} 个 skill[/green]")
         else:
             console.print("\n没有需要修复的问题")
+
+
+# ── Server ──────────────────────────────────────────────────
+
+
+@app.command()
+def serve(
+    mode: str = typer.Option("mcp", "--mode", "-m", help="服务模式：mcp / api"),
+    host: str = typer.Option("127.0.0.1", "--host", help="API 模式绑定的地址"),
+    port: int = typer.Option(8000, "--port", "-p", help="API 模式绑定的端口"),
+) -> None:
+    """启动 skillfmt Server（MCP 或 HTTP API 模式）。"""
+    if mode == "mcp":
+        try:
+            from .server import run_mcp_server
+        except ImportError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
+        console.print("[green]启动 MCP Server（stdio 模式）...[/green]")
+        run_mcp_server()
+    elif mode == "api":
+        try:
+            from .server import create_app
+            import uvicorn
+        except ImportError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
+        console.print(f"[green]启动 HTTP API Server 于 {host}:{port} ...[/green]")
+        app = create_app()
+        uvicorn.run(app, host=host, port=port)
+    else:
+        console.print(f"[red]Error:[/red] 未知模式 '{mode}'，可选：mcp / api")
+        raise typer.Exit(1)

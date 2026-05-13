@@ -6,16 +6,18 @@ import flet as ft
 
 from skills_manager.adapters import list_formats
 
+from ..components import FONT_TITLE, FONT_SECTION, FONT_SUBTITLE, FONT_BODY, FONT_SMALL
+
 
 def build_settings_page(app) -> ft.Control:
     return ft.Column(
         scroll=ft.ScrollMode.AUTO,
         spacing=16,
         controls=[
-            ft.Text("设置", size=22, weight=ft.FontWeight.BOLD),
+            ft.Text("设置", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
             ft.Divider(),
 
-            ft.Text("主题", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("主题", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Row([
                 ft.Chip(
                     label=ft.Text("浅色"),
@@ -32,7 +34,7 @@ def build_settings_page(app) -> ft.Control:
             ]),
             ft.Divider(),
 
-            ft.Text("默认导出格式", size=16, weight=ft.FontWeight.BOLD),
+            ft.Text("默认导出格式", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
             ft.Dropdown(
                 options=[ft.DropdownOption(f) for f in list_formats()],
                 value=app.export_format,
@@ -41,10 +43,10 @@ def build_settings_page(app) -> ft.Control:
             ),
             ft.Divider(),
 
-            ft.Text("存储信息", size=16, weight=ft.FontWeight.BOLD),
-            ft.Text(f"存储路径: {app.store.base_dir}", size=12),
-            ft.Text(f"已安装 Skill: {len(app.skills)} 个", size=12),
-            ft.Text(f"支持格式: {', '.join(list_formats())}", size=12),
+            ft.Text("存储信息", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
+            ft.Text(f"存储路径: {app.store.base_dir}", size=FONT_SMALL),
+            ft.Text(f"已安装 Skill: {len(app.skills)} 个", size=FONT_SMALL),
+            ft.Text(f"支持格式: {', '.join(list_formats())}", size=FONT_SMALL),
             ft.Divider(),
 
             ft.Row([
@@ -52,15 +54,15 @@ def build_settings_page(app) -> ft.Control:
             ]),
             ft.Divider(),
 
-            ft.Text("同步到 Agent", size=16, weight=ft.FontWeight.BOLD),
-            ft.Text("安装时自动用 symlink 同步到各工具目录，Agent 立即可用", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text("同步到 Agent", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
+            ft.Text("安装时自动用 symlink 同步到各工具目录，Agent 立即可用", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
             ft.Row([
                 ft.FilledButton("重新同步全部", icon=ft.Icons.SYNC, on_click=lambda _: _resync_all(app)),
             ]),
             ft.Divider(),
 
-            ft.Text("监视路径", size=16, weight=ft.FontWeight.BOLD),
-            ft.Text("自动扫描时会检查以下路径中的 Skill", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
+            ft.Text("监视路径", size=FONT_SECTION, weight=ft.FontWeight.BOLD),
+            ft.Text("自动扫描时会检查以下路径中的 Skill", size=FONT_SUBTITLE, color=ft.Colors.ON_SURFACE_VARIANT),
             *_build_watch_paths_section(app),
         ],
     )
@@ -75,7 +77,7 @@ def _build_watch_paths_section(app) -> list[ft.Control]:
     if paths:
         for p in list(paths):
             controls.append(ft.Row([
-                ft.Text(p, size=12, expand=True),
+                ft.Text(p, size=FONT_SMALL, expand=True),
                 ft.IconButton(
                     icon=ft.Icons.DELETE,
                     tooltip="移除此路径",
@@ -84,10 +86,10 @@ def _build_watch_paths_section(app) -> list[ft.Control]:
                 ),
             ]))
     else:
-        controls.append(ft.Text("暂无自定义监视路径", size=12, italic=True, color=ft.Colors.ON_SURFACE_VARIANT))
+        controls.append(ft.Text("暂无自定义监视路径", size=FONT_SMALL, italic=True, color=ft.Colors.ON_SURFACE_VARIANT))
 
     # 添加新路径
-    path_input = ft.TextField(label="输入路径", expand=True, dense=True, text_size=12)
+    path_input = ft.TextField(label="输入路径", expand=True, dense=True, text_size=FONT_BODY)
 
     def add_path(_):
         p = path_input.value.strip()
@@ -127,28 +129,41 @@ def _resync_all(app):
         app.show_snack("没有已安装的 Skill，无需同步")
         return
     success = 0
+    failed = 0
     for s in skills:
         try:
             results = app.store.sync_skill_to_agents(s.name)
             if any(results.values()):
                 success += 1
         except Exception:
-            pass
-    app.show_snack(f"已同步 {success}/{len(skills)} 个 Skill 到 Agent 目录")
+            failed += 1
+    msg = f"已同步 {success}/{len(skills)} 个 Skill 到 Agent 目录"
+    if failed:
+        msg += f"，{failed} 个失败"
+    app.show_snack(msg, error=failed > 0)
+
+
+def _safe_install_example(app, example: Path) -> str | None:
+    """安装单个示例，返回失败原因或 None。"""
+    try:
+        app.store.install(example, force=True)
+        return None
+    except Exception as e:
+        return str(e)
 
 
 def _install_examples(app):
     from pathlib import Path
 
     examples_dir = Path(__file__).parent.parent.parent / "examples"
-    installed = []
-    failed = []
+    installed: list[str] = []
+    failed: list[str] = []
     for example in sorted(examples_dir.iterdir()):
         if example.is_dir() and (example / "SKILL.md").exists():
-            try:
-                app.store.install(example, force=True)
+            err = _safe_install_example(app, example)
+            if err is None:
                 installed.append(example.name)
-            except Exception:
+            else:
                 failed.append(example.name)
     app._refresh_skills()
     if installed:

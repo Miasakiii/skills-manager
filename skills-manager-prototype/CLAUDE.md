@@ -6,7 +6,7 @@ Skills Manager 是一个 AI Skill 格式转换工具。用户编写一次 SKILL.
 
 - **PyPI 包名**: `skillfmt`
 - **CLI 命令**: `skillfmt`
-- **版本**: v0.1.3
+- **版本**: v0.1.4
 
 ## 技术栈
 
@@ -30,7 +30,6 @@ skills-manager/
 │   │   ├── installer.py       # 安装/升级/回滚
 │   │   ├── scanner.py         # 目录扫描与自动发现
 │   │   ├── category.py        # 自动分类
-│   │   ├── profile.py         # Profile 管理
 │   │   └── history.py         # 使用/导出历史、收藏
 │   ├── adapters/              # 格式适配器
 │   │   ├── openai.py          # OpenAI Function Calling
@@ -38,8 +37,10 @@ skills-manager/
 │   │   ├── gemini.py          # Gemini Function Declaration
 │   │   ├── mcp.py             # MCP Python Server
 │   │   └── json_schema.py     # JSON Schema
+│   ├── server/                # MCP Server + HTTP API
+│   │   ├── mcp_server.py      # MCP Server（stdio 模式）
+│   │   └── api.py             # FastAPI HTTP API
 │   ├── cli.py                 # CLI 入口（Typer）
-│   ├── translator.py          # 翻译模块（中英双向）
 │   ├── updater.py             # 自动更新检查
 │   └── security.py            # 路径穿越防护
 ├── desktop/                   # 桌面客户端（Flet 0.84）

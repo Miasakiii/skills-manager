@@ -1,4 +1,4 @@
-# Skills Manager v0.1.3
+# Skills Manager v0.1.4
 
 > 写一次 AI Skill 定义，一键导出为 OpenAI / Claude / Gemini / MCP 等主流平台格式。
 
@@ -227,8 +227,6 @@ skills-manager/
 │       ├── export.py                   # 批量导出
 │       ├── editor.py                   # 编辑器（实时预览）
 │       ├── import_page.py              # 批量导入
-│       ├── profiles.py                 # Profile 管理
-│       ├── recommend.py                # 推荐
 │       └── settings.py                 # 设置
 ├── installer/                          # 安装包
 │   └── setup.nsi                       # Windows NSIS 安装脚本
@@ -237,8 +235,8 @@ skills-manager/
 │   └── desktop_launcher.py
 ├── .github/workflows/                  # CI/CD
 │   └── release.yml                     # 三平台构建 + PyPI 发布
-├── examples/                           # 示例 Skills (6 个)
-├── tests/                              # 测试 (271 passed)
+├── examples/                           # 示例 Skills
+├── tests/                              # 测试 (285 passed)
 └── docs/                               # 文档
 ```
 

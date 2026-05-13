@@ -64,7 +64,7 @@ def check_pypi(package: str = "skillfmt") -> Optional[UpdateInfo]:
     )
 
 
-def check_github(owner: str = "user", repo: str = "skills-manager") -> Optional[UpdateInfo]:
+def check_github(owner: str = "Miasakiii", repo: str = "skills-manager") -> Optional[UpdateInfo]:
     """检查 GitHub Releases 上的最新版本。"""
     data = _fetch_json(f"https://api.github.com/repos/{owner}/{repo}/releases/latest")
     if not data:
@@ -90,7 +90,7 @@ def check_github(owner: str = "user", repo: str = "skills-manager") -> Optional[
 
 def check_update(
     package: str = "skillfmt",
-    github_owner: str = "user",
+    github_owner: str = "Miasakiii",
     github_repo: str = "skills-manager",
 ) -> Optional[UpdateInfo]:
     """综合检查：优先 GitHub，回退 PyPI。"""
