@@ -19,7 +19,7 @@ pip install skillfmt
 从 [Releases](https://github.com/Miasakiii/skills-manager/releases/latest) 下载对应平台安装包：
 
 | 平台 | 安装包 | 说明 |
-|------|--------|------|
+| --- | --- | --- |
 | Windows | `skills-manager-setup-windows.exe` | 安装向导（推荐） |
 | Windows | `skills-manager-desktop.exe` | 绿色版桌面应用 |
 | Windows | `skills-manager-cli.exe` | 绿色版 CLI |
@@ -33,7 +33,7 @@ pip install skillfmt
 
 创建目录 `my-skill/`，在其中创建 `SKILL.md`：
 
-~~~text
+```text
 ---
 name: hello
 version: "1.0.0"
@@ -52,7 +52,7 @@ category: misc
 ## 参数
 
 | 参数 | 类型 | 必需 | 说明 |
-|------|------|------|------|
+| --- | --- | --- | --- |
 | name | string | 是 | 用户名称 |
 | language | string | 否 | 语言：zh / en，默认 zh |
 
@@ -74,7 +74,7 @@ category: misc
 ## 不适用
 
 - 生产环境使用
-~~~
+```
 
 ### 2. 安装并导出
 
@@ -164,7 +164,7 @@ license: MIT
 
 ### Markdown Body
 
-~~~text
+```text
 ## 功能
 
 详细描述 Skill 的功能。
@@ -172,14 +172,14 @@ license: MIT
 ## 参数
 
 | 参数 | 类型 | 必需 | 说明 |
-|------|------|------|------|
+| --- | --- | --- | --- |
 | param1 | string | ✅ | 参数说明 |
 | param2 | integer | ❌ | 可选参数 |
 
 ## 返回
 
 | 字段 | 类型 | 说明 |
-|------|------|------|
+| --- | --- |
 | result | string | 返回结果 |
 
 ## 示例
@@ -202,12 +202,12 @@ license: MIT
 ## 不适用
 
 - 不适用场景 1
-~~~
+```
 
 ## 支持的导出格式
 
 | 格式 | 说明 | 文件扩展名 |
-|------|------|-----------|
+| --- | --- | --- |
 | openai | OpenAI Function Calling | .json |
 | claude | Claude Tool Use | .json |
 | gemini | Gemini Function Declaration | .json |
