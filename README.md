@@ -1,9 +1,9 @@
-# Skills Manager v0.1.4
+# Skills Manager v0.1.5
 
 > 写一次 AI Skill 定义，一键导出为 OpenAI / Claude / Gemini / MCP 等主流平台格式。
 
 [![PyPI](https://img.shields.io/pypi/v/skillfmt)](https://pypi.org/project/skillfmt/)
-[![Test](https://img.shields.io/badge/tests-271%20passed-green)](https://github.com/Miasakiii/skills-manager)
+[![Test](https://img.shields.io/badge/tests-335%20passed-green)](https://github.com/Miasakiii/skills-manager)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ## 快速安装
@@ -118,6 +118,39 @@ skillfmt serve --mode api --port 8000
 skillfmt check-update
 ```
 
+### 6. 管理 MCP 配置
+
+把已安装的 Skill 一键注册为 Claude Desktop / Claude Code / Cline 的 MCP Server：
+
+```bash
+# 列出内置客户端 profile
+skillfmt mcp profiles
+
+# 列出指定客户端的 mcpServers
+skillfmt mcp list claude-desktop
+
+# 把已安装的 skill 注册为 MCP server
+skillfmt mcp install-skill claude-desktop translator
+```
+
+桌面端「MCP 配置」页提供 profile 选择、增删启停、自定义路径等可视化操作。
+
+### 7. 检查 Skill 更新与批量管理
+
+```bash
+# 扫描所有已安装 Skill 是否有新版本（对比本地 source / 远程标记）
+skillfmt check-updates
+
+# 一键更新所有可更新 Skill
+skillfmt update-all --yes
+
+# 批量卸载
+skillfmt uninstall translator code-reviewer json-formatter
+```
+
+桌面端浏览页顶栏的「检查更新」按钮提供单项/一键更新；「最近活动」页展示
+30 天内的热门 Skill 排行与导出格式分布。
+
 ## SKILL.md 格式规范
 
 ### Frontmatter（必填）
@@ -220,11 +253,12 @@ license: MIT
 skills-manager/
 ├── skills-manager-prototype/    # 项目源码
 │   ├── src/skills_manager/      # 核心引擎
-│   │   ├── cli.py               # CLI 入口
+│   │   ├── cli.py               # CLI 入口（含 mcp / check-updates / update-all 子命令）
 │   │   ├── parser.py            # SKILL.md 解析器
-│   │   ├── store/               # 本地存储（安装/索引/搜索/同步）
+│   │   ├── store/               # 本地存储（安装/索引/搜索/同步/历史/频率统计）
 │   │   ├── adapters/            # 格式适配器（OpenAI / Claude / Gemini / MCP）
 │   │   ├── server/              # MCP Server + HTTP API
+│   │   ├── mcp_config.py        # MCP 客户端 mcpServers 配置中心
 │   │   └── ...
 │   ├── desktop/                 # 桌面客户端（Flet）
 │   ├── examples/                # 示例 Skills
