@@ -69,7 +69,9 @@ class TestCheckOutdated:
         src = _make_source(tmp_path / "srcs", "alpha", "1.0.0")
         store.install(src)
         md = src / "SKILL.md"
-        md.write_text(md.read_text(encoding="utf-8").replace("1.0.0", "2.0.0"), encoding="utf-8")
+        md.write_text(
+            md.read_text(encoding="utf-8").replace("1.0.0", "2.0.0"), encoding="utf-8"
+        )
         entries = store.check_outdated()
         e = next(e for e in entries if e["name"] == "alpha")
         assert e["updatable"] is True
@@ -107,7 +109,9 @@ class TestUpdateAll:
         a = _make_source(tmp_path / "srcs", "needs-update", "1.0.0")
         store.install(a)
         md = a / "SKILL.md"
-        md.write_text(md.read_text(encoding="utf-8").replace("1.0.0", "1.1.0"), encoding="utf-8")
+        md.write_text(
+            md.read_text(encoding="utf-8").replace("1.0.0", "1.1.0"), encoding="utf-8"
+        )
         # 不需要更新的
         b = _make_source(tmp_path / "srcs", "fresh", "1.0.0")
         store.install(b)

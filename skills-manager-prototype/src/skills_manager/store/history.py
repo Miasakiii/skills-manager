@@ -59,9 +59,7 @@ class _HistoryTracker:
 
     # -- 频率统计 ---------------------------------------------
 
-    def get_usage_stats(
-        self, window_days: int | None = None
-    ) -> list[tuple[str, int]]:
+    def get_usage_stats(self, window_days: int | None = None) -> list[tuple[str, int]]:
         """按 Skill 统计使用次数，从高到低。
 
         Args:
@@ -77,9 +75,7 @@ class _HistoryTracker:
             window_days=window_days,
         )
 
-    def get_export_stats(
-        self, window_days: int | None = None
-    ) -> list[tuple[str, int]]:
+    def get_export_stats(self, window_days: int | None = None) -> list[tuple[str, int]]:
         """按 Skill 统计导出次数。"""
         return _aggregate(
             self.get_export_history(),
@@ -118,9 +114,7 @@ class _HistoryTracker:
         except Exception:
             installed = None
         if installed is not None:
-            scores = Counter(
-                {k: v for k, v in scores.items() if k in installed}
-            )
+            scores = Counter({k: v for k, v in scores.items() if k in installed})
 
         return scores.most_common(limit)
 

@@ -139,7 +139,9 @@ def _cline_config_path() -> Path | None:
     macOS:   ~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
     Linux:   ~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
     """
-    rel = Path("User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json")
+    rel = Path(
+        "User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json"
+    )
     if sys.platform == "win32":
         base = _appdata_dir()
         if base is None:

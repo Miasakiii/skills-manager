@@ -231,7 +231,9 @@ class _SkillInstaller:
         self._remove_from_index(name)
         logger.info("已卸载 Skill: %s", name)
 
-    def uninstall_many(self, names: list[str]) -> tuple[list[str], list[tuple[str, str]]]:
+    def uninstall_many(
+        self, names: list[str]
+    ) -> tuple[list[str], list[tuple[str, str]]]:
         """批量卸载 Skill。
 
         Returns:

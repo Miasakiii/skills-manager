@@ -774,8 +774,6 @@ class TestStoreUsageStats:
         assert top[0] == ("test-skill", 3)
 
     def test_usage_stats_respects_window(self, store, monkeypatch):
-        import skills_manager.store.history as hist
-
         # 写两条记录，再把第一条改成 60 天前
         store.add_usage("old")
         store.add_usage("new")

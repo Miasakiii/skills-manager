@@ -174,20 +174,14 @@ class TestMCPConfigManager:
         assert result[0].args == ["-m", "x"]
 
     def test_update_existing(self, manager):
-        manager.add_or_update(
-            "custom:test", MCPServer(name="foo", command="python")
-        )
-        manager.add_or_update(
-            "custom:test", MCPServer(name="foo", command="node")
-        )
+        manager.add_or_update("custom:test", MCPServer(name="foo", command="python"))
+        manager.add_or_update("custom:test", MCPServer(name="foo", command="node"))
         result = manager.list_servers("custom:test")
         assert len(result) == 1
         assert result[0].command == "node"
 
     def test_remove(self, manager):
-        manager.add_or_update(
-            "custom:test", MCPServer(name="foo", command="python")
-        )
+        manager.add_or_update("custom:test", MCPServer(name="foo", command="python"))
         assert manager.remove("custom:test", "foo") is True
         assert manager.list_servers("custom:test") == []
 
@@ -195,9 +189,7 @@ class TestMCPConfigManager:
         assert manager.remove("custom:test", "nope") is False
 
     def test_set_disabled(self, manager):
-        manager.add_or_update(
-            "custom:test", MCPServer(name="foo", command="python")
-        )
+        manager.add_or_update("custom:test", MCPServer(name="foo", command="python"))
         assert manager.set_disabled("custom:test", "foo", True) is True
         s = manager.get_server("custom:test", "foo")
         assert s is not None
@@ -208,15 +200,11 @@ class TestMCPConfigManager:
 
     def test_add_rejects_empty_name(self, manager):
         with pytest.raises(MCPConfigError):
-            manager.add_or_update(
-                "custom:test", MCPServer(name="", command="x")
-            )
+            manager.add_or_update("custom:test", MCPServer(name="", command="x"))
 
     def test_add_rejects_empty_command(self, manager):
         with pytest.raises(MCPConfigError):
-            manager.add_or_update(
-                "custom:test", MCPServer(name="foo", command="")
-            )
+            manager.add_or_update("custom:test", MCPServer(name="foo", command=""))
 
     def test_add_custom_profile(self, tmp_path):
         mgr = MCPConfigManager()
@@ -247,9 +235,7 @@ class TestMCPConfigManager:
     def test_install_skill_persisted(self, manager, tmp_path, tmp_config):
         skill_dir = tmp_path / "skills" / "x"
         skill_dir.mkdir(parents=True)
-        manager.install_skill_to(
-            "custom:test", skill_name="x", skill_path=skill_dir
-        )
+        manager.install_skill_to("custom:test", skill_name="x", skill_path=skill_dir)
         data = json.loads(tmp_config.read_text(encoding="utf-8"))
         assert "x" in data["mcpServers"]
         assert str(skill_dir / "server.py") in data["mcpServers"]["x"]["args"][0]

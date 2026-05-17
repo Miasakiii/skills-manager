@@ -360,9 +360,7 @@ def check_updates() -> None:
             status = "[dim]up to date[/dim]"
         table.add_row(e["name"], cur, latest, status, e.get("reason", ""))
     console.print(table)
-    console.print(
-        f"\n[bold]{len(entries)} skills, {updatable_count} updatable[/bold]"
-    )
+    console.print(f"\n[bold]{len(entries)} skills, {updatable_count} updatable[/bold]")
 
 
 @app.command("update-all")
@@ -635,9 +633,7 @@ def mcp_add(
     env_dict: dict[str, str] = {}
     for item in env:
         if "=" not in item:
-            console.print(
-                f"[red]Error:[/red] --env must be KEY=VALUE, got: {item}"
-            )
+            console.print(f"[red]Error:[/red] --env must be KEY=VALUE, got: {item}")
             raise typer.Exit(1)
         k, v = item.split("=", 1)
         env_dict[k.strip()] = v
@@ -713,12 +709,8 @@ def mcp_enable(
 def mcp_install_skill(
     profile: str = typer.Argument(..., help="profile id"),
     skill_name: str = typer.Argument(..., help="已安装的 skill 名称"),
-    entry: str = typer.Option(
-        "server.py", "--entry", help="skill 目录中的入口脚本"
-    ),
-    python: str = typer.Option(
-        None, "--python", help="覆盖默认的 Python 解释器路径"
-    ),
+    entry: str = typer.Option("server.py", "--entry", help="skill 目录中的入口脚本"),
+    python: str = typer.Option(None, "--python", help="覆盖默认的 Python 解释器路径"),
 ) -> None:
     """把已安装的 skill 注册为指定 profile 的 MCP server。"""
     from .mcp_config import MCPConfigError, MCPConfigManager
