@@ -40,6 +40,7 @@ skills-manager/
 │   ├── server/                # MCP Server + HTTP API
 │   │   ├── mcp_server.py      # MCP Server（stdio 模式）
 │   │   └── api.py             # FastAPI HTTP API
+│   ├── mcp_config.py          # MCP 客户端 mcpServers 配置中心
 │   ├── cli.py                 # CLI 入口（Typer）
 │   ├── updater.py             # 自动更新检查
 │   └── security.py            # 路径穿越防护
@@ -47,7 +48,7 @@ skills-manager/
 │   ├── app.py                 # 主控类（App）
 │   ├── components.py          # 可复用 UI 组件
 │   ├── dialogs.py             # 对话框
-│   └── pages/                 # 页面（browse/detail/export/editor/settings 等）
+│   └── pages/                 # 页面（browse/detail/export/editor/settings/mcp 等）
 ├── tests/                     # 测试（331 passed）
 ├── examples/                  # 示例 Skills
 └── docs/                      # 用户文档

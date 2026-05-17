@@ -155,15 +155,25 @@ def install_url(
 
 @app.command()
 def uninstall(
-    name: str = typer.Argument(..., help="Skill 名称"),
+    names: list[str] = typer.Argument(..., help="一个或多个 Skill 名称"),
 ) -> None:
-    """卸载 Skill。"""
+    """卸载 Skill（支持批量）。"""
     store = Store()
-    try:
-        store.uninstall(name)
+    if len(names) == 1:
+        try:
+            store.uninstall(names[0])
+            console.print(f"[green]OK[/green] Uninstalled {names[0]}")
+        except StoreError as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
+        return
+
+    succeeded, failed = store.uninstall_many(names)
+    for name in succeeded:
         console.print(f"[green]OK[/green] Uninstalled {name}")
-    except StoreError as e:
-        console.print(f"[red]Error:[/red] {e}")
+    for name, msg in failed:
+        console.print(f"[red]Fail[/red] {name}: {msg}")
+    if failed:
         raise typer.Exit(1)
 
 
@@ -324,6 +334,65 @@ def rollback(
         raise typer.Exit(1)
 
 
+@app.command("check-updates")
+def check_updates() -> None:
+    """检查所有已安装 Skill 是否有新版本。"""
+    store = Store()
+    entries = store.check_outdated()
+    if not entries:
+        console.print("[yellow]No installed skills.[/yellow]")
+        return
+
+    table = Table(title="Skill Update Check")
+    table.add_column("Name", style="cyan")
+    table.add_column("Current")
+    table.add_column("Latest")
+    table.add_column("Status")
+    table.add_column("Reason", style="dim")
+    updatable_count = 0
+    for e in entries:
+        cur = e.get("current_version") or "?"
+        latest = e.get("latest_version") or "—"
+        if e.get("updatable"):
+            status = "[green]updatable[/green]"
+            updatable_count += 1
+        else:
+            status = "[dim]up to date[/dim]"
+        table.add_row(e["name"], cur, latest, status, e.get("reason", ""))
+    console.print(table)
+    console.print(
+        f"\n[bold]{len(entries)} skills, {updatable_count} updatable[/bold]"
+    )
+
+
+@app.command("update-all")
+def update_all_cmd(
+    yes: bool = typer.Option(False, "--yes", "-y", help="跳过确认"),
+) -> None:
+    """对所有可更新 Skill 执行更新。"""
+    store = Store()
+    entries = [e for e in store.check_outdated() if e.get("updatable")]
+    if not entries:
+        console.print("[yellow]No updatable skills[/yellow]")
+        return
+
+    console.print(f"About to update {len(entries)} skill(s):")
+    for e in entries:
+        console.print(f"  - {e['name']}  ({e.get('reason', '')})")
+    if not yes:
+        confirm = typer.confirm("Continue?", default=True)
+        if not confirm:
+            raise typer.Exit(0)
+
+    succeeded, failed = store.update_all()
+    for name in succeeded:
+        console.print(f"[green]OK[/green] Updated {name}")
+    for name, msg in failed:
+        console.print(f"[red]Fail[/red] {name}: {msg}")
+    if failed:
+        raise typer.Exit(1)
+
+
 @app.command("history")
 def version_history(
     name: str = typer.Argument(..., help="Skill 名称"),
@@ -424,9 +493,9 @@ def reclassify() -> None:
     store = Store()
     changed = store.reclassify_all()
     if changed > 0:
-        console.print(f"[green]OK[/green] 已更新 {changed} 个 Skill 的分类")
+        console.print(f"[green]OK[/green] Reclassified {changed} skills")
     else:
-        console.print("所有 Skill 的分类都是最新的")
+        console.print("All skills are already up to date")
 
 
 # ── Claude Code 兼容性检查 ──────────────────────────────────
@@ -485,5 +554,192 @@ def serve(
         app = create_app()
         uvicorn.run(app, host=host, port=port)
     else:
-        console.print(f"[red]Error:[/red] 未知模式 '{mode}'，可选：mcp / api")
+        console.print(f"[red]Error:[/red] Unknown mode '{mode}', expected: mcp / api")
         raise typer.Exit(1)
+
+
+# ── MCP 配置管理 ──────────────────────────────────────────
+
+
+mcp_app = typer.Typer(
+    name="mcp",
+    help="管理主流 MCP 客户端的 mcpServers 配置",
+    no_args_is_help=True,
+)
+app.add_typer(mcp_app)
+
+
+def _format_profile_status(prof) -> str:
+    if prof.default_path is None:
+        return "[dim]不可用[/dim]"
+    return "[green]已存在[/green]" if prof.exists else "[yellow]未创建[/yellow]"
+
+
+@mcp_app.command("profiles")
+def mcp_profiles() -> None:
+    """列出内置的 MCP 客户端 profile。"""
+    from .mcp_config import MCPConfigManager
+
+    mgr = MCPConfigManager()
+    table = Table(title="MCP 客户端 Profile")
+    table.add_column("ID", style="cyan")
+    table.add_column("名称")
+    table.add_column("路径", style="dim")
+    table.add_column("状态")
+    for prof in mgr.profiles():
+        path = str(prof.default_path) if prof.default_path else "—"
+        table.add_row(prof.id, prof.label, path, _format_profile_status(prof))
+    console.print(table)
+
+
+@mcp_app.command("list")
+def mcp_list(
+    profile: str = typer.Argument(..., help="profile id（如 claude-desktop）"),
+) -> None:
+    """列出指定 profile 下的所有 MCP server。"""
+    from .mcp_config import MCPConfigError, MCPConfigManager
+
+    try:
+        servers = MCPConfigManager().list_servers(profile)
+    except MCPConfigError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    if not servers:
+        console.print(f"[yellow]{profile} 当前没有任何 MCP server[/yellow]")
+        return
+    table = Table(title=f"{profile} - mcpServers ({len(servers)})")
+    table.add_column("名称", style="cyan")
+    table.add_column("Command")
+    table.add_column("Args")
+    table.add_column("状态")
+    for s in servers:
+        state = "[dim]disabled[/dim]" if s.disabled else "[green]enabled[/green]"
+        table.add_row(s.name, s.command, " ".join(s.args), state)
+    console.print(table)
+
+
+@mcp_app.command("add")
+def mcp_add(
+    profile: str = typer.Argument(..., help="profile id"),
+    name: str = typer.Argument(..., help="MCP server 名称"),
+    command: str = typer.Option(..., "--command", "-c", help="可执行命令"),
+    arg: list[str] = typer.Option([], "--arg", "-a", help="命令行参数，可重复指定"),
+    env: list[str] = typer.Option(
+        [], "--env", "-e", help="环境变量，格式 KEY=VALUE，可重复"
+    ),
+    disabled: bool = typer.Option(False, "--disabled", help="写入后立即禁用"),
+) -> None:
+    """新增或更新一个 MCP server。"""
+    from .mcp_config import MCPConfigError, MCPConfigManager, MCPServer
+
+    env_dict: dict[str, str] = {}
+    for item in env:
+        if "=" not in item:
+            console.print(
+                f"[red]Error:[/red] --env must be KEY=VALUE, got: {item}"
+            )
+            raise typer.Exit(1)
+        k, v = item.split("=", 1)
+        env_dict[k.strip()] = v
+    server = MCPServer(
+        name=name, command=command, args=list(arg), env=env_dict, disabled=disabled
+    )
+    try:
+        MCPConfigManager().add_or_update(profile, server)
+    except MCPConfigError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    console.print(f"[green]OK[/green] Wrote {name} into {profile}")
+
+
+@mcp_app.command("remove")
+def mcp_remove(
+    profile: str = typer.Argument(..., help="profile id"),
+    name: str = typer.Argument(..., help="MCP server 名称"),
+) -> None:
+    """从指定 profile 删除一个 MCP server。"""
+    from .mcp_config import MCPConfigError, MCPConfigManager
+
+    try:
+        removed = MCPConfigManager().remove(profile, name)
+    except MCPConfigError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    if not removed:
+        console.print(f"[yellow]{name} not present in {profile}[/yellow]")
+        raise typer.Exit(1)
+    console.print(f"[green]OK[/green] Removed {name} from {profile}")
+
+
+@mcp_app.command("disable")
+def mcp_disable(
+    profile: str = typer.Argument(..., help="profile id"),
+    name: str = typer.Argument(..., help="MCP server 名称"),
+) -> None:
+    """禁用一个 MCP server。"""
+    from .mcp_config import MCPConfigError, MCPConfigManager
+
+    try:
+        ok = MCPConfigManager().set_disabled(profile, name, True)
+    except MCPConfigError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    if not ok:
+        console.print(f"[yellow]{name} not present in {profile}[/yellow]")
+        raise typer.Exit(1)
+    console.print(f"[green]OK[/green] Disabled {name}")
+
+
+@mcp_app.command("enable")
+def mcp_enable(
+    profile: str = typer.Argument(..., help="profile id"),
+    name: str = typer.Argument(..., help="MCP server 名称"),
+) -> None:
+    """启用一个 MCP server。"""
+    from .mcp_config import MCPConfigError, MCPConfigManager
+
+    try:
+        ok = MCPConfigManager().set_disabled(profile, name, False)
+    except MCPConfigError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    if not ok:
+        console.print(f"[yellow]{name} not present in {profile}[/yellow]")
+        raise typer.Exit(1)
+    console.print(f"[green]OK[/green] Enabled {name}")
+
+
+@mcp_app.command("install-skill")
+def mcp_install_skill(
+    profile: str = typer.Argument(..., help="profile id"),
+    skill_name: str = typer.Argument(..., help="已安装的 skill 名称"),
+    entry: str = typer.Option(
+        "server.py", "--entry", help="skill 目录中的入口脚本"
+    ),
+    python: str = typer.Option(
+        None, "--python", help="覆盖默认的 Python 解释器路径"
+    ),
+) -> None:
+    """把已安装的 skill 注册为指定 profile 的 MCP server。"""
+    from .mcp_config import MCPConfigError, MCPConfigManager
+
+    store = Store()
+    try:
+        skill = store.get(skill_name)
+    except StoreError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    try:
+        server = MCPConfigManager().install_skill_to(
+            profile,
+            skill_name=skill.name,
+            skill_path=Path(skill.path),
+            python_executable=python,
+            entry=entry,
+        )
+    except MCPConfigError as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+    console.print(
+        f"[green]OK[/green] Wrote {skill.name} into {profile}, command={server.command}"
+    )

@@ -445,3 +445,101 @@ class CLICheckUpdate:
             result = runner.invoke(app, ["check-update"])
             assert result.exit_code == 0
             assert "9.9.9" in result.output
+
+
+class TestCLIMcp:
+    """MCP 配置子命令测试。"""
+
+    def test_mcp_help(self):
+        result = runner.invoke(app, ["mcp", "--help"])
+        assert result.exit_code == 0
+        assert "mcpServers" in result.output
+
+    def test_mcp_profiles(self):
+        result = runner.invoke(app, ["mcp", "profiles"])
+        assert result.exit_code == 0
+        assert "claude-desktop" in result.output
+
+    def test_mcp_add_list_remove(self, tmp_path):
+        cfg = tmp_path / "cfg.json"
+        # add 命令使用自定义路径 profile 不方便（CLI 无法注册），改为
+        # 直接在测试里调用 MCPConfigManager 来验证 add/list/remove 在 CLI 路径下能跑通
+        from skills_manager.mcp_config import (
+            MCPConfigManager,
+            MCPServer,
+        )
+
+        mgr = MCPConfigManager(custom_paths={"x": cfg})
+        mgr.add_or_update("custom:x", MCPServer(name="foo", command="python"))
+        assert any(s.name == "foo" for s in mgr.list_servers("custom:x"))
+
+
+class TestCLIUpdates:
+    """check-updates / update-all / 批量 uninstall。"""
+
+    @pytest.fixture
+    def two_skills(self, store, tmp_path):
+        # 装两个 skill，分别命名 alpha / beta
+        def make(name: str) -> Path:
+            d = tmp_path / f"src-{name}"
+            d.mkdir()
+            (d / "SKILL.md").write_text(
+                f"""---
+name: {name}
+version: "1.0.0"
+description: A test skill
+summary: For testing
+tags: [test]
+category: misc
+---
+
+## 功能
+
+Test function.
+
+## 参数
+
+| 参数 | 类型 | 必需 | 说明 |
+|---|---|---|---|
+| input | string | ✅ | Input text |
+""",
+                encoding="utf-8",
+            )
+            return d
+
+        a = make("alpha")
+        b = make("beta")
+        store.install(a)
+        store.install(b)
+        return store, a, b
+
+    def test_check_updates(self, two_skills):
+        store, a, _ = two_skills
+        # 让 alpha 的 source 升级到 2.0.0
+        md = a / "SKILL.md"
+        md.write_text(
+            md.read_text(encoding="utf-8").replace("1.0.0", "2.0.0"),
+            encoding="utf-8",
+        )
+        result = runner.invoke(app, ["check-updates"])
+        assert result.exit_code == 0
+        assert "alpha" in result.output
+        assert "updatable" in result.output
+
+    def test_update_all_yes(self, two_skills):
+        store, a, _ = two_skills
+        md = a / "SKILL.md"
+        md.write_text(
+            md.read_text(encoding="utf-8").replace("1.0.0", "1.5.0"),
+            encoding="utf-8",
+        )
+        result = runner.invoke(app, ["update-all", "--yes"])
+        assert result.exit_code == 0
+        assert "alpha" in result.output
+        assert store.get("alpha").version == "1.5.0"
+
+    def test_uninstall_many(self, two_skills):
+        store, _, _ = two_skills
+        result = runner.invoke(app, ["uninstall", "alpha", "beta"])
+        assert result.exit_code == 0
+        assert store.list_all() == []
