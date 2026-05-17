@@ -473,6 +473,13 @@ class BrowsePage:
         self.app._active_dialog = build_batch_uninstall_dialog(self.app, list(checked))
         self.app.page.show_dialog(self.app._active_dialog)
 
+    def _on_check_updates(self):
+        """打开检查更新对话框。"""
+        from ..dialogs import build_check_updates_dialog
+
+        self.app._active_dialog = build_check_updates_dialog(self.app)
+        self.app.page.show_dialog(self.app._active_dialog)
+
     def _on_sort_change(self, e):
         self.app.sort_by = e.control.value
         self._rebuild_cards()
@@ -552,6 +559,12 @@ class BrowsePage:
             tooltip="简洁模式" if compact_mode else "详细模式",
             on_click=lambda _: self._on_toggle_compact(),
         )
+        self._check_updates_btn = ft.IconButton(
+            icon=ft.Icons.SYSTEM_UPDATE,
+            icon_size=20,
+            tooltip="检查 Skill 更新",
+            on_click=lambda _: self._on_check_updates(),
+        )
 
         return ft.Row(
             [
@@ -568,6 +581,7 @@ class BrowsePage:
                         self._grid_btn,
                         self._list_btn,
                         self._batch_btn,
+                        self._check_updates_btn,
                     ],
                     spacing=8,
                     alignment=ft.MainAxisAlignment.CENTER,

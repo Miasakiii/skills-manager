@@ -1,4 +1,4 @@
-"""对话框：安装 Skill。"""
+"""对话框：安装 Skill / 批量卸载 / 检查更新。"""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import flet as ft
 
-from ..components import FONT_SECTION, FONT_SMALL
+from .components import FONT_BODY, FONT_SECTION, FONT_SMALL
 
 
 def build_install_dialog(app) -> ft.AlertDialog:
@@ -157,14 +157,7 @@ def build_uninstall_dialog(app, skill_name: str) -> ft.AlertDialog:
 def build_batch_uninstall_dialog(app, skill_names: list[str]) -> ft.AlertDialog:
     def do_batch_uninstall(_):
         app._close_active_dialog()
-        success = []
-        failed = []
-        for name in skill_names:
-            try:
-                app.store.uninstall(name)
-                success.append(name)
-            except Exception as ex:
-                failed.append((name, str(ex)))
+        success, failed = app.store.uninstall_many(list(skill_names))
         app._refresh_skills()
         app.checked_skills = set()
         app.batch_mode = False
@@ -197,4 +190,141 @@ def build_batch_uninstall_dialog(app, skill_names: list[str]) -> ft.AlertDialog:
                 style=ft.ButtonStyle(color=ft.Colors.ERROR),
             ),
         ],
+    )
+
+
+def build_check_updates_dialog(app) -> ft.AlertDialog:
+    """显示可更新 Skill 列表，提供「一键更新」和单项更新。"""
+    entries = app.store.check_outdated()
+    updatable = [e for e in entries if e.get("updatable")]
+
+    def update_one(name: str):
+        try:
+            app.store.update(name)
+            app.show_snack(f"已更新 {name}")
+        except Exception as ex:
+            app.show_snack(f"{name} 更新失败：{ex}", error=True)
+            return
+        app._close_active_dialog()
+        app._refresh_skills()
+        app._update_ui()
+
+    def update_all(_):
+        app._close_active_dialog()
+        success, failed = app.store.update_all()
+        app._refresh_skills()
+        if success:
+            app.show_snack(f"已更新 {len(success)} 个 Skill")
+        if failed:
+            app.show_snack(f"{len(failed)} 个更新失败", error=True)
+        app._update_ui()
+
+    # 行列表
+    rows: list[ft.Control] = []
+    if not entries:
+        rows.append(
+            ft.Text(
+                "尚未安装任何 Skill",
+                size=FONT_BODY,
+                color=ft.Colors.ON_SURFACE_VARIANT,
+            )
+        )
+    else:
+        for e in entries:
+            cur = e.get("current_version") or "?"
+            latest = e.get("latest_version")
+            reason = e.get("reason", "")
+            tag = (
+                f"v{cur} → v{latest}"
+                if latest and latest != cur
+                else f"v{cur}"
+            )
+            if e.get("updatable"):
+                if e.get("reason") == "remote":
+                    label_color = ft.Colors.AMBER
+                    badge = "远程"
+                else:
+                    label_color = ft.Colors.GREEN
+                    badge = "可更新"
+                action = ft.TextButton(
+                    "更新",
+                    on_click=lambda _, n=e["name"]: update_one(n),
+                )
+            else:
+                label_color = ft.Colors.ON_SURFACE_VARIANT
+                badge = "已最新" if reason == "已是最新" else "不可更新"
+                action = ft.Container()
+            rows.append(
+                ft.Row(
+                    spacing=10,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                    controls=[
+                        ft.Container(
+                            content=ft.Text(badge, size=FONT_SMALL, color=ft.Colors.WHITE),
+                            bgcolor=label_color,
+                            padding=ft.Padding(8, 2, 8, 2),
+                            border_radius=10,
+                        ),
+                        ft.Column(
+                            spacing=2,
+                            tight=True,
+                            expand=True,
+                            controls=[
+                                ft.Text(
+                                    e["name"],
+                                    size=FONT_BODY,
+                                    weight=ft.FontWeight.BOLD,
+                                ),
+                                ft.Text(
+                                    f"{tag}  ·  {reason}",
+                                    size=FONT_SMALL,
+                                    color=ft.Colors.ON_SURFACE_VARIANT,
+                                ),
+                            ],
+                        ),
+                        action,
+                    ],
+                )
+            )
+
+    actions: list[ft.Control] = [
+        ft.TextButton("关闭", on_click=lambda _: app._close_active_dialog()),
+    ]
+    if updatable:
+        actions.append(
+            ft.FilledButton(
+                f"一键更新 ({len(updatable)})",
+                icon=ft.Icons.SYSTEM_UPDATE,
+                on_click=update_all,
+            )
+        )
+
+    return ft.AlertDialog(
+        title=ft.Row(
+            spacing=8,
+            controls=[
+                ft.Icon(ft.Icons.SYSTEM_UPDATE, color=ft.Colors.INDIGO),
+                ft.Text(
+                    "检查 Skill 更新", size=FONT_SECTION, weight=ft.FontWeight.BOLD
+                ),
+            ],
+        ),
+        content=ft.Container(
+            width=520,
+            content=ft.Column(
+                tight=True,
+                spacing=8,
+                scroll=ft.ScrollMode.AUTO,
+                controls=[
+                    ft.Text(
+                        f"扫描结果：{len(entries)} 个 Skill，其中 {len(updatable)} 个可更新",
+                        size=FONT_SMALL,
+                        color=ft.Colors.ON_SURFACE_VARIANT,
+                    ),
+                    ft.Divider(),
+                    *rows,
+                ],
+            ),
+        ),
+        actions=actions,
     )
