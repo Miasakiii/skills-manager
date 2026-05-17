@@ -231,6 +231,23 @@ class _SkillInstaller:
         self._remove_from_index(name)
         logger.info("已卸载 Skill: %s", name)
 
+    def uninstall_many(self, names: list[str]) -> tuple[list[str], list[tuple[str, str]]]:
+        """批量卸载 Skill。
+
+        Returns:
+            ``(成功列表, [(失败名, 错误消息)])``。
+        """
+        succeeded: list[str] = []
+        failed: list[tuple[str, str]] = []
+        for name in names:
+            try:
+                self.uninstall(name)
+                succeeded.append(name)
+            except Exception as e:
+                logger.warning("批量卸载失败: %s — %s", name, e)
+                failed.append((name, str(e)))
+        return succeeded, failed
+
     def get_version_history(self, name: str) -> list[dict]:
         """获取 Skill 的版本历史。"""
         history_path = self.store_dir / name / ".version_history.json"
@@ -376,6 +393,82 @@ class _SkillInstaller:
             return True, f"来源: {source_path}"
         return False, f"Source directory does not exist: {source}"
 
+    def check_outdated(self) -> list[dict]:
+        """扫描所有已安装 Skill，返回有新版本可用的列表。
+
+        本地源：比较 source 目录下 SKILL.md 的版本与当前安装版本。
+        URL/GitHub 源：只标记 ``updatable=True``，需要网络才能确认版本，
+        以避免 Store 层做 I/O 阻塞。
+
+        Returns:
+            ``[{name, current_version, latest_version | None, source, updatable, reason}]``
+        """
+        results: list[dict] = []
+        for skill in self.list_all():
+            entry: dict = {
+                "name": skill.name,
+                "current_version": skill.version,
+                "latest_version": None,
+                "source": getattr(skill, "source", ""),
+                "updatable": False,
+                "reason": "",
+            }
+            source = entry["source"]
+            if not source:
+                entry["reason"] = "无 source 信息"
+                results.append(entry)
+                continue
+
+            if source.startswith(("http://", "https://", "github:")):
+                # 远程源：标记可尝试更新，留待真正 update() 时再确认
+                entry["updatable"] = True
+                entry["reason"] = "remote"
+                results.append(entry)
+                continue
+
+            source_path = Path(source)
+            skill_md = source_path / "SKILL.md"
+            if not skill_md.is_file():
+                entry["reason"] = "source 已不存在"
+                results.append(entry)
+                continue
+
+            try:
+                ir = parse_skill_md(skill_md)
+            except Exception as e:
+                entry["reason"] = f"无法解析 source SKILL.md: {e}"
+                results.append(entry)
+                continue
+
+            entry["latest_version"] = ir.version
+            if _version_tuple(ir.version) > _version_tuple(skill.version):
+                entry["updatable"] = True
+                entry["reason"] = "本地 source 有新版本"
+            else:
+                entry["reason"] = "已是最新"
+            results.append(entry)
+        return results
+
+    def update_all(self) -> tuple[list[str], list[tuple[str, str]]]:
+        """对所有可更新的 Skill 执行 update。
+
+        Returns:
+            ``(成功列表, [(失败名, 错误消息)])``
+        """
+        succeeded: list[str] = []
+        failed: list[tuple[str, str]] = []
+        for entry in self.check_outdated():
+            if not entry.get("updatable"):
+                continue
+            name = entry["name"]
+            try:
+                self.update(name)
+                succeeded.append(name)
+            except Exception as e:
+                logger.warning("批量更新失败: %s — %s", name, e)
+                failed.append((name, str(e)))
+        return succeeded, failed
+
     def rollback(self, name: str, version: str | None = None) -> SimpleNamespace:
         """回滚 Skill 到指定版本。"""
         skill_dir = self.store_dir / name
@@ -437,3 +530,23 @@ class _SkillInstaller:
 
         logger.info("已回滚 Skill: %s → v%s", name, ir.version)
         return self.get(name)
+
+
+def _version_tuple(version: str) -> tuple[int, ...]:
+    """把版本号转成可比较的元组，无法解析的字段当作 0。"""
+    if not version:
+        return (0,)
+    parts: list[int] = []
+    for piece in str(version).split("."):
+        try:
+            parts.append(int(piece))
+        except ValueError:
+            # 取数字前缀（兼容 1.0.0-beta 等）
+            buf = ""
+            for ch in piece:
+                if ch.isdigit():
+                    buf += ch
+                else:
+                    break
+            parts.append(int(buf) if buf else 0)
+    return tuple(parts) if parts else (0,)

@@ -2,11 +2,22 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 
 from ..logging import get_logger
 
 logger = get_logger(__name__)
+
+
+def _parse_iso(ts: str) -> datetime | None:
+    """容错地解析 ISO 时间字符串；失败时返回 None。"""
+    if not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except (ValueError, TypeError):
+        return None
 
 
 class _HistoryTracker:
@@ -45,6 +56,73 @@ class _HistoryTracker:
             if len(recent) >= limit:
                 break
         return recent
+
+    # -- 频率统计 ---------------------------------------------
+
+    def get_usage_stats(
+        self, window_days: int | None = None
+    ) -> list[tuple[str, int]]:
+        """按 Skill 统计使用次数，从高到低。
+
+        Args:
+            window_days: 若给定，仅统计最近 N 天内的记录；None 表示全部。
+
+        Returns:
+            ``[(skill_name, count), ...]``，按 count 倒序。
+        """
+        return _aggregate(
+            self.get_usage_history(),
+            key="skill_name",
+            ts_key="used_at",
+            window_days=window_days,
+        )
+
+    def get_export_stats(
+        self, window_days: int | None = None
+    ) -> list[tuple[str, int]]:
+        """按 Skill 统计导出次数。"""
+        return _aggregate(
+            self.get_export_history(),
+            key="skill_name",
+            ts_key="exported_at",
+            window_days=window_days,
+        )
+
+    def get_export_format_stats(
+        self, window_days: int | None = None
+    ) -> list[tuple[str, int]]:
+        """按导出格式统计次数。"""
+        return _aggregate(
+            self.get_export_history(),
+            key="format",
+            ts_key="exported_at",
+            window_days=window_days,
+        )
+
+    def get_top_skills(
+        self, limit: int = 5, window_days: int | None = None
+    ) -> list[tuple[str, int]]:
+        """综合使用 + 导出的热门 Skill 排行（每次使用计 1 分、每次导出计 2 分）。
+
+        若 Skill 已不在已安装索引中（已卸载），自动从结果中过滤。
+        """
+        scores: Counter[str] = Counter()
+        for name, count in self.get_usage_stats(window_days):
+            scores[name] += count
+        for name, count in self.get_export_stats(window_days):
+            scores[name] += count * 2
+
+        # 过滤已卸载的 skill
+        try:
+            installed = {s.name for s in self.list_all()}
+        except Exception:
+            installed = None
+        if installed is not None:
+            scores = Counter(
+                {k: v for k, v in scores.items() if k in installed}
+            )
+
+        return scores.most_common(limit)
 
     # -- 收藏 ------------------------------------------------
 
@@ -103,3 +181,31 @@ class _HistoryTracker:
         history_path = self.base_dir / "export_history.json"
         if history_path.exists():
             history_path.unlink()
+
+
+# ── 内部工具 ────────────────────────────────────────────
+
+
+def _aggregate(
+    entries: list[dict],
+    *,
+    key: str,
+    ts_key: str,
+    window_days: int | None = None,
+) -> list[tuple[str, int]]:
+    """按 ``key`` 字段聚合次数。``window_days`` 限定时间窗口。"""
+    cutoff: datetime | None = None
+    if window_days is not None and window_days > 0:
+        cutoff = datetime.now(timezone.utc) - timedelta(days=window_days)
+
+    counter: Counter[str] = Counter()
+    for entry in entries:
+        value = entry.get(key) or ""
+        if not value:
+            continue
+        if cutoff is not None:
+            ts = _parse_iso(entry.get(ts_key, ""))
+            if ts is None or ts < cutoff:
+                continue
+        counter[value] += 1
+    return counter.most_common()

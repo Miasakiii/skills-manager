@@ -720,6 +720,82 @@ class TestStoreExportHistory:
         assert history[-1]["skill_name"] == "skill-104"
 
 
+class TestStoreUsageStats:
+    """使用 / 导出频率统计测试。"""
+
+    def test_usage_stats_empty(self, store):
+        assert store.get_usage_stats() == []
+        assert store.get_export_stats() == []
+        assert store.get_export_format_stats() == []
+        assert store.get_top_skills() == []
+
+    def test_usage_stats_basic(self, store):
+        store.add_usage("translator")
+        store.add_usage("translator")
+        store.add_usage("json-formatter")
+        stats = store.get_usage_stats()
+        # 按 count 倒序：translator(2), json-formatter(1)
+        assert stats[0] == ("translator", 2)
+        assert ("json-formatter", 1) in stats
+
+    def test_export_stats_basic(self, store):
+        store.add_export_history("translator", "openai", "/tmp/a.json")
+        store.add_export_history("translator", "claude", "/tmp/b.json")
+        store.add_export_history("code-reviewer", "openai", "/tmp/c.json")
+        stats = store.get_export_stats()
+        assert stats[0] == ("translator", 2)
+        assert ("code-reviewer", 1) in stats
+
+    def test_export_format_stats(self, store):
+        store.add_export_history("translator", "openai", "/tmp/a.json")
+        store.add_export_history("code-reviewer", "openai", "/tmp/b.json")
+        store.add_export_history("translator", "claude", "/tmp/c.json")
+        fmt_stats = dict(store.get_export_format_stats())
+        assert fmt_stats == {"openai": 2, "claude": 1}
+
+    def test_top_skills_filters_uninstalled(self, store, sample_skill_dir):
+        # ghost 没有安装，不应出现在 top
+        store.add_usage("ghost")
+        store.add_export_history("ghost", "openai", "/tmp/x.json")
+        # 安装一个真实 skill
+        store.install(sample_skill_dir)
+        store.add_usage("test-skill")
+        top = store.get_top_skills(limit=5)
+        names = [n for n, _ in top]
+        assert "ghost" not in names
+        assert "test-skill" in names
+
+    def test_top_skills_export_double_weight(self, store, sample_skill_dir):
+        store.install(sample_skill_dir)
+        # 1 次 use = 1 分；1 次 export = 2 分
+        store.add_usage("test-skill")
+        store.add_export_history("test-skill", "openai", "/tmp/x.json")
+        top = store.get_top_skills(limit=5)
+        assert top[0] == ("test-skill", 3)
+
+    def test_usage_stats_respects_window(self, store, monkeypatch):
+        import skills_manager.store.history as hist
+
+        # 写两条记录，再把第一条改成 60 天前
+        store.add_usage("old")
+        store.add_usage("new")
+        from datetime import datetime, timedelta, timezone
+
+        path = store.base_dir / "usage_history.json"
+        import json
+
+        data = json.loads(path.read_text(encoding="utf-8"))
+        data[0]["used_at"] = (
+            datetime.now(timezone.utc) - timedelta(days=60)
+        ).isoformat()
+        path.write_text(json.dumps(data), encoding="utf-8")
+
+        # 30 天窗口只看到 "new"
+        stats = dict(store.get_usage_stats(window_days=30))
+        assert "old" not in stats
+        assert stats.get("new") == 1
+
+
 class TestStoreInstallFromUrl:
     """从 URL 安装测试。"""
 
