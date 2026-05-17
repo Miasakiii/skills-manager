@@ -31,8 +31,8 @@ class App:
         # 对话框引用
         self._active_dialog: ft.AlertDialog | None = None
 
-        # FilePicker（页面级复用，避免重复实例化）
-        self.file_picker = ft.FilePicker()
+        # FilePicker（在 build 时创建并 attach 到 page.services，确保有 parent）
+        self.file_picker: ft.FilePicker | None = None
 
         # UI 组件引用（build 后赋值）
         self.page: ft.Page | None = None
@@ -71,6 +71,13 @@ class App:
         self._new_skill_intent: str = ""
         self._preview_format: str = "markdown"
         self._generated_content: str = ""
+
+        # ── MCP 配置页状态 ──
+        from pathlib import Path as _Path
+
+        self.mcp_manager = None  # 懒加载，避免桌面端启动时 import 失败
+        self.mcp_selected_profile: str = ""
+        self.mcp_custom_paths: dict[str, _Path] = {}
 
     def build(self, page: ft.Page):
         self.page = page
@@ -175,6 +182,13 @@ class App:
             )
         )
 
+        # Flet 0.85+: FilePicker 是 Service，必须通过 page.services setter 注册
+        # （直接 append 不会触发 parent 绑定）。在 page.add 之后做，确保 root view
+        # 已初始化。
+        self.file_picker = ft.FilePicker()
+        page.services = list(page.services) + [self.file_picker]
+        page.update()
+
     # ── 数据 ──────────────────────────────────────────────────
 
     def _refresh_skills(self):
@@ -228,6 +242,7 @@ class App:
         from .pages.settings import build_settings_page
         from .pages.import_page import build_import_page
         from .pages.recommend import build_recommend_page
+        from .pages.mcp import build_mcp_page
 
         if self.selected_skill_name:
             return build_detail_page(self)
@@ -241,6 +256,8 @@ class App:
             return build_recommend_page(self)
         if self.current_page == "editor":
             return build_editor_page(self)
+        if self.current_page == "mcp":
+            return build_mcp_page(self)
         if self.current_page == "settings":
             return build_settings_page(self)
         return build_browse_page(self)
@@ -254,6 +271,7 @@ class App:
             ("import", ft.Icons.FILE_UPLOAD, "批量导入"),
             ("recommend", ft.Icons.HISTORY, "最近"),
             ("editor", ft.Icons.EDIT, "编辑器"),
+            ("mcp", ft.Icons.HUB, "MCP 配置"),
             ("settings", ft.Icons.SETTINGS, "设置"),
         ]
 
@@ -832,7 +850,20 @@ class App:
         self.page.update()
 
     def copy_to_clipboard(self, content: str):
-        # Flet 0.84 desktop 不支持 set_clipboard，显示对话框让用户手动复制
+        """复制到系统剪贴板。
+
+        Flet 0.85 重新引入 ``page.clipboard`` Service；若不可用（如旧版本回退）
+        则降级为对话框让用户手动复制。
+        """
+        clipboard = getattr(self.page, "clipboard", None)
+        if clipboard is not None and hasattr(clipboard, "set"):
+            try:
+                clipboard.set(content)
+                self.show_snack("已复制到剪贴板")
+                return
+            except Exception:
+                logger.exception("Clipboard set failed, falling back to dialog")
+
         dialog = ft.AlertDialog(
             title=ft.Text("导出结果"),
             content=ft.Container(

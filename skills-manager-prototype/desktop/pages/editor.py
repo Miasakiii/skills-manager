@@ -283,7 +283,7 @@ def build_editor_page(app) -> ft.Control:
         controls=[
             # 左侧：表单
             ft.Container(
-                width=400,
+                expand=2,
                 content=ft.Column(
                     scroll=ft.ScrollMode.AUTO,
                     spacing=12,
@@ -402,7 +402,7 @@ def build_editor_page(app) -> ft.Control:
             ),
             # 右侧：预览 + 校验
             ft.Container(
-                expand=True,
+                expand=3,
                 content=ft.Column(
                     spacing=8,
                     controls=[
