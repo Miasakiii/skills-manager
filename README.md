@@ -33,7 +33,7 @@ pip install skillfmt
 
 创建目录 `my-skill/`，在其中创建 `SKILL.md`：
 
-```text
+````text
 ---
 name: hello
 version: "1.0.0"
@@ -74,7 +74,7 @@ category: misc
 ## 不适用
 
 - 生产环境使用
-```
+````
 
 ### 2. 安装并导出
 
