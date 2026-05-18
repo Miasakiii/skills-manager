@@ -197,7 +197,7 @@ license: MIT
 
 ### Markdown Body
 
-```text
+````text
 ## 功能
 
 详细描述 Skill 的功能。
@@ -235,7 +235,7 @@ license: MIT
 ## 不适用
 
 - 不适用场景 1
-```
+````
 
 ## 支持的导出格式
 
