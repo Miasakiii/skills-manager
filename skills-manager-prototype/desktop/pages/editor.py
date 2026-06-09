@@ -8,6 +8,7 @@ import flet as ft
 
 from skills_manager.adapters import get_adapter
 from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_BODY, FONT_SMALL
+from ..theme import COLORS, RADIUS_MD
 from skills_manager.ir import SkillIR
 from skills_manager.validator import validate_skill_md
 
@@ -54,12 +55,7 @@ def build_editor_page(app) -> ft.Control:
             right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
             bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
         ),
-        shadow=ft.BoxShadow(
-            spread_radius=0,
-            blur_radius=4,
-            color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
-            offset=ft.Offset(0, 1),
-        ),
+        shadow=None,
     )
 
     # 校验结果区域
@@ -196,9 +192,9 @@ def build_editor_page(app) -> ft.Control:
                                 ft.Icon(
                                     ft.Icons.WARNING_AMBER,
                                     size=14,
-                                    color=ft.Colors.ORANGE,
+                                    color=COLORS["warning"],
                                 ),
-                                ft.Text(warn, size=FONT_SMALL, color=ft.Colors.ORANGE),
+                                ft.Text(warn, size=FONT_SMALL, color=COLORS["warning"]),
                             ],
                             spacing=4,
                         )
@@ -210,10 +206,10 @@ def build_editor_page(app) -> ft.Control:
                             ft.Icon(
                                 ft.Icons.CHECK_CIRCLE_OUTLINE,
                                 size=14,
-                                color=ft.Colors.GREEN,
+                                color=COLORS["success"],
                             ),
                             ft.Text(
-                                "格式校验通过", size=FONT_SMALL, color=ft.Colors.GREEN
+                                "格式校验通过", size=FONT_SMALL, color=COLORS["success"]
                             ),
                         ],
                         spacing=4,
@@ -293,11 +289,11 @@ def build_editor_page(app) -> ft.Control:
                                 ft.Container(
                                     content=ft.Icon(
                                         ft.Icons.EDIT_NOTE,
-                                        color=ft.Colors.WHITE,
+                                        color=COLORS["on_primary"],
                                         size=18,
                                     ),
-                                    bgcolor=ft.Colors.INDIGO,
-                                    border_radius=8,
+                                    bgcolor=COLORS["accent"],
+                                    border_radius=RADIUS_MD,
                                     padding=ft.Padding(6, 6, 6, 6),
                                 ),
                                 ft.Text(

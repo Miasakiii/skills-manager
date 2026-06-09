@@ -6,6 +6,7 @@ import flet as ft
 
 from skills_manager.adapters import get_adapter, list_formats
 from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_BODY, FONT_SMALL
+from ..theme import COLORS, RADIUS_MD, RADIUS_LG
 
 
 def build_detail_page(app) -> ft.Control:
@@ -27,7 +28,7 @@ def build_detail_page(app) -> ft.Control:
             ft.Colors.SURFACE_CONTAINER_HIGHEST if i % 2 == 0 else ft.Colors.SURFACE
         )
         req_icon = ft.Icons.CHECK_CIRCLE if p.required else ft.Icons.CIRCLE_OUTLINED
-        req_color = ft.Colors.GREEN if p.required else ft.Colors.GREY
+        req_color = COLORS["success"] if p.required else COLORS["ink_muted"]
         param_rows.append(
             ft.DataRow(
                 cells=[
@@ -37,7 +38,7 @@ def build_detail_page(app) -> ft.Control:
                     ft.DataCell(
                         ft.Container(
                             content=ft.Text(p.type, size=FONT_SMALL),
-                            bgcolor=ft.Colors.INDIGO_50,
+                            bgcolor=COLORS["accent_soft"],
                             border_radius=4,
                             padding=ft.Padding(4, 2, 4, 2),
                         )
@@ -167,11 +168,11 @@ def build_detail_page(app) -> ft.Control:
                                         ft.Container(
                                             content=ft.Icon(
                                                 ft.Icons.MEMORY,
-                                                color=ft.Colors.WHITE,
+                                                color=COLORS["on_primary"],
                                                 size=18,
                                             ),
-                                            bgcolor=ft.Colors.INDIGO,
-                                            border_radius=8,
+                                            bgcolor=COLORS["accent"],
+                                            border_radius=RADIUS_MD,
                                             padding=ft.Padding(6, 6, 6, 6),
                                         ),
                                         ft.Text(
@@ -251,12 +252,7 @@ def build_detail_page(app) -> ft.Control:
                     right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
                     bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
                 ),
-                shadow=ft.BoxShadow(
-                    spread_radius=0,
-                    blur_radius=4,
-                    color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
-                    offset=ft.Offset(0, 1),
-                ),
+                shadow=None,
             ),
         ],
     )

@@ -13,6 +13,7 @@ from skills_manager.packager import (
     pack_for_codex,
 )
 from ..components import FONT_TITLE, FONT_SUBTITLE, FONT_SECTION, FONT_META, FONT_TAG
+from ..theme import COLORS, RADIUS_MD
 
 
 def build_export_page(app) -> ft.Control:
@@ -196,10 +197,10 @@ def build_export_page(app) -> ft.Control:
                 [
                     ft.Container(
                         content=ft.Icon(
-                            ft.Icons.FILE_DOWNLOAD, color=ft.Colors.WHITE, size=18
+                            ft.Icons.FILE_DOWNLOAD, color=COLORS["on_primary"], size=18
                         ),
-                        bgcolor=ft.Colors.INDIGO,
-                        border_radius=8,
+                        bgcolor=COLORS["accent"],
+                        border_radius=RADIUS_MD,
                         padding=ft.Padding(6, 6, 6, 6),
                     ),
                     ft.Text("批量导出", size=FONT_TITLE, weight=ft.FontWeight.BOLD),

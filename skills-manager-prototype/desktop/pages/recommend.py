@@ -14,6 +14,7 @@ from ..components import (
     FONT_SUBTITLE,
     FONT_TITLE,
 )
+from ..theme import COLORS, RADIUS_MD
 
 
 WINDOW_DAYS = 30  # 频率统计窗口
@@ -185,7 +186,7 @@ def _section_header(icon, label: str) -> ft.Row:
         spacing=8,
         vertical_alignment=ft.CrossAxisAlignment.CENTER,
         controls=[
-            ft.Icon(icon, size=18, color=ft.Colors.INDIGO),
+            ft.Icon(icon, size=18, color=COLORS["accent"]),
             ft.Text(label, size=FONT_SECTION, weight=ft.FontWeight.BOLD),
         ],
     )
@@ -202,7 +203,7 @@ def _rank_row(
 ) -> ft.Control:
     ratio = score / max_score if max_score else 0
     rank_color = (
-        ft.Colors.AMBER if idx == 1 else (ft.Colors.GREY if idx <= 3 else ft.Colors.OUTLINE)
+        COLORS["warning"] if idx == 1 else (COLORS["ink_muted"] if idx <= 3 else COLORS["ink_tertiary"])
     )
     title_row = ft.Row(
         spacing=10,
@@ -216,7 +217,7 @@ def _rank_row(
                 alignment=ft.Alignment.CENTER,
                 content=ft.Text(
                     str(idx),
-                    color=ft.Colors.WHITE,
+                    color=COLORS["on_primary"],
                     size=FONT_SMALL,
                     weight=ft.FontWeight.BOLD,
                 ),
@@ -238,13 +239,13 @@ def _rank_row(
             ),
             ft.Container(
                 padding=ft.Padding(8, 4, 8, 4),
-                bgcolor=ft.Colors.INDIGO_50,
-                border_radius=8,
+                bgcolor=COLORS["accent_soft"],
+                border_radius=RADIUS_MD,
                 content=ft.Text(
                     f"{score} 分",
                     size=FONT_SMALL,
                     weight=ft.FontWeight.BOLD,
-                    color=ft.Colors.INDIGO,
+                    color=COLORS["accent"],
                 ),
             ),
         ],
@@ -252,8 +253,8 @@ def _rank_row(
     bar = ft.ProgressBar(
         value=max(0.04, ratio),
         height=4,
-        color=ft.Colors.INDIGO,
-        bgcolor=ft.Colors.INDIGO_50,
+        color=COLORS["accent"],
+        bgcolor=COLORS["accent_soft"],
     )
     inner = ft.Column(spacing=6, controls=[title_row, bar])
     return ft.Container(
@@ -286,8 +287,8 @@ def _format_row(fmt: str, count: int, ratio: float) -> ft.Control:
             ft.ProgressBar(
                 value=max(0.02, ratio),
                 height=4,
-                color=ft.Colors.INDIGO,
-                bgcolor=ft.Colors.INDIGO_50,
+                color=COLORS["accent"],
+                bgcolor=COLORS["accent_soft"],
             ),
         ],
     )

@@ -7,26 +7,25 @@ from datetime import datetime, timezone
 
 import flet as ft
 
-
-# ── 字体规范 ──────────────────────────────────────────────
-# 建立 Material Design 3 风格层级，确保中英文混排清晰美观
-FONT_DISPLAY = 28  # 大标题 / 空状态主标题
-FONT_TITLE = 24  # 页面标题
-FONT_HEADLINE = 18  # 区块大标题 / 详情页名称
-FONT_SECTION = 15  # 区块标题 / 分类标题
-FONT_SUBTITLE = 14  # 副标题 / 描述 / 统计
-FONT_BODY = 13  # 正文 / 表单标签
-FONT_CARD_NAME = 15  # 卡片名称（与区块标题同级）
-FONT_CARD_DESC = 12  # 卡片描述
-FONT_TAG = 11  # 标签 / Tag
-FONT_META = 12  # 元数据（版本、分类）
-FONT_SMALL = 11  # 小字（时间、角落信息）
-
-# 全局字体栈（Windows 优先 Segoe UI + 微软雅黑，兼顾 macOS/Linux）
-FONT_FAMILY_UI = (
-    "Segoe UI, Microsoft YaHei UI, PingFang SC, Noto Sans SC, system-ui, sans-serif"
+from .theme import (
+    COLORS,
+    CATEGORY_COLORS,
+    FONT_DISPLAY,
+    FONT_TITLE,
+    FONT_HEADLINE,
+    FONT_SECTION,
+    FONT_SUBTITLE,
+    FONT_BODY,
+    FONT_CARD_NAME,
+    FONT_CARD_DESC,
+    FONT_TAG,
+    FONT_META,
+    FONT_SMALL,
+    FONT_FAMILY_MONO,
+    RADIUS_SM,
+    RADIUS_MD,
+    RADIUS_LG,
 )
-FONT_FAMILY_MONO = "Cascadia Code, Consolas, monospace"
 
 
 # ── 工具函数 ──────────────────────────────────────────────
@@ -58,33 +57,33 @@ def _relative_time(iso_str: str) -> str:
 
 
 def _source_info(source: str) -> dict:
-    """根据来源返回标签、图标和颜色。"""
+    """根据来源返回标签、图标和颜色（Cursor 风格克制调色）。"""
     if not source:
-        return {"label": "本地", "icon": ft.Icons.COMPUTER, "color": ft.Colors.GREY}
+        return {"label": "本地", "icon": ft.Icons.COMPUTER, "color": COLORS["ink_muted"]}
     lower = source.lower()
     if "github.com" in lower:
         return {
             "label": "GitHub",
             "icon": ft.Icons.CODE,
-            "color": ft.Colors.ON_SURFACE_VARIANT,
+            "color": COLORS["ink_secondary"],
         }
     if "anthropic.com" in lower:
         return {
             "label": "Anthropic",
             "icon": ft.Icons.SMART_TOY,
-            "color": ft.Colors.BLUE,
+            "color": COLORS["info"],
         }
     if "openai.com" in lower:
         return {
             "label": "OpenAI",
             "icon": ft.Icons.PSYCHOLOGY,
-            "color": ft.Colors.GREEN,
+            "color": COLORS["success"],
         }
     if "google" in lower:
-        return {"label": "Google", "icon": ft.Icons.SEARCH, "color": ft.Colors.RED}
+        return {"label": "Google", "icon": ft.Icons.SEARCH, "color": COLORS["error"]}
     if source.startswith(("http://", "https://")):
-        return {"label": "Web", "icon": ft.Icons.LANGUAGE, "color": ft.Colors.OUTLINE}
-    return {"label": "本地", "icon": ft.Icons.COMPUTER, "color": ft.Colors.GREY}
+        return {"label": "Web", "icon": ft.Icons.LANGUAGE, "color": COLORS["ink_muted"]}
+    return {"label": "本地", "icon": ft.Icons.COMPUTER, "color": COLORS["ink_muted"]}
 
 
 # ── 类型图标映射 ──────────────────────────────────────────
@@ -95,20 +94,6 @@ SKILL_TYPE_ICONS = {
     "workflow": (ft.Icons.ACCOUNT_TREE_OUTLINED, "流程"),
     "tool": (ft.Icons.BUILD_OUTLINED, "工具"),
 }
-
-# ── 分类颜色映射 ──────────────────────────────────────────
-
-CATEGORY_COLORS = {
-    "language": ft.Colors.BLUE,
-    "code": ft.Colors.GREEN,
-    "data": ft.Colors.ORANGE,
-    "research": ft.Colors.PURPLE,
-    "writing": ft.Colors.TEAL,
-    "automation": ft.Colors.RED,
-    "misc": ft.Colors.GREY,
-    "agent": ft.Colors.AMBER,
-}
-
 
 class SkillCard(ft.Container):
     """Skill 卡片组件。"""
@@ -124,25 +109,21 @@ class SkillCard(ft.Container):
     ):
         super().__init__()
         self.skill_info = skill_info
-        tag_color = CATEGORY_COLORS.get(skill_info.category, ft.Colors.GREY)
+        tag_color = CATEGORY_COLORS.get(skill_info.category, COLORS["ink_muted"])
 
-        self.bgcolor = ft.Colors.SURFACE_CONTAINER
-        self.border_radius = 16
-        self.padding = 16
+        # Cursor 风格：无阴影卡片，靠背景色对比分层
+        self.bgcolor = COLORS["card"]
+        self.border_radius = RADIUS_LG
+        self.padding = 24
         self.ink = True
         self.border = ft.Border(
             left=ft.BorderSide(3, tag_color),
-            top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
-            right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
-            bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            top=ft.BorderSide(1, COLORS["border_01"]),
+            right=ft.BorderSide(1, COLORS["border_01"]),
+            bottom=ft.BorderSide(1, COLORS["border_01"]),
         )
-        self.elevation = 2
-        self.shadow = ft.BoxShadow(
-            spread_radius=0,
-            blur_radius=6,
-            color=ft.Colors.with_opacity(0.06, ft.Colors.BLACK),
-            offset=ft.Offset(0, 2),
-        )
+        self.elevation = 0
+        self.shadow = None
         self.animate = ft.Animation(180, ft.AnimationCurve.EASE_IN_OUT)
         self.on_click = lambda _: on_click(skill_info.name)
         self.on_hover = self._on_hover
@@ -278,35 +259,23 @@ class SkillCard(ft.Container):
         self.content = ft.Column(spacing=8, controls=controls)
 
     def _on_hover(self, e):
-        """悬浮时提升阴影和边框。"""
+        """Cursor 风格：悬浮时仅变背景色，无阴影。"""
         if e.data == "true":
-            self.shadow = ft.BoxShadow(
-                spread_radius=0,
-                blur_radius=12,
-                color=ft.Colors.with_opacity(0.12, ft.Colors.BLACK),
-                offset=ft.Offset(0, 4),
-            )
+            self.bgcolor = COLORS["card_hover"]
             self.border = ft.Border(
                 left=ft.BorderSide(3, self._tag_color),
-                top=ft.BorderSide(1, ft.Colors.with_opacity(0.4, self._tag_color)),
-                right=ft.BorderSide(1, ft.Colors.with_opacity(0.4, self._tag_color)),
-                bottom=ft.BorderSide(1, ft.Colors.with_opacity(0.4, self._tag_color)),
+                top=ft.BorderSide(1, COLORS["border_02"]),
+                right=ft.BorderSide(1, COLORS["border_02"]),
+                bottom=ft.BorderSide(1, COLORS["border_02"]),
             )
-            self.elevation = 4
         else:
-            self.shadow = ft.BoxShadow(
-                spread_radius=0,
-                blur_radius=6,
-                color=ft.Colors.with_opacity(0.06, ft.Colors.BLACK),
-                offset=ft.Offset(0, 2),
-            )
+            self.bgcolor = COLORS["card"]
             self.border = ft.Border(
                 left=ft.BorderSide(3, self._tag_color),
-                top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
-                right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
-                bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                top=ft.BorderSide(1, COLORS["border_01"]),
+                right=ft.BorderSide(1, COLORS["border_01"]),
+                bottom=ft.BorderSide(1, COLORS["border_01"]),
             )
-            self.elevation = 2
         self.update()
 
 
@@ -324,25 +293,21 @@ class SkillListItem(ft.Container):
     ):
         super().__init__()
         self.skill_info = skill_info
-        tag_color = CATEGORY_COLORS.get(skill_info.category, ft.Colors.GREY)
+        tag_color = CATEGORY_COLORS.get(skill_info.category, COLORS["ink_muted"])
 
-        self.bgcolor = ft.Colors.SURFACE_CONTAINER
-        self.border_radius = 12
+        # Cursor 风格：无阴影列表项
+        self.bgcolor = COLORS["card"]
+        self.border_radius = RADIUS_MD
         self.padding = ft.Padding(12, 8, 12, 8)
         self.ink = True
         self.border = ft.Border(
             left=ft.BorderSide(3, tag_color),
-            top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
-            right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
-            bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            top=ft.BorderSide(1, COLORS["border_01"]),
+            right=ft.BorderSide(1, COLORS["border_01"]),
+            bottom=ft.BorderSide(1, COLORS["border_01"]),
         )
-        self.elevation = 1
-        self.shadow = ft.BoxShadow(
-            spread_radius=0,
-            blur_radius=4,
-            color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
-            offset=ft.Offset(0, 1),
-        )
+        self.elevation = 0
+        self.shadow = None
         self.animate = ft.Animation(150, ft.AnimationCurve.EASE_IN_OUT)
         self.on_click = lambda _: on_click(skill_info.name)
         self.on_hover = self._on_hover
@@ -466,23 +431,11 @@ class SkillListItem(ft.Container):
         )
 
     def _on_hover(self, e):
-        """悬浮时提升阴影。"""
+        """Cursor 风格：悬浮时仅变背景色。"""
         if e.data == "true":
-            self.shadow = ft.BoxShadow(
-                spread_radius=0,
-                blur_radius=8,
-                color=ft.Colors.with_opacity(0.1, ft.Colors.BLACK),
-                offset=ft.Offset(0, 2),
-            )
-            self.elevation = 2
+            self.bgcolor = COLORS["card_hover"]
         else:
-            self.shadow = ft.BoxShadow(
-                spread_radius=0,
-                blur_radius=4,
-                color=ft.Colors.with_opacity(0.04, ft.Colors.BLACK),
-                offset=ft.Offset(0, 1),
-            )
-            self.elevation = 1
+            self.bgcolor = COLORS["card"]
         self.update()
 
 
@@ -502,7 +455,9 @@ class SearchBar(ft.Container):
             hint_text=placeholder,
             prefix_icon=ft.Icons.SEARCH,
             border=ft.InputBorder.OUTLINE,
-            border_radius=8,
+            border_radius=RADIUS_MD,
+            bgcolor=COLORS["card"],
+            border_color=COLORS["border_02"],
             on_change=self._on_change,
         )
 
@@ -573,14 +528,14 @@ class TagCloud(ft.Container):
                         weight=ft.FontWeight.W_500
                         if is_selected
                         else ft.FontWeight.NORMAL,
-                        color=ft.Colors.ON_PRIMARY
+                        color=COLORS["on_primary"]
                         if is_selected
-                        else ft.Colors.ON_SURFACE_VARIANT,
+                        else COLORS["ink_secondary"],
                     ),
-                    bgcolor=ft.Colors.PRIMARY
+                    bgcolor=COLORS["accent"]
                     if is_selected
-                    else ft.Colors.SURFACE_CONTAINER_HIGHEST,
-                    border_radius=12,
+                    else COLORS["canvas_muted"],
+                    border_radius=RADIUS_MD,
                     padding=ft.Padding(8, 4, 8, 4),
                     ink=True,
                     on_click=lambda _, t=tag: self._handle_click(t),
@@ -624,7 +579,7 @@ class RecentUsage(ft.Container):
 
         skill_controls = []
         for s in recent_skills[:5]:
-            tag_color = CATEGORY_COLORS.get(s.category, ft.Colors.GREY)
+            tag_color = CATEGORY_COLORS.get(s.category, COLORS["ink_muted"])
             is_fav = s.name in favorites
 
             skill_controls.append(
@@ -644,17 +599,17 @@ class RecentUsage(ft.Container):
                             ft.IconButton(
                                 icon=ft.Icons.STAR if is_fav else ft.Icons.STAR_BORDER,
                                 icon_size=16,
-                                icon_color=ft.Colors.AMBER
+                                icon_color=COLORS["warning"]
                                 if is_fav
-                                else ft.Colors.OUTLINE,
+                                else COLORS["ink_tertiary"],
                                 on_click=lambda _, name=s.name: self._handle_favorite(
                                     name
                                 ),
                             ),
                         ],
                     ),
-                    bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST,
-                    border_radius=8,
+                    bgcolor=COLORS["canvas_muted"],
+                    border_radius=RADIUS_MD,
                     padding=ft.Padding(8, 4, 8, 4),
                     ink=True,
                     on_click=lambda _, name=s.name: self._handle_click(name),
@@ -692,23 +647,17 @@ class EmptyState(ft.Container):
             controls=[
                 ft.Container(
                     content=ft.Icon(
-                        ft.Icons.EXPLORE_OUTLINED, size=72, color=ft.Colors.INDIGO
+                        ft.Icons.EXPLORE_OUTLINED, size=72, color=COLORS["accent"]
                     ),
                     padding=ft.Padding(24, 24, 24, 24),
                     border_radius=24,
-                    bgcolor=ft.Colors.INDIGO_50,
-                    shadow=ft.BoxShadow(
-                        spread_radius=0,
-                        blur_radius=16,
-                        color=ft.Colors.with_opacity(0.1, ft.Colors.INDIGO),
-                        offset=ft.Offset(0, 4),
-                    ),
+                    bgcolor=COLORS["accent_soft"],
                 ),
                 ft.Text("开始探索 Skills", size=FONT_TITLE, weight=ft.FontWeight.BOLD),
                 ft.Text(
                     "安装示例 Skill 或创建新的 Skill 来开始使用",
                     size=FONT_SUBTITLE,
-                    color=ft.Colors.ON_SURFACE_VARIANT,
+                    color=COLORS["ink_secondary"],
                 ),
                 ft.Row(
                     [
@@ -717,7 +666,8 @@ class EmptyState(ft.Container):
                             icon=ft.Icons.FILE_DOWNLOAD,
                             on_click=lambda _: on_install(),
                             style=ft.ButtonStyle(
-                                shape=ft.RoundedRectangleBorder(radius=10),
+                                bgcolor=COLORS["accent"],
+                                shape=ft.RoundedRectangleBorder(radius=RADIUS_MD),
                                 padding=ft.Padding(16, 12, 16, 12),
                             ),
                         ),
@@ -726,7 +676,7 @@ class EmptyState(ft.Container):
                             icon=ft.Icons.ADD,
                             on_click=lambda _: on_create(),
                             style=ft.ButtonStyle(
-                                shape=ft.RoundedRectangleBorder(radius=10),
+                                shape=ft.RoundedRectangleBorder(radius=RADIUS_MD),
                                 padding=ft.Padding(16, 12, 16, 12),
                             ),
                         ),
@@ -747,11 +697,11 @@ class SearchEmptyState(ft.Container):
         controls = [
             ft.Container(
                 content=ft.Icon(
-                    ft.Icons.SEARCH_OFF, size=64, color=ft.Colors.INDIGO_200
+                    ft.Icons.SEARCH_OFF, size=64, color=COLORS["accent"]
                 ),
                 padding=ft.Padding(20, 20, 20, 20),
                 border_radius=20,
-                bgcolor=ft.Colors.INDIGO_50,
+                bgcolor=COLORS["accent_soft"],
             ),
             ft.Text(
                 f"未找到与「{query}」匹配的 Skill",
@@ -761,7 +711,7 @@ class SearchEmptyState(ft.Container):
             ft.Text(
                 "尝试其他关键词，或清除筛选条件",
                 size=FONT_SUBTITLE,
-                color=ft.Colors.ON_SURFACE_VARIANT,
+                color=COLORS["ink_secondary"],
             ),
         ]
         if on_clear:
@@ -771,7 +721,7 @@ class SearchEmptyState(ft.Container):
                     icon=ft.Icons.CLEAR_ALL,
                     on_click=lambda _: on_clear(),
                     style=ft.ButtonStyle(
-                        shape=ft.RoundedRectangleBorder(radius=10),
+                        shape=ft.RoundedRectangleBorder(radius=RADIUS_MD),
                         padding=ft.Padding(14, 10, 14, 10),
                     ),
                 ),
@@ -794,11 +744,11 @@ class FilterEmptyState(ft.Container):
         controls = [
             ft.Container(
                 content=ft.Icon(
-                    ft.Icons.FILTER_LIST_OFF, size=64, color=ft.Colors.INDIGO_200
+                    ft.Icons.FILTER_LIST_OFF, size=64, color=COLORS["accent"]
                 ),
                 padding=ft.Padding(20, 20, 20, 20),
                 border_radius=20,
-                bgcolor=ft.Colors.INDIGO_50,
+                bgcolor=COLORS["accent_soft"],
             ),
             ft.Text(
                 "当前筛选条件下没有 Skill", size=FONT_TITLE, weight=ft.FontWeight.BOLD
@@ -806,7 +756,7 @@ class FilterEmptyState(ft.Container):
             ft.Text(
                 "尝试调整筛选条件，或查看全部 Skill",
                 size=FONT_SUBTITLE,
-                color=ft.Colors.ON_SURFACE_VARIANT,
+                color=COLORS["ink_secondary"],
             ),
         ]
         if on_clear:
@@ -816,7 +766,7 @@ class FilterEmptyState(ft.Container):
                     icon=ft.Icons.CLEAR_ALL,
                     on_click=lambda _: on_clear(),
                     style=ft.ButtonStyle(
-                        shape=ft.RoundedRectangleBorder(radius=10),
+                        shape=ft.RoundedRectangleBorder(radius=RADIUS_MD),
                         padding=ft.Padding(14, 10, 14, 10),
                     ),
                 ),

@@ -30,6 +30,7 @@ from ..components import (
     FONT_SUBTITLE,
     FONT_TITLE,
 )
+from ..theme import COLORS, RADIUS_MD
 
 logger = get_logger(__name__)
 
@@ -37,23 +38,23 @@ logger = get_logger(__name__)
 def _profile_status_chip(prof) -> ft.Control:
     if prof.default_path is None:
         return ft.Container(
-            content=ft.Text("不可用", size=FONT_SMALL, color=ft.Colors.WHITE),
-            bgcolor=ft.Colors.GREY,
+            content=ft.Text("不可用", size=FONT_SMALL, color=COLORS["on_primary"]),
+            bgcolor=COLORS["ink_muted"],
             padding=ft.Padding(8, 2, 8, 2),
-            border_radius=10,
+            border_radius=RADIUS_MD,
         )
     if prof.exists:
         return ft.Container(
-            content=ft.Text("已存在", size=FONT_SMALL, color=ft.Colors.WHITE),
-            bgcolor=ft.Colors.GREEN,
+            content=ft.Text("已存在", size=FONT_SMALL, color=COLORS["on_primary"]),
+            bgcolor=COLORS["success"],
             padding=ft.Padding(8, 2, 8, 2),
-            border_radius=10,
+            border_radius=RADIUS_MD,
         )
     return ft.Container(
-        content=ft.Text("未创建", size=FONT_SMALL, color=ft.Colors.WHITE),
-        bgcolor=ft.Colors.AMBER,
+        content=ft.Text("未创建", size=FONT_SMALL, color=COLORS["on_primary"]),
+        bgcolor=COLORS["warning"],
         padding=ft.Padding(8, 2, 8, 2),
-        border_radius=10,
+        border_radius=RADIUS_MD,
     )
 
 
@@ -271,11 +272,11 @@ def _server_card(
         content=ft.Text(
             "已禁用" if server.disabled else "已启用",
             size=FONT_SMALL,
-            color=ft.Colors.WHITE,
+            color=COLORS["on_primary"],
         ),
-        bgcolor=ft.Colors.GREY if server.disabled else ft.Colors.GREEN,
+        bgcolor=COLORS["ink_muted"] if server.disabled else COLORS["success"],
         padding=ft.Padding(8, 2, 8, 2),
-        border_radius=10,
+        border_radius=RADIUS_MD,
     )
 
     args_text = " ".join(server.args) if server.args else "—"
@@ -294,7 +295,7 @@ def _server_card(
                     spacing=10,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     controls=[
-                        ft.Icon(ft.Icons.MEMORY, size=18, color=ft.Colors.INDIGO),
+                        ft.Icon(ft.Icons.MEMORY, size=18, color=COLORS["accent"]),
                         ft.Text(
                             server.name,
                             size=FONT_CARD_NAME,

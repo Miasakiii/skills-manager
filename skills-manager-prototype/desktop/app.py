@@ -11,6 +11,15 @@ from skills_manager.logging import get_logger
 from skills_manager.store import Store
 
 from .components import FONT_SECTION, FONT_BODY, FONT_SMALL
+from .theme import (
+    COLORS,
+    DARK_COLORS,
+    FONT_FAMILY_UI,
+    FONT_FAMILY_MONO,
+    get_theme,
+    RADIUS_MD,
+    RADIUS_LG,
+)
 
 logger = get_logger(__name__)
 
@@ -88,60 +97,11 @@ class App:
         page.window.min_height = 500
         page.theme_mode = self.theme_mode
         page.padding = 0
-        page.fonts = {"monospace": "Cascadia Code, Consolas, monospace"}
+        page.fonts = {"monospace": FONT_FAMILY_MONO}
 
-        # 全局字体栈：优先使用系统 UI 字体，中文回退微软雅黑
-        _font_family = "Segoe UI, Microsoft YaHei UI, PingFang SC, Noto Sans SC, system-ui, sans-serif"
-
-        # 自定义主题配色（靛蓝主色 + 珊瑚点缀）
-        page.theme = ft.Theme(
-            font_family=_font_family,
-            color_scheme=ft.ColorScheme(
-                primary=ft.Colors.INDIGO,
-                on_primary=ft.Colors.WHITE,
-                primary_container=ft.Colors.INDIGO_50,
-                on_primary_container=ft.Colors.INDIGO_900,
-                secondary=ft.Colors.DEEP_PURPLE,
-                on_secondary=ft.Colors.WHITE,
-                secondary_container=ft.Colors.DEEP_PURPLE_50,
-                on_secondary_container=ft.Colors.DEEP_PURPLE_900,
-                surface=ft.Colors.WHITE,
-                surface_container=ft.Colors.GREY_50,
-                surface_container_highest=ft.Colors.GREY_100,
-                on_surface=ft.Colors.GREY_900,
-                on_surface_variant=ft.Colors.GREY_600,
-                outline=ft.Colors.GREY_300,
-                outline_variant=ft.Colors.GREY_200,
-                error=ft.Colors.RED_600,
-                on_error=ft.Colors.WHITE,
-                error_container=ft.Colors.RED_50,
-                on_error_container=ft.Colors.RED_900,
-            ),
-        )
-        page.dark_theme = ft.Theme(
-            font_family=_font_family,
-            color_scheme=ft.ColorScheme(
-                primary=ft.Colors.INDIGO_300,
-                on_primary=ft.Colors.INDIGO_900,
-                primary_container=ft.Colors.INDIGO_700,
-                on_primary_container=ft.Colors.INDIGO_50,
-                secondary=ft.Colors.DEEP_PURPLE_300,
-                on_secondary=ft.Colors.DEEP_PURPLE_900,
-                secondary_container=ft.Colors.DEEP_PURPLE_700,
-                on_secondary_container=ft.Colors.DEEP_PURPLE_50,
-                surface=ft.Colors.GREY_900,
-                surface_container=ft.Colors.GREY_800,
-                surface_container_highest=ft.Colors.GREY_700,
-                on_surface=ft.Colors.GREY_100,
-                on_surface_variant=ft.Colors.GREY_400,
-                outline=ft.Colors.GREY_600,
-                outline_variant=ft.Colors.GREY_700,
-                error=ft.Colors.RED_300,
-                on_error=ft.Colors.RED_900,
-                error_container=ft.Colors.RED_900,
-                on_error_container=ft.Colors.RED_100,
-            ),
-        )
+        # Cursor Design 主题：暖羊皮纸 + 深咖啡墨色 + 焦橙点缀
+        page.theme = get_theme("light")
+        page.dark_theme = get_theme("dark")
 
         self._refresh_skills()
 
@@ -286,11 +246,11 @@ class App:
                                 content=ft.Icon(
                                     icon,
                                     size=18,
-                                    color=ft.Colors.WHITE
+                                    color=COLORS["on_primary"]
                                     if is_active
                                     else ft.Colors.ON_SURFACE_VARIANT,
                                 ),
-                                bgcolor=ft.Colors.INDIGO
+                                bgcolor=COLORS["accent"]
                                 if is_active
                                 else ft.Colors.TRANSPARENT,
                                 border_radius=6,
@@ -302,14 +262,14 @@ class App:
                                 weight=ft.FontWeight.BOLD
                                 if is_active
                                 else ft.FontWeight.W_500,
-                                color=ft.Colors.INDIGO
+                                color=COLORS["accent"]
                                 if is_active
                                 else ft.Colors.ON_SURFACE,
                             ),
                         ],
                         spacing=10,
                     ),
-                    bgcolor=ft.Colors.INDIGO_50 if is_active else ft.Colors.TRANSPARENT,
+                    bgcolor=COLORS["accent_soft"] if is_active else ft.Colors.TRANSPARENT,
                     border_radius=10,
                     padding=ft.Padding(10, 8, 12, 8),
                     border=ft.Border(
@@ -327,7 +287,7 @@ class App:
         return ft.Container(
             width=180,
             padding=ft.Padding(0, 0, 0, 0),
-            bgcolor=ft.Colors.SURFACE,
+            bgcolor=COLORS["canvas_soft"],
             content=ft.Column(
                 spacing=0,
                 controls=[
@@ -344,20 +304,12 @@ class App:
                                         ft.Container(
                                             content=ft.Icon(
                                                 ft.Icons.MEMORY,
-                                                color=ft.Colors.WHITE,
+                                                color=COLORS["on_primary"],
                                                 size=22,
                                             ),
-                                            bgcolor=ft.Colors.INDIGO,
-                                            border_radius=10,
+                                            bgcolor=COLORS["accent"],
+                                            border_radius=RADIUS_LG,
                                             padding=ft.Padding(8, 8, 8, 8),
-                                            shadow=ft.BoxShadow(
-                                                spread_radius=0,
-                                                blur_radius=8,
-                                                color=ft.Colors.with_opacity(
-                                                    0.3, ft.Colors.INDIGO
-                                                ),
-                                                offset=ft.Offset(0, 2),
-                                            ),
                                         ),
                                         ft.Column(
                                             spacing=2,
@@ -384,7 +336,7 @@ class App:
                                             ft.Container(
                                                 width=6,
                                                 height=6,
-                                                bgcolor=ft.Colors.GREEN,
+                                                bgcolor=COLORS["success"],
                                                 border_radius=3,
                                             ),
                                             ft.Text(
@@ -411,25 +363,21 @@ class App:
                                     ft.Icon(
                                         ft.Icons.ADD_CIRCLE_OUTLINE,
                                         size=18,
-                                        color=ft.Colors.WHITE,
+                                        color=COLORS["on_primary"],
                                     ),
                                     ft.Text(
                                         "安装 Skill",
                                         size=FONT_BODY,
-                                        color=ft.Colors.WHITE,
+                                        color=COLORS["on_primary"],
                                     ),
                                 ],
                                 spacing=10,
                             ),
                             on_click=lambda _: self._show_install_dialog(),
                             style=ft.ButtonStyle(
-                                bgcolor=ft.Colors.INDIGO,
-                                shape=ft.RoundedRectangleBorder(radius=10),
+                                bgcolor=COLORS["accent"],
+                                shape=ft.RoundedRectangleBorder(radius=RADIUS_MD),
                                 padding=ft.Padding(14, 10, 14, 10),
-                                elevation=2,
-                                shadow_color=ft.Colors.with_opacity(
-                                    0.2, ft.Colors.INDIGO
-                                ),
                             ),
                         ),
                     ),
@@ -484,7 +432,7 @@ class App:
                                 ft.Icon(
                                     ft.Icons.ROCKET_LAUNCH_OUTLINED,
                                     size=14,
-                                    color=ft.Colors.INDIGO,
+                                    color=COLORS["accent"],
                                 ),
                                 ft.Text(
                                     "Skills Manager",
@@ -495,10 +443,10 @@ class App:
                                     content=ft.Text(
                                         f"v{__version__}",
                                         size=FONT_SMALL,
-                                        color=ft.Colors.INDIGO,
+                                        color=COLORS["accent"],
                                         weight=ft.FontWeight.W_500,
                                     ),
-                                    bgcolor=ft.Colors.INDIGO_50,
+                                    bgcolor=COLORS["accent_soft"],
                                     border_radius=6,
                                     padding=ft.Padding(6, 3, 6, 3),
                                     ink=True,
@@ -629,15 +577,15 @@ class App:
                 info = check_update()
                 if info is None:
                     summary = "无法检查更新，请检查网络连接"
-                    color = ft.Colors.AMBER
+                    color = COLORS["warning"]
                 elif info.has_update:
                     summary = f"新版本可用: v{info.latest_version} (当前 v{info.current_version})"
-                    color = ft.Colors.AMBER
+                    color = COLORS["warning"]
                     if info.release_url:
                         summary += f"\n下载: {info.release_url}"
                 else:
                     summary = f"已是最新版本 v{info.current_version}"
-                    color = ft.Colors.GREEN
+                    color = COLORS["success"]
             except Exception:
                 summary = "检查更新失败，请稍后重试"
                 color = ft.Colors.ERROR
@@ -669,7 +617,7 @@ class App:
             return ft.Colors.ERROR
         if warnings > 0:
             return ft.Colors.WARNING
-        return ft.Colors.GREEN
+        return COLORS["success"]
 
     def _health_status_text(self):
         _, _, errors, warnings = self._run_health_check()
@@ -691,13 +639,13 @@ class App:
         # 摘要行
         if errors == 0 and warnings == 0:
             summary_text = f"共 {total} 个 Skills，全部正常"
-            summary_color = ft.Colors.GREEN
+            summary_color = COLORS["success"]
         elif errors > 0:
             summary_text = f"共 {total} 个 Skills，{ok_count} 个正常，{errors} 个错误，{warnings} 个警告"
             summary_color = ft.Colors.ERROR
         else:
             summary_text = f"共 {total} 个 Skills，{ok_count} 个正常，{warnings} 个警告"
-            summary_color = ft.Colors.AMBER
+            summary_color = COLORS["warning"]
 
         # 问题列表
         issue_rows = []
@@ -711,7 +659,7 @@ class App:
                     else ft.Icons.WARNING_AMBER
                 )
                 color = (
-                    ft.Colors.ERROR if issue.severity == "error" else ft.Colors.AMBER
+                    COLORS["error"] if issue.severity == "error" else COLORS["warning"]
                 )
                 fixable_note = "  [可自动修复]" if issue.auto_fixable else ""
                 issue_rows.append(

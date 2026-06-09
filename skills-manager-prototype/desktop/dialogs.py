@@ -7,6 +7,7 @@ from pathlib import Path
 import flet as ft
 
 from .components import FONT_BODY, FONT_SECTION, FONT_SMALL
+from .theme import COLORS, RADIUS_MD
 
 
 def build_install_dialog(app) -> ft.AlertDialog:
@@ -241,10 +242,10 @@ def build_check_updates_dialog(app) -> ft.AlertDialog:
             )
             if e.get("updatable"):
                 if e.get("reason") == "remote":
-                    label_color = ft.Colors.AMBER
+                    label_color = COLORS["warning"]
                     badge = "远程"
                 else:
-                    label_color = ft.Colors.GREEN
+                    label_color = COLORS["success"]
                     badge = "可更新"
                 action = ft.TextButton(
                     "更新",
@@ -260,7 +261,7 @@ def build_check_updates_dialog(app) -> ft.AlertDialog:
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     controls=[
                         ft.Container(
-                            content=ft.Text(badge, size=FONT_SMALL, color=ft.Colors.WHITE),
+                            content=ft.Text(badge, size=FONT_SMALL, color=COLORS["on_primary"]),
                             bgcolor=label_color,
                             padding=ft.Padding(8, 2, 8, 2),
                             border_radius=10,
@@ -303,7 +304,7 @@ def build_check_updates_dialog(app) -> ft.AlertDialog:
         title=ft.Row(
             spacing=8,
             controls=[
-                ft.Icon(ft.Icons.SYSTEM_UPDATE, color=ft.Colors.INDIGO),
+                ft.Icon(ft.Icons.SYSTEM_UPDATE, color=COLORS["accent"]),
                 ft.Text(
                     "检查 Skill 更新", size=FONT_SECTION, weight=ft.FontWeight.BOLD
                 ),
