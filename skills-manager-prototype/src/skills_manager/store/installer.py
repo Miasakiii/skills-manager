@@ -96,8 +96,6 @@ class _SkillInstaller:
 
     def install_from_package(self, package_path: Path) -> SimpleNamespace:
         """从 .skill 包文件安装。"""
-        import tarfile
-
         if not package_path.exists():
             raise StoreError(f"Package not found: {package_path}")
 
@@ -105,10 +103,7 @@ class _SkillInstaller:
         tmp_dir.mkdir(exist_ok=True)
 
         try:
-            with tarfile.open(package_path, "r:gz") as tar:
-                tar.extractall(
-                    tmp_dir, filter="data" if hasattr(tarfile, "data_filter") else None
-                )
+            _safe_extract_archive(package_path, tmp_dir, kind="tar")
 
             skill_dir = self._find_skill_dir(tmp_dir)
             if not skill_dir:
@@ -182,12 +177,11 @@ class _SkillInstaller:
         zip_path = tmp_dir / "repo.zip"
         zip_path.write_bytes(response.content)
 
-        import zipfile
+        extract_dir = tmp_dir / "extracted"
+        extract_dir.mkdir(exist_ok=True)
+        _safe_extract_archive(zip_path, extract_dir, kind="zip")
 
-        with zipfile.ZipFile(zip_path) as zf:
-            zf.extractall(tmp_dir)
-
-        extracted_dir = tmp_dir / f"{repo}-{branch}"
+        extracted_dir = extract_dir / f"{repo}-{branch}"
         search_dir = extracted_dir / sub_path if sub_path else extracted_dir
 
         skill_dir = self._find_skill_dir(search_dir)
@@ -200,21 +194,11 @@ class _SkillInstaller:
         self, archive_path: Path, tmp_dir: Path
     ) -> SimpleNamespace:
         """从压缩包安装。"""
-        import tarfile
-        import zipfile
-
         extract_dir = tmp_dir / "extracted"
         extract_dir.mkdir(exist_ok=True)
 
-        if archive_path.name.endswith(".zip"):
-            with zipfile.ZipFile(archive_path) as zf:
-                zf.extractall(extract_dir)
-        else:
-            with tarfile.open(archive_path) as tf:
-                tf.extractall(
-                    extract_dir,
-                    filter="data" if hasattr(tarfile, "data_filter") else None,
-                )
+        kind = "zip" if archive_path.name.endswith(".zip") else "tar"
+        _safe_extract_archive(archive_path, extract_dir, kind=kind)
 
         skill_dir = self._find_skill_dir(extract_dir)
         if not skill_dir:
@@ -552,3 +536,88 @@ def _version_tuple(version: str) -> tuple[int, ...]:
                     break
             parts.append(int(buf) if buf else 0)
     return tuple(parts) if parts else (0,)
+
+
+def _safe_extract_archive(
+    archive_path: Path, dest: Path, *, kind: str
+) -> None:
+    """安全解压压缩包到 dest。
+
+    防护措施（适用于 tar 与 zip，且不依赖 Python 3.12 的 ``filter="data"``）：
+
+    - 拒绝绝对路径成员
+    - 拒绝包含 ``..`` 的成员
+    - 拒绝 NUL 字节
+    - 拒绝指向 dest 外部的符号链接 / 硬链接
+    - 解压前验证每个成员的最终路径都在 dest 之内
+    - 优先使用 tarfile 的 ``data_filter``（Python 3.12+），低版本回退到手动过滤
+    """
+    import os
+    import tarfile
+    import zipfile
+    from pathlib import PurePosixPath
+
+    dest = dest.resolve()
+    dest.mkdir(parents=True, exist_ok=True)
+
+    def _check_member_path(name: str) -> PurePosixPath:
+        if "\x00" in name:
+            raise StoreError(f"Unsafe path in archive (NUL byte): {name!r}")
+        # 规范化反斜杠（Windows 风格 zip）
+        normalized = name.replace("\\", "/")
+        p = PurePosixPath(normalized)
+        if p.is_absolute():
+            raise StoreError(f"Unsafe absolute path in archive: {name}")
+        if any(part == ".." for part in p.parts):
+            raise StoreError(f"Unsafe path traversal in archive: {name}")
+        # 确保解析后的最终路径仍在 dest 内
+        candidate = (dest / normalized).resolve()
+        try:
+            candidate.relative_to(dest)
+        except ValueError:
+            raise StoreError(f"Unsafe path in archive: {name}")
+        return p
+
+    if kind == "zip":
+        with zipfile.ZipFile(archive_path) as zf:
+            for info in zf.infolist():
+                if info.is_dir():
+                    _check_member_path(info.filename)
+                    continue
+                _check_member_path(info.filename)
+            # zipfile 自身没有 filter API，但已逐条校验
+            zf.extractall(dest)
+        return
+
+    if kind == "tar":
+        with tarfile.open(archive_path) as tf:
+            safe_members = []
+            for member in tf.getmembers():
+                _check_member_path(member.name)
+                # 拒绝指向外部的链接
+                if member.issym() or member.islnk():
+                    link_target = member.linkname
+                    if not link_target:
+                        raise StoreError(
+                            f"Unsafe link in archive (empty target): {member.name}"
+                        )
+                    link_resolved = (dest / member.name).parent / link_target
+                    try:
+                        link_resolved.resolve().relative_to(dest)
+                    except (ValueError, OSError):
+                        raise StoreError(
+                            f"Unsafe link target in archive: {member.name} -> {link_target}"
+                        )
+                # 设备文件等特殊类型也拒绝
+                if member.isdev():
+                    raise StoreError(f"Unsafe device member in archive: {member.name}")
+                safe_members.append(member)
+
+            kwargs: dict = {"members": safe_members}
+            if hasattr(tarfile, "data_filter"):
+                # Python 3.12+ 提供的额外保护
+                kwargs["filter"] = "data"
+            tf.extractall(dest, **kwargs)
+        return
+
+    raise StoreError(f"Unsupported archive kind: {kind}")

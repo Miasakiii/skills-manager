@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from ..logging import get_logger
+from ..security import sanitize_name
 from ..store import Store, StoreError
 
 logger = get_logger(__name__)
@@ -279,6 +280,15 @@ class SkillfmtMCPServer:
                 source = arguments["source"]
                 force = arguments.get("force", False)
                 custom_name = arguments.get("name")
+
+                # 验证输入
+                if "\x00" in source or ".." in source:
+                    return [
+                        TextContent(type="text", text="Error: source 包含非法路径字符")
+                    ]
+                if custom_name is not None:
+                    custom_name = sanitize_name(custom_name)
+
                 source_path = Path(source)
 
                 if source.startswith(("http://", "https://")):
@@ -301,6 +311,14 @@ class SkillfmtMCPServer:
                 skill_name = arguments["name"]
                 fmt = arguments["format"]
                 output = arguments.get("output")
+
+                # 验证输出路径安全
+                if output and (".." in output or "\x00" in output):
+                    return [
+                        TextContent(
+                            type="text", text="Error: output 路径包含非法字符"
+                        )
+                    ]
 
                 ir = self.store.get_skill_ir(skill_name)
                 adapter = get_adapter(fmt)

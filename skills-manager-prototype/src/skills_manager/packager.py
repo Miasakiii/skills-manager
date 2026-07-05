@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import tarfile
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from .parser import parse_skill_md
 
@@ -45,6 +45,27 @@ def pack(source_dir: Path, output_dir: Path | None = None) -> Path:
     return output_path
 
 
+def _validate_tar_member(member: tarfile.TarInfo, dest_dir: Path) -> bool:
+    """验证 tar 成员路径是否安全（防止路径遍历）。"""
+    target = dest_dir / member.name
+    try:
+        target.resolve().relative_to(dest_dir.resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _validate_zip_path(path: str, dest_dir: Path) -> bool:
+    """验证 ZIP 内路径是否安全（防止路径遍历）。"""
+    # 拒绝绝对路径和 .. 遍历
+    parts = PurePosixPath(path).parts
+    if any(p == ".." for p in parts):
+        return False
+    if PurePosixPath(path).is_absolute():
+        return False
+    return True
+
+
 def unpack(package_path: Path, output_dir: Path | None = None) -> Path:
     """解包 .skill 文件。
 
@@ -62,9 +83,16 @@ def unpack(package_path: Path, output_dir: Path | None = None) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     with tarfile.open(package_path, "r:gz") as tar:
-        tar.extractall(
-            output_dir, filter="data" if hasattr(tarfile, "data_filter") else None
-        )
+        # 安全过滤：拒绝路径遍历成员
+        safe_members = []
+        for member in tar.getmembers():
+            if not _validate_tar_member(member, output_dir):
+                raise ValueError(f"Unsafe path in archive: {member.name}")
+            safe_members.append(member)
+        if hasattr(tarfile, "data_filter"):
+            tar.extractall(output_dir, members=safe_members, filter="data")
+        else:
+            tar.extractall(output_dir, members=safe_members)
 
     # 找到解压后的目录
     for item in output_dir.iterdir():
@@ -108,7 +136,9 @@ def pack_for_claude_desktop(skills_dirs: list[Path], output_dir: Path) -> Path:
             for item in skill_dir.rglob("*"):
                 if item.is_file() and not item.name.startswith("."):
                     rel_path = item.relative_to(skill_dir)
-                    zf.write(item, f"{ir.name}/{rel_path}")
+                    arc_path = f"{ir.name}/{rel_path}"
+                    if _validate_zip_path(arc_path, output_dir):
+                        zf.write(item, arc_path)
 
     return output_path
 
@@ -140,7 +170,9 @@ def pack_for_codex(skills_dirs: list[Path], output_dir: Path) -> Path:
             for item in skill_dir.rglob("*"):
                 if item.is_file() and not item.name.startswith("."):
                     rel_path = item.relative_to(skill_dir)
-                    zf.write(item, f".agents/skills/{ir.name}/{rel_path}")
+                    arc_path = f".agents/skills/{ir.name}/{rel_path}"
+                    if _validate_zip_path(arc_path, output_dir):
+                        zf.write(item, arc_path)
 
         # 生成 AGENTS.md
         agents_md = _generate_agents_md(skills_dirs)
@@ -176,7 +208,9 @@ def pack_for_claude_code(skills_dirs: list[Path], output_dir: Path) -> Path:
             for item in skill_dir.rglob("*"):
                 if item.is_file() and not item.name.startswith("."):
                     rel_path = item.relative_to(skill_dir)
-                    zf.write(item, f".claude/skills/{ir.name}/{rel_path}")
+                    arc_path = f".claude/skills/{ir.name}/{rel_path}"
+                    if _validate_zip_path(arc_path, output_dir):
+                        zf.write(item, arc_path)
 
     return output_path
 
